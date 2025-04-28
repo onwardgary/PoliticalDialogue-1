@@ -17,7 +17,7 @@ type ChatInputProps = {
 export default function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const MAX_CHARS = 280; // Twitter-style character limit
+  const MAX_CHARS = 560; // Doubled character limit for users
   
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -90,7 +90,7 @@ export default function ChatInput({ onSendMessage, isLoading }: ChatInputProps) 
         <div className="flex items-center gap-2">
           <kbd className="px-1 py-0.5 text-xs text-neutral-700 bg-neutral-100 border border-neutral-300 rounded">Ctrl+Enter</kbd>
           <span className="ml-1">to send</span>
-          <span className={`ml-2 ${isOverLimit ? 'text-red-500 font-medium' : remainingChars <= 50 ? 'text-amber-500' : ''}`}>
+          <span className={`ml-2 ${isOverLimit ? 'text-red-500 font-medium' : remainingChars <= 100 ? 'text-amber-500' : ''}`}>
             {isOverLimit ? `${Math.abs(remainingChars)} over limit` : `${remainingChars} left`}
           </span>
         </div>

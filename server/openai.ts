@@ -21,12 +21,13 @@ export function createPartySystemMessage(partyShortName: string): Message {
   
   const commonInstructions = `
   IMPORTANT COMMUNICATION GUIDELINES:
-  1. ALWAYS LIMIT YOUR RESPONSES TO 280 CHARACTERS OR LESS, LIKE A TWEET. This is a strict requirement.
-  2. Illustrate your points with brief, realistic examples relevant to Singaporeans.
-  3. Adapt your persona and tone to suit the specific topic being discussed.
-  4. Be extremely concise but informative - focus on quality over quantity.
-  5. Use bold text (**like this**) sparingly for the most important points only.
-  6. Your responses must never exceed 280 characters total.
+  1. LIMIT YOUR RESPONSES TO 1000 CHARACTERS OR LESS. This is a strict requirement.
+  2. Illustrate your points with SPECIFIC, realistic examples relevant to Singaporeans.
+  3. Include calculations, statistics, and data when needed to avoid being theoretical.
+  4. Adapt your persona and tone to suit the specific topic being discussed.
+  5. Be informative and substantive - provide actual evidence for your claims.
+  6. Use bold text (**like this**) sparingly for the most important points only.
+  7. Your responses must never exceed 1000 characters total.
   `;
   
   switch (partyShortName) {
@@ -95,7 +96,7 @@ export async function generatePartyResponse(messages: Message[]): Promise<string
       model: MODEL,
       messages: formattedMessages,
       temperature: 0.7,
-      max_tokens: 100, // Reduced to ensure we get responses under 280 characters
+      max_tokens: 350, // Increased to allow for responses under 1000 characters
     });
     
     // Race the API promise against the timeout
