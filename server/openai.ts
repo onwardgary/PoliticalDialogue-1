@@ -141,10 +141,10 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
       4. "conclusion": An in-depth assessment of the debate with:
          - "outcome": Either "party" (if party arguments were stronger), "citizen" (if citizen arguments were stronger), or "inconclusive" (if the debate was balanced)
          - "evaluation": A structured analysis based on four key pillars:
-            * "logicalSoundness": Assessment of how fact-based and logically coherent each side's arguments were
-            * "emotionalReasoning": Analysis of how effectively and appropriately emotional appeals were used
-            * "keyPointResolution": Evaluation of how directly each side addressed the core challenges raised
-            * "toneAndClarity": Assessment of the professionalism, seriousness, and clarity of communication
+            * "logicalSoundness": Brief assessment (1-2 sentences) of how fact-based and logically coherent each side's arguments were 
+            * "emotionalReasoning": Brief assessment (1-2 sentences) of how effectively and appropriately emotional appeals were used
+            * "keyPointResolution": Brief assessment (1-2 sentences) of how directly each side addressed the core challenges raised
+            * "toneAndClarity": Brief assessment (1-2 sentences) of the professionalism, seriousness, and clarity of communication
          - "reasoning": A final justification explaining the overall outcome based on the four pillars
       
       Format your response as a JSON object with these properties. Focus on concrete examples mentioned in the debate rather than generalizations. Evaluate the logical strength of arguments, not just quantity or assertion.`
@@ -152,16 +152,16 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
     
     console.log("Sending summary request to OpenAI API...");
     
-    // Add a timeout to the OpenAI request
+    // Add a timeout to the OpenAI request (increased for more complex responses)
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error("OpenAI API request timed out after 20 seconds")), 20000);
+      setTimeout(() => reject(new Error("OpenAI API request timed out after 30 seconds")), 30000);
     });
     
     const apiPromise = openai.chat.completions.create({
       model: MODEL,
       messages: formattedMessages,
       temperature: 0.5,
-      max_tokens: 1000,
+      max_tokens: 2000, // Increased to handle larger and more detailed responses
       response_format: { type: "json_object" }
     });
     
@@ -279,7 +279,7 @@ export async function generateAggregateSummary(
       model: MODEL,
       messages: [{ role: "user", content: prompt }],
       temperature: 0.5,
-      max_tokens: 1000,
+      max_tokens: 1500, // Increased to handle larger responses
       response_format: { type: "json_object" }
     });
     
