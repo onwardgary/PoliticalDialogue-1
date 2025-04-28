@@ -102,48 +102,57 @@ export default function AuthPage() {
   // Handle login form submission
   const onLoginSubmit = async (data: LoginData) => {
     console.log("Login form submitted:", data);
-    try {
-      // Direct fetch approach for better debugging
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: data.email,
-          password: data.password
-        }),
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Login API error:', response.status, errorText);
-        throw new Error(`Login failed: ${errorText}`);
+    // Use the loginMutation from auth context if it's available
+    if (loginMutation && loginMutation.mutate !== createDummyMutation().mutate) {
+      try {
+        loginMutation.mutate(data);
+      } catch (error) {
+        console.error("Login mutation error:", error);
       }
+    } else {
+      // Fallback to direct fetch approach if auth context is not available
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: data.email,
+            password: data.password
+          }),
+          credentials: 'include'
+        });
 
-      const user = await response.json();
-      console.log('Login successful:', user);
-      
-      // Show success toast
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-        variant: "default",
-      });
-      
-      // Manually update the auth state
-      queryClient.setQueryData(["/api/user"], user);
-      
-      // Redirect to home
-      setLocation('/');
-    } catch (error) {
-      console.error("Login error:", error);
-      toast({
-        title: "Login failed",
-        description: error instanceof Error ? error.message : "Unknown error occurred",
-        variant: "destructive",
-      });
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Login API error:', response.status, errorText);
+          throw new Error(`Login failed: ${errorText}`);
+        }
+
+        const user = await response.json();
+        console.log('Login successful:', user);
+        
+        // Show success toast
+        toast({
+          title: "Login successful",
+          description: "Welcome back!",
+          variant: "default",
+        });
+        
+        // Manually update the auth state
+        queryClient.setQueryData(["/api/user"], user);
+        
+        // Redirect to home
+        setLocation('/');
+      } catch (error) {
+        console.error("Login error:", error);
+        toast({
+          title: "Login failed",
+          description: error instanceof Error ? error.message : "Unknown error occurred",
+          variant: "destructive",
+        });
+      }
     }
   };
   

@@ -40,9 +40,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     data: user,
     error,
     isLoading,
+    refetch,
   } = useQuery<SelectUser | null, Error>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
+    staleTime: 0, // Always fetch the latest user info
+    refetchOnWindowFocus: true, // Refetch when window gets focus
   });
 
   const loginMutation = useMutation({
@@ -52,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
+      refetch(); // Explicitly refetch user data
       toast({
         title: "Login successful",
         description: `Welcome back, ${user.username}!`,
@@ -75,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
+      refetch(); // Explicitly refetch user data
       toast({
         title: "Registration successful",
         description: `Welcome to Suara.sg, ${user.username}!`,
@@ -95,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
+      refetch(); // Explicitly refetch user data after logout
       toast({
         title: "Logout successful",
         description: "You've been logged out successfully.",
