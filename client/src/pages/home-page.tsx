@@ -50,7 +50,7 @@ export default function HomePage() {
     <div className="min-h-screen flex flex-col md:flex-row">
       <Sidebar />
       
-      <main className="flex-1 md:ml-64">
+      <main className="flex-1">
         <MobileHeader />
         
         <header className="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-neutral-200 px-6 py-10 md:py-16">
