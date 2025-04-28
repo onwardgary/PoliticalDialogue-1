@@ -38,28 +38,93 @@ export default function MessageBubble({ message, partyShortName = "BOT" }: Messa
       return formatted;
     };
 
-    // Check if content contains a list with numbers or bullets
-    if (content.match(/(\d+\.\s|•\s|\*\s).+/g)) {
-      const parts = content.split(/(?=(\d+\.\s|•\s|\*\s))/);
+    // Special handling for numbered lists with titles/headers
+    const numberedListWithHeadersRegex = /(\d+\.\s+)([\w\s]+):([^]+?)(?=\d+\.\s+[\w\s]+:|$)/g;
+    if (content.match(numberedListWithHeadersRegex)) {
+      // Format specifically for numbered lists with headers
+      const formattedContent = content.replace(numberedListWithHeadersRegex, 
+        '<div class="list-item-with-header mb-4">' +
+        '<div class="list-header mb-1"><strong>$1$2</strong></div>' +
+        '<div class="list-content pl-6">$3</div>' +
+        '</div>'
+      );
+      
       return (
-        <>
+        <div 
+          className="formatted-list" 
+          dangerouslySetInnerHTML={{ __html: formattedContent }}
+        />
+      );
+    }
+    
+    // Check if content contains a standard list with numbers or bullets
+    if (content.match(/(\d+\.\s|•\s|\*\s).+/g)) {
+      // Split content into list items and regular paragraphs
+      const listItemRegex = /^(\d+\.\s|•\s|\*\s)(.+)$/gm;
+      const parts = [];
+      let lastIndex = 0;
+      let match;
+      
+      const contentWithNormalizedLineEndings = content.replace(/\r\n/g, '\n');
+      const regex = new RegExp(listItemRegex);
+      
+      while ((match = regex.exec(contentWithNormalizedLineEndings)) !== null) {
+        // Add any text before this list item as a paragraph
+        if (match.index > lastIndex) {
+          const textBefore = contentWithNormalizedLineEndings.substring(lastIndex, match.index).trim();
+          if (textBefore) {
+            parts.push({
+              type: 'paragraph',
+              content: textBefore
+            });
+          }
+        }
+        
+        // Add this list item
+        parts.push({
+          type: 'list-item',
+          marker: match[1],
+          content: match[2].trim()
+        });
+        
+        lastIndex = match.index + match[0].length;
+      }
+      
+      // Add any remaining text as a paragraph
+      if (lastIndex < contentWithNormalizedLineEndings.length) {
+        const textAfter = contentWithNormalizedLineEndings.substring(lastIndex).trim();
+        if (textAfter) {
+          parts.push({
+            type: 'paragraph',
+            content: textAfter
+          });
+        }
+      }
+      
+      return (
+        <div className="list-content">
           {parts.map((part, index) => {
-            if (part.match(/^(\d+\.\s|•\s|\*\s)/)) {
-              // It's a list item
+            if (part.type === 'list-item') {
               return (
-                <li key={index} className="ml-4 mb-1" 
-                    dangerouslySetInnerHTML={{ __html: formatText(part) }} />
+                <div key={index} className="flex mb-2">
+                  <div className="list-marker mr-2">{part.marker}</div>
+                  <div 
+                    className="list-text flex-1"
+                    dangerouslySetInnerHTML={{ __html: formatText(part.content) }}
+                  />
+                </div>
               );
-            } else if (part.trim()) {
-              // It's a paragraph
+            } else {
               return (
-                <p key={index} className="mb-2" 
-                   dangerouslySetInnerHTML={{ __html: formatText(part) }} />
+                <p 
+                  key={index} 
+                  className="mb-3"
+                  dangerouslySetInnerHTML={{ __html: formatText(part.content.replace(/\n/g, '<br />')) }}
+                />
               );
             }
-            return null;
-          }).filter(Boolean)}
-        </>
+          })}
+        </div>
       );
     }
     
@@ -106,7 +171,10 @@ export default function MessageBubble({ message, partyShortName = "BOT" }: Messa
           ? "bg-primary text-white rounded-tr-none" 
           : "bg-white text-neutral-800 rounded-tl-none"
       )}>
-        <div className="text-sm prose prose-sm dark:prose-invert">
+        <div className={cn(
+          "text-sm prose prose-sm dark:prose-invert chat-content",
+          isUser ? "chat-content-user" : "chat-content-bot"
+        )}>
           {formatContent(message.content)}
         </div>
         <p className={cn(
@@ -116,6 +184,28 @@ export default function MessageBubble({ message, partyShortName = "BOT" }: Messa
           {formattedTime}
         </p>
       </div>
+
+      <style jsx>{`
+        .chat-content-bot :global(.list-item-with-header) {
+          margin-bottom: 1rem;
+        }
+        .chat-content-bot :global(.list-header) {
+          margin-bottom: 0.25rem;
+          font-weight: 600;
+        }
+        .chat-content-bot :global(.list-content) {
+          margin-left: 1.5rem;
+        }
+        .chat-content-bot :global(.list-marker) {
+          min-width: 1.5rem;
+          font-weight: 600;
+        }
+        .chat-content-bot :global(.formatted-list) {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+      `}</style>
     </div>
   );
 }
