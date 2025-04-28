@@ -6,7 +6,7 @@ import Sidebar from "@/components/sidebar";
 import { MobileHeader, MobileNavigation } from "@/components/mobile-nav";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2 } from "lucide-react";
+import { Loader2, MessageSquare, ArrowUp, ChevronRight } from "lucide-react";
 
 export default function HomePage() {
   const [periodFilter, setPeriodFilter] = useState("weekly");
@@ -53,21 +53,27 @@ export default function HomePage() {
       <main className="flex-1 md:ml-64">
         <MobileHeader />
         
-        <header className="bg-white border-b border-neutral-200 p-4">
-          <h1 className="text-2xl font-bold">Welcome to Suara.sg</h1>
-          <p className="text-neutral-600">Debate political party positions with AI and vote on summaries</p>
+        <header className="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-neutral-200 px-6 py-10 md:py-16">
+          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-700 to-blue-500 text-transparent bg-clip-text mb-2">Welcome to Suara.sg</h1>
+          <p className="text-neutral-600 text-lg md:w-3/4 lg:w-2/3">
+            Engage in meaningful debates with AI-powered political party representatives, 
+            understand different policy positions, and contribute to Singapore's democratic discourse.
+          </p>
         </header>
         
         {/* Party Selection Section */}
-        <section className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Select a party to debate with</h2>
+        <section className="p-6 md:p-8">
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-2">Select a Political Party to Debate With</h2>
+            <p className="text-neutral-500">Choose a party to discuss policies, understand positions, and engage in democratic dialogue</p>
+          </div>
           
           {isLoadingParties ? (
             <div className="py-12 flex justify-center">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
               {parties?.map((party: any) => (
                 <PartyCard key={party.id} party={party} />
               ))}
@@ -76,30 +82,33 @@ export default function HomePage() {
         </section>
         
         {/* Trending Debates Section */}
-        <section className="p-6 bg-neutral-50">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Trending Debates</h2>
-            <div className="flex space-x-2">
+        <section className="p-6 md:p-8 bg-gradient-to-b from-white to-neutral-50 border-t border-neutral-100">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <div className="mb-4 md:mb-0">
+              <h2 className="text-xl font-semibold mb-1">Trending Political Debates</h2>
+              <p className="text-neutral-500">See what topics are being discussed by the community</p>
+            </div>
+            <div className="flex space-x-2 bg-white p-1 rounded-full border border-neutral-200 shadow-sm">
               <Button 
-                variant={periodFilter === "daily" ? "default" : "outline"} 
+                variant={periodFilter === "daily" ? "default" : "ghost"} 
                 size="sm" 
-                className="rounded-full"
+                className="rounded-full text-sm"
                 onClick={() => handlePeriodChange("daily")}
               >
                 Daily
               </Button>
               <Button 
-                variant={periodFilter === "weekly" ? "default" : "outline"} 
+                variant={periodFilter === "weekly" ? "default" : "ghost"} 
                 size="sm" 
-                className="rounded-full"
+                className="rounded-full text-sm"
                 onClick={() => handlePeriodChange("weekly")}
               >
                 Weekly
               </Button>
               <Button 
-                variant={periodFilter === "monthly" ? "default" : "outline"} 
+                variant={periodFilter === "monthly" ? "default" : "ghost"} 
                 size="sm" 
-                className="rounded-full"
+                className="rounded-full text-sm"
                 onClick={() => handlePeriodChange("monthly")}
               >
                 Monthly
@@ -112,21 +121,35 @@ export default function HomePage() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : trendingDebates.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               {trendingDebates.map((debate: any) => (
                 <TrendingDebateCard key={debate.id} debate={debate} />
               ))}
             </div>
           ) : (
-            <div className="py-12 text-center">
-              <p className="text-neutral-500">No trending debates available for this period.</p>
-              <p className="text-sm text-neutral-400 mt-2">Start a debate to be the first!</p>
+            <div className="py-16 text-center bg-white rounded-lg border border-dashed border-neutral-200">
+              <div className="mx-auto w-16 h-16 mb-4 rounded-full bg-neutral-100 flex items-center justify-center">
+                <MessageSquare className="h-8 w-8 text-neutral-400" />
+              </div>
+              <h3 className="text-lg font-medium text-neutral-700 mb-2">No trending debates yet</h3>
+              <p className="text-neutral-500 max-w-md mx-auto mb-6">
+                Be the first to start a political debate with one of the party bots above!
+                Your conversations will appear here for others to see and vote on.
+              </p>
+              <Button 
+                onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}
+                className="gap-2"
+              >
+                <ArrowUp className="h-4 w-4" />
+                Select a party to debate with
+              </Button>
             </div>
           )}
           
           {trendingDebates.length > 0 && (
-            <div className="mt-4 text-center">
-              <Button variant="link" className="text-primary font-medium">
+            <div className="mt-6 text-center">
+              <Button variant="outline" className="gap-2">
+                <ChevronRight className="h-4 w-4" />
                 View all trending debates
               </Button>
             </div>
