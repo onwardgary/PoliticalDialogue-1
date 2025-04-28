@@ -138,9 +138,14 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
          - "point": The core issue being debated
          - "partyPosition": The party's stance on this issue
          - "citizenPosition": The citizen's stance on this issue
-      4. "conclusion": An objective assessment of the debate with:
+      4. "conclusion": An in-depth assessment of the debate with:
          - "outcome": Either "party" (if party arguments were stronger), "citizen" (if citizen arguments were stronger), or "inconclusive" (if the debate was balanced)
-         - "reasoning": A brief explanation justifying your conclusion
+         - "evaluation": A structured analysis based on four key pillars:
+            * "logicalSoundness": Assessment of how fact-based and logically coherent each side's arguments were
+            * "emotionalReasoning": Analysis of how effectively and appropriately emotional appeals were used
+            * "keyPointResolution": Evaluation of how directly each side addressed the core challenges raised
+            * "toneAndClarity": Assessment of the professionalism, seriousness, and clarity of communication
+         - "reasoning": A final justification explaining the overall outcome based on the four pillars
       
       Format your response as a JSON object with these properties. Focus on concrete examples mentioned in the debate rather than generalizations. Evaluate the logical strength of arguments, not just quantity or assertion.`
     });
@@ -177,7 +182,13 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
         keyPoints: summary.keyPoints || [],
         conclusion: summary.conclusion || {
           outcome: "inconclusive",
-          reasoning: "Analysis could not determine a clear winner"
+          evaluation: {
+            logicalSoundness: "Not enough information to assess logical soundness",
+            emotionalReasoning: "Not enough information to assess emotional appeals",
+            keyPointResolution: "Not enough information to assess resolution of key points",
+            toneAndClarity: "Not enough information to assess tone and clarity"
+          },
+          reasoning: "Analysis could not determine a clear winner due to insufficient content"
         }
       };
     } catch (jsonError) {
@@ -193,6 +204,12 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
         }],
         conclusion: {
           outcome: "inconclusive",
+          evaluation: {
+            logicalSoundness: "Could not be evaluated due to technical issues",
+            emotionalReasoning: "Could not be evaluated due to technical issues",
+            keyPointResolution: "Could not be evaluated due to technical issues",
+            toneAndClarity: "Could not be evaluated due to technical issues"
+          },
           reasoning: "Technical issues prevented proper analysis of the debate"
         }
       };
@@ -215,6 +232,12 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
       }],
       conclusion: {
         outcome: "inconclusive",
+        evaluation: {
+          logicalSoundness: "Could not be evaluated due to technical issues",
+          emotionalReasoning: "Could not be evaluated due to technical issues",
+          keyPointResolution: "Could not be evaluated due to technical issues",
+          toneAndClarity: "Could not be evaluated due to technical issues"
+        },
         reasoning: "Technical difficulties prevented analysis of the debate"
       }
     };
