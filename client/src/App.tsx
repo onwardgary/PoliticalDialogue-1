@@ -36,11 +36,13 @@ function Router() {
 
 function App() {
   return (
-    <TooltipProvider>
-      <Router />
-      {/* This is here to ensure the toaster UI is correctly rendered */}
-      <Toaster />
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Router />
+        {/* This is here to ensure the toaster UI is correctly rendered */}
+        <Toaster />
+      </TooltipProvider>
+    </AuthProvider>
   );
 }
 

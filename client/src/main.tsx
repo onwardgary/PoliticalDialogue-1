@@ -11,8 +11,6 @@ import { Toaster } from "@/components/ui/toaster";
 // and to ensure it's available across the application
 createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
+    <App />
   </QueryClientProvider>
 );
