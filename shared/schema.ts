@@ -87,6 +87,17 @@ export const knowledgeBase = pgTable("knowledge_base", {
 export type DebateSummary = {
   partyArguments: string[];
   citizenArguments: string[];
+  // Point-by-point comparison
+  keyPoints?: {
+    point: string;
+    partyPosition: string;
+    citizenPosition: string;
+  }[];
+  // Final deliberation
+  conclusion?: {
+    outcome: "party" | "citizen" | "inconclusive";
+    reasoning: string;
+  };
 };
 
 export type Party = typeof parties.$inferSelect;

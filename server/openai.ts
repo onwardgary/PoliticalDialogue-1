@@ -130,11 +130,19 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
     
     formattedMessages.push({
       role: "user",
-      content: `Summarize this debate into two concise lists:
-      1. "partyArguments": The top 5 key arguments made by the political party (the assistant)
-      2. "citizenArguments": The top 5 key arguments made by the citizen (the user)
+      content: `Analyze this debate and provide a comprehensive structured summary with the following components:
+
+      1. "partyArguments": The top 5 key arguments made by the political party (the assistant) - concise but specific
+      2. "citizenArguments": The top 5 key arguments made by the citizen (the user) - concise but specific
+      3. "keyPoints": An array of the most important points of contention, with each object containing:
+         - "point": The core issue being debated
+         - "partyPosition": The party's stance on this issue
+         - "citizenPosition": The citizen's stance on this issue
+      4. "conclusion": An objective assessment of the debate with:
+         - "outcome": Either "party" (if party arguments were stronger), "citizen" (if citizen arguments were stronger), or "inconclusive" (if the debate was balanced)
+         - "reasoning": A brief explanation justifying your conclusion
       
-      Format your response as a JSON object with these two arrays. Keep each argument concise (under 100 characters) but informative, focusing on the strongest points made. The summary should reflect the specific examples and points discussed, avoiding vague generalizations.`
+      Format your response as a JSON object with these properties. Focus on concrete examples mentioned in the debate rather than generalizations. Evaluate the logical strength of arguments, not just quantity or assertion.`
     });
     
     console.log("Sending summary request to OpenAI API...");
@@ -162,16 +170,31 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
       console.log("Parsing summary JSON response:", summaryText);
       const summary = JSON.parse(summaryText) as DebateSummary;
       
+      // Return comprehensive summary with all components
       return {
         partyArguments: summary.partyArguments || [],
-        citizenArguments: summary.citizenArguments || []
+        citizenArguments: summary.citizenArguments || [],
+        keyPoints: summary.keyPoints || [],
+        conclusion: summary.conclusion || {
+          outcome: "inconclusive",
+          reasoning: "Analysis could not determine a clear winner"
+        }
       };
     } catch (jsonError) {
       console.error("Error parsing JSON response:", jsonError);
-      // Provide a fallback summary
+      // Provide a fallback summary with all required properties
       return {
         partyArguments: ["The AI provided arguments about this topic"],
-        citizenArguments: ["The citizen raised questions about this topic"]
+        citizenArguments: ["The citizen raised questions about this topic"],
+        keyPoints: [{
+          point: "Topic discussion",
+          partyPosition: "Official party position on this topic",
+          citizenPosition: "Citizen's concerns and questions about this topic"
+        }],
+        conclusion: {
+          outcome: "inconclusive",
+          reasoning: "Technical issues prevented proper analysis of the debate"
+        }
       };
     }
   } catch (error) {
@@ -181,10 +204,19 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
       console.error("Error stack:", error.stack);
     }
     
-    // Return a fallback summary instead of throwing
+    // Return a complete fallback summary instead of throwing
     return {
       partyArguments: ["Technical difficulties prevented proper summary"],
-      citizenArguments: ["Technical difficulties prevented proper summary"]
+      citizenArguments: ["Technical difficulties prevented proper summary"],
+      keyPoints: [{
+        point: "Technical issue",
+        partyPosition: "Could not be analyzed due to technical issues",
+        citizenPosition: "Could not be analyzed due to technical issues"
+      }],
+      conclusion: {
+        outcome: "inconclusive",
+        reasoning: "Technical difficulties prevented analysis of the debate"
+      }
     };
   }
 }
