@@ -3,14 +3,49 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import Sidebar from "@/components/sidebar";
 import { MobileHeader, MobileNavigation } from "@/components/mobile-nav";
-import TrendingDebateCard from "@/components/trending-debate-card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Clock, ChevronRight, BarChart, ArrowRight, Award, Lightbulb } from "lucide-react";
+import { format } from "date-fns";
+
+// Simple trending debate card component to avoid issues with missing import
+function TrendingDebateCard({ debate }: { debate: any }) {
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="font-semibold">{debate.topic || "General Discussion"}</h3>
+            <p className="text-sm text-neutral-600 mt-1">
+              <Badge variant="outline" className="mr-2">{debate.partyShortName}</Badge>
+              <span className="text-xs">{debate.totalDebates} debates</span>
+            </p>
+          </div>
+          <div className="flex flex-col items-end">
+            <div className="flex space-x-4 text-sm">
+              <div className="flex items-center">
+                <Badge variant="secondary" className="font-medium">{debate.partyVotes} party wins</Badge>
+              </div>
+              <div className="flex items-center">
+                <Badge variant="outline" className="font-medium">{debate.citizenVotes} citizen wins</Badge>
+              </div>
+            </div>
+            <span className="text-xs text-neutral-400 mt-1">
+              {debate.updatedAt ? format(debate.updatedAt, 'MMM d, yyyy') : 'Recent'}
+            </span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function TrendingPage() {
   const [periodFilter, setPeriodFilter] = useState("weekly");
+  const [activeTab, setActiveTab] = useState("stats");
+  const [selectedParty, setSelectedParty] = useState<number | null>(null);
   
   // Fetch political parties for reference
   const { data: parties } = useQuery({
@@ -31,6 +66,19 @@ export default function TrendingPage() {
     refetchOnWindowFocus: false,
   });
   
+  // Fetch completed debates to extract action recommendations
+  const { data: completedDebates, isLoading: isLoadingDebates } = useQuery({
+    queryKey: ["/api/debates/completed"],
+    queryFn: async () => {
+      const response = await fetch("/api/debates/completed?limit=30");
+      if (!response.ok) {
+        throw new Error("Failed to fetch completed debates");
+      }
+      return response.json();
+    },
+    refetchOnWindowFocus: false,
+  });
+  
   // Process trending data for display
   const trendingDebates = trendingTopics?.map((summary: any) => ({
     id: summary.id,
@@ -42,6 +90,22 @@ export default function TrendingPage() {
     citizenVotes: summary.citizenVotes,
     updatedAt: new Date(summary.date)
   })) || [];
+  
+  // Extract recommendations from completed debates
+  const recommendations = completedDebates?.map((debate: any) => {
+    // Only include debates with recommendations
+    if (!debate.summary?.conclusion?.actionRecommendations) return null;
+    
+    return {
+      id: debate.id,
+      partyId: debate.partyId,
+      partyShortName: parties?.find((p: any) => p.id === debate.partyId)?.shortName || "Unknown",
+      topic: debate.topic || "General Discussion",
+      recommendations: debate.summary.conclusion.actionRecommendations || [],
+      outcome: debate.summary.conclusion.outcome || "party",
+      updatedAt: new Date(debate.updatedAt)
+    };
+  }).filter(Boolean) || [];
   
   const handlePeriodChange = (period: string) => {
     setPeriodFilter(period);
