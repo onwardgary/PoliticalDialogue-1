@@ -69,18 +69,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
+      try {
+        console.log("Login mutation executing with credentials:", credentials);
+        const res = await apiRequest("POST", "/api/login", credentials);
+        const userData = await res.json();
+        console.log("Login successful, received user data:", userData);
+        return userData;
+      } catch (error) {
+        console.error("Login mutation error:", error);
+        throw error;
+      }
     },
     onSuccess: (user: SelectUser) => {
+      console.log("Login mutation success, updating user in query cache:", user);
+      // Set the user in the query cache
       queryClient.setQueryData(["/api/user"], user);
-      refetch(); // Explicitly refetch user data
+      
+      // Force a refetch to ensure we have the latest user data
+      setTimeout(() => {
+        refetch();
+      }, 100);
+      
       toast({
         title: "Login successful",
         description: `Welcome back, ${user.username}!`,
       });
     },
     onError: (error: Error) => {
+      console.error("Login mutation onError handler:", error);
       toast({
         title: "Login failed",
         description: error.message,
@@ -91,20 +107,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterData) => {
-      // Omit confirmPassword before sending to server
-      const { confirmPassword, ...credentials } = data;
-      const res = await apiRequest("POST", "/api/register", credentials);
-      return await res.json();
+      try {
+        console.log("Register mutation executing with data:", {...data, password: "***REDACTED***"});
+        // Omit confirmPassword before sending to server
+        const { confirmPassword, ...credentials } = data;
+        const res = await apiRequest("POST", "/api/register", credentials);
+        const userData = await res.json();
+        console.log("Registration successful, received user data:", userData);
+        return userData;
+      } catch (error) {
+        console.error("Registration mutation error:", error);
+        throw error;
+      }
     },
     onSuccess: (user: SelectUser) => {
+      console.log("Registration mutation success, updating user in query cache:", user);
+      // Set the user in the query cache
       queryClient.setQueryData(["/api/user"], user);
-      refetch(); // Explicitly refetch user data
+      
+      // Force a refetch to ensure we have the latest user data
+      setTimeout(() => {
+        refetch();
+      }, 100);
+      
       toast({
         title: "Registration successful",
         description: `Welcome to Suara.sg, ${user.username}!`,
       });
     },
     onError: (error: Error) => {
+      console.error("Registration mutation onError handler:", error);
       toast({
         title: "Registration failed",
         description: error.message,
@@ -115,17 +147,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/logout");
+      try {
+        console.log("Logout mutation executing");
+        await apiRequest("POST", "/api/logout");
+        console.log("Logout API call successful");
+      } catch (error) {
+        console.error("Logout mutation error:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
+      console.log("Logout mutation success, clearing user from query cache");
+      // Clear the user from query cache
       queryClient.setQueryData(["/api/user"], null);
-      refetch(); // Explicitly refetch user data after logout
+      
+      // Force a refetch to ensure we have the latest state
+      setTimeout(() => {
+        refetch();
+      }, 100);
+      
       toast({
         title: "Logout successful",
         description: "You've been logged out successfully.",
       });
     },
     onError: (error: Error) => {
+      console.error("Logout mutation onError handler:", error);
       toast({
         title: "Logout failed",
         description: error.message,

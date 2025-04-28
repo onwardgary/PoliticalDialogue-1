@@ -83,115 +83,70 @@ export default function AuthPage() {
   // Handle login form submission
   const onLoginSubmit = async (data: LoginData) => {
     console.log("Login form submitted:", data);
-    // loginMutation should always be available now
-    if (loginMutation) {
-      try {
-        loginMutation.mutate(data);
-      } catch (error) {
-        console.error("Login mutation error:", error);
-      }
-    } else {
-      // Fallback to direct fetch approach if auth context is not available
-      try {
-        const response = await fetch('/api/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: data.email,
-            password: data.password
-          }),
-          credentials: 'include'
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Login API error:', response.status, errorText);
-          throw new Error(`Login failed: ${errorText}`);
+    
+    // Print current cookie info 
+    console.log("Current cookies before login:", document.cookie);
+    
+    // Use mutation - should always be available now
+    try {
+      console.log("Starting login mutation");
+      loginMutation.mutate(data, {
+        onSuccess: (userData) => {
+          console.log("Login successful through mutation:", userData);
+          console.log("Cookies after successful login:", document.cookie);
+          
+          // Manually navigate to home after successful login
+          setTimeout(() => {
+            console.log("Redirecting to home page after login");
+            setLocation('/');
+          }, 500);
+        },
+        onError: (error) => {
+          console.error("Login mutation error callback:", error);
         }
-
-        const user = await response.json();
-        console.log('Login successful:', user);
-        
-        // Show success toast
-        toast({
-          title: "Login successful",
-          description: "Welcome back!",
-          variant: "default",
-        });
-        
-        // Manually update the auth state
-        queryClient.setQueryData(["/api/user"], user);
-        
-        // Redirect to home
-        setLocation('/');
-      } catch (error) {
-        console.error("Login error:", error);
-        toast({
-          title: "Login failed",
-          description: error instanceof Error ? error.message : "Unknown error occurred",
-          variant: "destructive",
-        });
-      }
+      });
+    } catch (error) {
+      console.error("Exception during login mutation execution:", error);
+      toast({
+        title: "Login failed",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
     }
   };
   
   // Handle registration form submission
   const onRegisterSubmit = async (data: RegisterData) => {
-    console.log("Registration form submitted:", data);
-    // registerMutation should always be available now
-    if (registerMutation) {
-      try {
-        registerMutation.mutate(data);
-      } catch (error) {
-        console.error("Registration mutation error:", error);
-      }
-    } else {
-      // Fallback to direct fetch approach if auth context is not available
-      try {
-        const response = await fetch('/api/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            username: data.username,
-            email: data.email,
-            password: data.password
-          }),
-          credentials: 'include'
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Registration API error:', response.status, errorText);
-          throw new Error(`Registration failed: ${errorText}`);
+    console.log("Registration form submitted:", {...data, password: "***REDACTED***"});
+    
+    // Print current cookie info 
+    console.log("Current cookies before registration:", document.cookie);
+    
+    // Use mutation - should always be available now
+    try {
+      console.log("Starting registration mutation");
+      registerMutation.mutate(data, {
+        onSuccess: (userData) => {
+          console.log("Registration successful through mutation:", userData);
+          console.log("Cookies after successful registration:", document.cookie);
+          
+          // Manually navigate to home after successful registration
+          setTimeout(() => {
+            console.log("Redirecting to home page after registration");
+            setLocation('/');
+          }, 500);
+        },
+        onError: (error) => {
+          console.error("Registration mutation error callback:", error);
         }
-
-        const user = await response.json();
-        console.log('Registration successful:', user);
-        
-        // Show success toast
-        toast({
-          title: "Registration successful",
-          description: "Your account has been created!",
-          variant: "default",
-        });
-        
-        // Manually update the auth state
-        queryClient.setQueryData(["/api/user"], user);
-        
-        // Redirect to home
-        setLocation('/');
-      } catch (error) {
-        console.error("Registration error:", error);
-        toast({
-          title: "Registration failed",
-          description: error instanceof Error ? error.message : "Unknown error occurred",
-          variant: "destructive",
-        });
-      }
+      });
+    } catch (error) {
+      console.error("Exception during registration mutation execution:", error);
+      toast({
+        title: "Registration failed",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
     }
   };
   
