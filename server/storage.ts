@@ -23,6 +23,7 @@ export interface IStorage {
   createDebate(debate: InsertDebate): Promise<Debate>;
   getDebate(id: number): Promise<Debate | undefined>;
   getUserDebates(userId: number): Promise<Debate[]>;
+  getAllDebates(): Promise<Debate[]>;
   updateDebateMessages(id: number, messages: Message[]): Promise<Debate>;
   completeDebate(id: number, summary: DebateSummary): Promise<Debate>;
   
@@ -174,6 +175,10 @@ export class MemStorage implements IStorage {
     return Array.from(this.debates.values()).filter(
       (debate) => debate.userId === userId,
     );
+  }
+  
+  async getAllDebates(): Promise<Debate[]> {
+    return Array.from(this.debates.values());
   }
   
   async updateDebateMessages(id: number, messages: Message[]): Promise<Debate> {
