@@ -12,26 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function Sidebar() {
-  // Temporary mock user for development
-  const mockUser = {
-    username: "Test User",
-    email: "test@example.com",
-    isAdmin: true, // Set to true for admin view, false for regular users
-  };
+  // Set isAdmin to true for development access to knowledge base
+  const isAdmin = true;
   
   const [location] = useLocation();
-
-  const handleLogout = () => {
-    console.log("Logout clicked");
-    // Mock logout for now
-  };
-
-  const getFirstLetters = (name: string) => {
-    return name.split(' ')
-      .map(part => part.charAt(0))
-      .join('')
-      .toUpperCase();
-  };
 
   return (
     <aside className="hidden md:flex flex-col w-64 bg-white border-r border-neutral-200 h-screen fixed left-0 top-0">
@@ -53,18 +37,10 @@ export default function Sidebar() {
             </Link>
           </li>
           <li>
-            <Link href="/debates">
-              <a className={`flex items-center p-2 rounded-lg font-medium ${location.startsWith('/debates') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
-                <MessageSquare className="w-5 h-5 mr-3" />
-                <span>My Debates</span>
-              </a>
-            </Link>
-          </li>
-          <li>
             <Link href="/trending">
               <a className={`flex items-center p-2 rounded-lg font-medium ${location.startsWith('/trending') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
                 <TrendingUp className="w-5 h-5 mr-3" />
-                <span>Trending</span>
+                <span>Trending Debates</span>
               </a>
             </Link>
           </li>
@@ -76,15 +52,7 @@ export default function Sidebar() {
               </a>
             </Link>
           </li>
-          <li>
-            <Link href="/profile">
-              <a className={`flex items-center p-2 rounded-lg font-medium ${location.startsWith('/profile') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
-                <UserCircle className="w-5 h-5 mr-3" />
-                <span>Profile</span>
-              </a>
-            </Link>
-          </li>
-          {mockUser.isAdmin && (
+          {isAdmin && (
             <li>
               <Link href="/admin/knowledge">
                 <a className={`flex items-center p-2 rounded-lg font-medium ${location.startsWith('/admin') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
@@ -98,25 +66,8 @@ export default function Sidebar() {
       </nav>
       
       <div className="p-4 border-t border-neutral-200">
-        <div className="flex items-center">
-          <Avatar className="h-10 w-10">
-            <AvatarFallback className="bg-primary text-white">
-              {getFirstLetters(mockUser.username)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="ml-3">
-            <p className="font-medium text-sm">{mockUser.username}</p>
-            <p className="text-xs text-neutral-500">{mockUser.email}</p>
-          </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={handleLogout} 
-            className="ml-auto text-neutral-400 hover:text-neutral-600"
-            aria-label="Logout"
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
+        <div className="flex items-center justify-center">
+          <p className="text-sm text-neutral-500">Powered by OpenAI's GPT-4o</p>
         </div>
       </div>
     </aside>
