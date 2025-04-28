@@ -33,13 +33,18 @@ export default function DebatePage() {
   const { data: debate, isLoading: isLoadingDebate } = useQuery({
     queryKey: [`/api/debates/${id}`],
     queryFn: async () => {
+      console.log("Fetching debate data for ID:", id);
       const response = await fetch(`/api/debates/${id}`);
       if (!response.ok) {
         throw new Error("Failed to fetch debate");
       }
-      return response.json();
+      const data = await response.json();
+      console.log("Fetched debate data:", data);
+      console.log("Message count:", data.messages.length);
+      return data;
     },
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
+    refetchInterval: 3000, // Poll every 3 seconds to ensure we get the latest messages
   });
   
   // Fetch party data
@@ -61,12 +66,25 @@ export default function DebatePage() {
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
+      console.log("Sending message to debate", id, ":", content);
       const res = await apiRequest("POST", `/api/debates/${id}/messages`, { content });
-      return res.json();
+      const data = await res.json();
+      console.log("Response received:", data);
+      return data;
     },
     onSuccess: (data) => {
+      console.log("Updating UI with new messages:", data);
+      
+      // Force refetch debate data
+      queryClient.invalidateQueries({ queryKey: [`/api/debates/${id}`] });
+      
+      // Direct update of cache
       queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
-        if (!old) return old;
+        if (!old) {
+          console.log("No existing debate data to update");
+          return old;
+        }
+        console.log("Existing messages:", old.messages.length);
         return {
           ...old,
           messages: [...old.messages, data.userMessage, data.assistantMessage],
@@ -74,6 +92,9 @@ export default function DebatePage() {
         };
       });
     },
+    onError: (error) => {
+      console.error("Error sending message:", error);
+    }
   });
   
   // End debate mutation
@@ -186,10 +207,10 @@ export default function DebatePage() {
         {debate?.completed ? (
           <div className="flex-1 overflow-auto p-6 bg-neutral-50">
             <DebateSummary 
-              debateId={parseInt(id)}
+              debateId={parseInt(id || "0")}
               summary={debate.summary as DebateSummaryType}
-              partyName={party?.name || ""}
-              partyShortName={party?.shortName || ""}
+              partyName={party?.name || "Party"}
+              partyShortName={party?.shortName || "BOT"}
             />
             
             <div className="text-center">
