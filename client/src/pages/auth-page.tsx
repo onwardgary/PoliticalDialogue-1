@@ -97,20 +97,78 @@ export default function AuthPage() {
   });
   
   // Handle login form submission
-  const onLoginSubmit = (data: LoginData) => {
+  const onLoginSubmit = async (data: LoginData) => {
     console.log("Login form submitted:", data);
     try {
-      loginMutation.mutate(data);
+      // Direct fetch approach for better debugging
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password
+        }),
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Login API error:', response.status, errorText);
+        throw new Error(`Login failed: ${errorText}`);
+      }
+
+      const user = await response.json();
+      console.log('Login successful:', user);
+      
+      // Manually update the auth state
+      queryClient.setQueryData(["/api/user"], user);
+      
+      // Redirect to home
+      setLocation('/');
     } catch (error) {
       console.error("Login error:", error);
+      toast({
+        title: "Login failed",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
     }
   };
   
   // Handle registration form submission
-  const onRegisterSubmit = (data: RegisterData) => {
+  const onRegisterSubmit = async (data: RegisterData) => {
     console.log("Registration form submitted:", data);
     try {
-      registerMutation.mutate(data);
+      // Instead of using the mutation directly, let's try a direct fetch for debugging
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: data.username,
+          email: data.email,
+          password: data.password
+        }),
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Registration API error:', response.status, errorText);
+        throw new Error(`Registration failed: ${errorText}`);
+      }
+
+      const user = await response.json();
+      console.log('Registration successful:', user);
+      
+      // Manually update the auth state
+      queryClient.setQueryData(["/api/user"], user);
+      
+      // Redirect to home
+      setLocation('/');
     } catch (error) {
       console.error("Registration error:", error);
     }

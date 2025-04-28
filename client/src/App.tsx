@@ -36,7 +36,6 @@ function Router() {
 function App() {
   return (
     <TooltipProvider>
-      <Toaster />
       <Router />
     </TooltipProvider>
   );
