@@ -98,12 +98,22 @@ export default function AuthPage() {
   
   // Handle login form submission
   const onLoginSubmit = (data: LoginData) => {
-    loginMutation.mutate(data);
+    console.log("Login form submitted:", data);
+    try {
+      loginMutation.mutate(data);
+    } catch (error) {
+      console.error("Login error:", error);
+    }
   };
   
   // Handle registration form submission
   const onRegisterSubmit = (data: RegisterData) => {
-    registerMutation.mutate(data);
+    console.log("Registration form submitted:", data);
+    try {
+      registerMutation.mutate(data);
+    } catch (error) {
+      console.error("Registration error:", error);
+    }
   };
   
   // Redirect to home if already logged in
