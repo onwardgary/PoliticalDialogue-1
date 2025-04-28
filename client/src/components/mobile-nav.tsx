@@ -164,8 +164,8 @@ function MobileSidebar() {
 export function MobileNavigation() {
   const [location] = useLocation();
   
-  // We no longer need to use try/catch since useAuth will always return a valid context
-  const { user } = useAuth();
+  // Temporary mock implementation without useAuth
+  const user = null;
   
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 flex justify-around p-2 z-10">
@@ -187,10 +187,10 @@ export function MobileNavigation() {
           <span className="text-xs mt-1">Trending</span>
         </div>
       </Link>
-      <Link href={user ? "/profile" : "/auth"}>
+      <Link href="/auth">
         <div className={`flex flex-col items-center p-2 ${location.startsWith('/profile') || location.startsWith('/auth') ? 'text-primary' : 'text-neutral-500'}`}>
           <UserCircle className="h-5 w-5" />
-          <span className="text-xs mt-1">{user ? "Profile" : "Login"}</span>
+          <span className="text-xs mt-1">Login</span>
         </div>
       </Link>
     </nav>
