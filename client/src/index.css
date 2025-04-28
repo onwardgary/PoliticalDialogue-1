@@ -57,3 +57,43 @@
   }
 }
 
+/* Message Formatting Styles */
+.chat-content-bot .list-item-with-header {
+  @apply mb-4;
+}
+
+.chat-content-bot .list-header {
+  @apply mb-1 font-semibold;
+}
+
+.chat-content-bot .list-content {
+  @apply ml-6;
+}
+
+.chat-content-bot .list-marker {
+  @apply min-w-6 font-semibold;
+}
+
+.chat-content-bot .formatted-list {
+  @apply flex flex-col gap-2;
+}
+
+/* Better list styling */
+.chat-content li {
+  @apply ml-5 mb-2 list-disc;
+}
+
+.chat-content ol > li {
+  @apply list-decimal;
+}
+
+/* Proper spacing for paragraphs */
+.chat-content p {
+  @apply mb-3;
+}
+
+/* Strong text */
+.chat-content strong {
+  @apply font-bold;
+}
+
