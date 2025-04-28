@@ -44,19 +44,11 @@ export function MobileHeader() {
 function MobileSidebar() {
   const [location, setLocation] = useLocation();
   
-  // Default values for when auth is not available
-  let user = null;
-  let logoutMutation = { mutate: () => {}, isPending: false };
-  let isAdmin = false;
-  
-  try {
-    const auth = useAuth();
-    user = auth.user;
-    logoutMutation = auth.logoutMutation;
-    isAdmin = user?.isAdmin || false;
-  } catch (error) {
-    console.log("Auth context not available, showing public mobile sidebar");
-  }
+  // We no longer need to use try/catch since useAuth will always return a valid context
+  const auth = useAuth();
+  const user = auth.user;
+  const logoutMutation = auth.logoutMutation;
+  const isAdmin = user?.isAdmin || false;
   
   const handleLogout = () => {
     logoutMutation.mutate();
@@ -167,15 +159,8 @@ function MobileSidebar() {
 export function MobileNavigation() {
   const [location] = useLocation();
   
-  // Default values for when auth is not available
-  let user = null;
-  
-  try {
-    const auth = useAuth();
-    user = auth.user;
-  } catch (error) {
-    console.log("Auth context not available, showing public mobile nav");
-  }
+  // We no longer need to use try/catch since useAuth will always return a valid context
+  const { user } = useAuth();
   
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 flex justify-around p-2 z-10">

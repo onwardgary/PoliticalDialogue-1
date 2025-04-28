@@ -9,17 +9,8 @@ export function ProtectedRoute({
   path: string;
   component: () => React.JSX.Element;
 }) {
-  // Use a try-catch to handle cases where auth is not available
-  let user = null;
-  let isLoading = false;
-  
-  try {
-    const auth = useAuth();
-    user = auth.user;
-    isLoading = auth.isLoading;
-  } catch (error) {
-    console.log("Auth context not available in protected route");
-  }
+  // We no longer need to use try/catch since useAuth will always return a valid context
+  const { user, isLoading } = useAuth();
   
   return (
     <Route path={path}>

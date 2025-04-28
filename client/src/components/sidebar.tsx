@@ -17,19 +17,11 @@ import { Separator } from "@/components/ui/separator";
 export default function Sidebar() {
   const [location, setLocation] = useLocation();
   
-  // Default values for when auth is not available
-  let user = null;
-  let logoutMutation = { mutate: () => {}, isPending: false };
-  let isAdmin = false;
-  
-  try {
-    const auth = useAuth();
-    user = auth.user;
-    logoutMutation = auth.logoutMutation;
-    isAdmin = user?.isAdmin || false;
-  } catch (error) {
-    console.log("Auth context not available, showing public sidebar");
-  }
+  // We no longer need to use try/catch since useAuth will always return a valid context
+  const auth = useAuth();
+  const user = auth.user;
+  const logoutMutation = auth.logoutMutation;
+  const isAdmin = user?.isAdmin || false;
   
   const handleLogout = () => {
     logoutMutation.mutate();

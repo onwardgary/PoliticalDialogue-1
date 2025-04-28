@@ -48,39 +48,17 @@ const registerSchema = z.object({
 
 type RegisterData = z.infer<typeof registerSchema>;
 
-// Function to create dummy mutation for use when auth context is not available
-function createDummyMutation() {
-  return {
-    mutate: (data: any) => {
-      console.log("Auth context not available, mutation not processed", data);
-    },
-    isPending: false,
-  };
-}
+// We no longer need the dummy mutation since auth context is always available
 
 export default function AuthPage() {
   const [_, setLocation] = useLocation();
   const { toast } = useToast();
   
-  // Try to use auth hooks, but don't error if they're not available
-  // This is a workaround for the case where we just want to show the public auth page UI
-  let user = null;
-  let loginMutation = createDummyMutation();
-  let registerMutation = createDummyMutation();
-  let isLoading = false;
-  
-  try {
-    console.log("Before useAuth call");
-    const auth = useAuth();
-    console.log("After useAuth call:", auth ? "Auth context found" : "Auth context null");
-    user = auth.user;
-    loginMutation = auth.loginMutation;
-    registerMutation = auth.registerMutation;
-    isLoading = auth.isLoading;
-    console.log("Auth context available, user:", user ? `User ${user.username} loaded` : "No user logged in");
-  } catch (error) {
-    console.error("Auth context error:", error);
-  }
+  // We no longer need to use try/catch since useAuth will always return a valid context
+  console.log("Before useAuth call");
+  const { user, loginMutation, registerMutation, isLoading } = useAuth();
+  console.log("After useAuth call:", "Auth context loaded");
+  console.log("Auth context available, user:", user ? `User ${user.username} loaded` : "No user logged in");
   
   // Define form for login
   const loginForm = useForm<LoginData>({
@@ -105,8 +83,8 @@ export default function AuthPage() {
   // Handle login form submission
   const onLoginSubmit = async (data: LoginData) => {
     console.log("Login form submitted:", data);
-    // Use the loginMutation from auth context if it's available
-    if (loginMutation && loginMutation.mutate !== createDummyMutation().mutate) {
+    // loginMutation should always be available now
+    if (loginMutation) {
       try {
         loginMutation.mutate(data);
       } catch (error) {
@@ -162,8 +140,8 @@ export default function AuthPage() {
   // Handle registration form submission
   const onRegisterSubmit = async (data: RegisterData) => {
     console.log("Registration form submitted:", data);
-    // Use the registerMutation from auth context if it's available
-    if (registerMutation && registerMutation.mutate !== createDummyMutation().mutate) {
+    // registerMutation should always be available now
+    if (registerMutation) {
       try {
         registerMutation.mutate(data);
       } catch (error) {
