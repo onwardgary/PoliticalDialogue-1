@@ -16,6 +16,7 @@ export default function Sidebar() {
   const mockUser = {
     username: "Test User",
     email: "test@example.com",
+    isAdmin: true, // Set to true for admin view, false for regular users
   };
   
   const [location] = useLocation();
@@ -83,14 +84,16 @@ export default function Sidebar() {
               </a>
             </Link>
           </li>
-          <li>
-            <Link href="/admin/knowledge">
-              <a className={`flex items-center p-2 rounded-lg font-medium ${location.startsWith('/admin') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
-                <Database className="w-5 h-5 mr-3" />
-                <span>Knowledge Base</span>
-              </a>
-            </Link>
-          </li>
+          {mockUser.isAdmin && (
+            <li>
+              <Link href="/admin/knowledge">
+                <a className={`flex items-center p-2 rounded-lg font-medium ${location.startsWith('/admin') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
+                  <Database className="w-5 h-5 mr-3" />
+                  <span>Knowledge Base</span>
+                </a>
+              </Link>
+            </li>
+          )}
         </ul>
       </nav>
       

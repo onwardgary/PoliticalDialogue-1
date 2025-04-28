@@ -64,6 +64,19 @@ export const aggregateSummaries = pgTable("aggregate_summaries", {
   totalDebates: integer("total_debates").notNull(),
 });
 
+// Knowledge base table for RAG implementation
+export const knowledgeBase = pgTable("knowledge_base", {
+  id: serial("id").primaryKey(),
+  partyId: integer("party_id").references(() => parties.id).notNull(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  source: text("source"), // Optional source of the information
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  addedById: integer("added_by_id").references(() => users.id).notNull(),
+  isActive: boolean("is_active").default(true), // Allow disabling entries without deletion
+});
+
 export type DebateSummary = {
   partyArguments: string[];
   citizenArguments: string[];
@@ -80,6 +93,17 @@ export type InsertVote = typeof votes.$inferInsert;
 
 export type AggregateSummary = typeof aggregateSummaries.$inferSelect;
 export type InsertAggregateSummary = typeof aggregateSummaries.$inferInsert;
+
+export const insertKnowledgeBaseSchema = createInsertSchema(knowledgeBase).pick({
+  partyId: true,
+  title: true,
+  content: true,
+  source: true,
+  isActive: true,
+});
+
+export type KnowledgeBase = typeof knowledgeBase.$inferSelect;
+export type InsertKnowledgeBase = z.infer<typeof insertKnowledgeBaseSchema>;
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;

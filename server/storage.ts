@@ -36,6 +36,14 @@ export interface IStorage {
   getAggregateSummariesByParty(partyId: number, period: string): Promise<AggregateSummary[]>;
   getTrendingTopics(period: string, limit: number): Promise<AggregateSummary[]>;
   
+  // Knowledge Base methods
+  getKnowledgeBaseEntries(): Promise<KnowledgeBase[]>;
+  getKnowledgeBaseEntriesByParty(partyId: number): Promise<KnowledgeBase[]>;
+  getKnowledgeBaseEntry(id: number): Promise<KnowledgeBase | undefined>;
+  createKnowledgeBaseEntry(entry: InsertKnowledgeBase, userId: number): Promise<KnowledgeBase>;
+  updateKnowledgeBaseEntry(id: number, entry: Partial<InsertKnowledgeBase>): Promise<KnowledgeBase>;
+  deleteKnowledgeBaseEntry(id: number): Promise<void>;
+  
   sessionStore: session.SessionStore;
 }
 
@@ -45,12 +53,14 @@ export class MemStorage implements IStorage {
   private debates: Map<number, Debate>;
   private votes: Map<number, Vote>;
   private summaries: Map<number, AggregateSummary>;
+  private knowledgeBase: Map<number, KnowledgeBase>;
   
   currentUserId: number;
   currentPartyId: number;
   currentDebateId: number;
   currentVoteId: number;
   currentSummaryId: number;
+  currentKnowledgeBaseId: number;
   sessionStore: session.SessionStore;
 
   constructor() {
