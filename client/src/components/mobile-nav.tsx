@@ -5,7 +5,9 @@ import {
   TrendingUp,
   UserCircle,
   Menu,
-  Database
+  Database,
+  LogIn,
+  LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -13,6 +15,9 @@ import {
   SheetContent, 
   SheetTrigger 
 } from "@/components/ui/sheet";
+import { useAuth } from "@/hooks/use-auth";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 
 export function MobileHeader() {
   return (
@@ -37,17 +42,28 @@ export function MobileHeader() {
 }
 
 function MobileSidebar() {
-  // Temporary mock user for development
-  const mockUser = {
-    username: "Test User",
-    isAdmin: true // Set to true for admin view, false for regular users
+  const [location, setLocation] = useLocation();
+  
+  // Default values for when auth is not available
+  let user = null;
+  let logoutMutation = { mutate: () => {}, isPending: false };
+  let isAdmin = false;
+  
+  try {
+    const auth = useAuth();
+    user = auth.user;
+    logoutMutation = auth.logoutMutation;
+    isAdmin = user?.isAdmin || false;
+  } catch (error) {
+    console.log("Auth context not available, showing public mobile sidebar");
+  }
+  
+  const handleLogout = () => {
+    logoutMutation.mutate();
   };
   
-  const [location] = useLocation();
-
-  const handleLogout = () => {
-    console.log("Logout clicked");
-    // Mock logout for now
+  const handleLogin = () => {
+    setLocation("/auth");
   };
 
   return (
@@ -56,50 +72,66 @@ function MobileSidebar() {
         <h2 className="text-xl font-bold text-primary flex items-center">
           <MessageSquare className="mr-2 h-5 w-5" /> Suara.sg
         </h2>
-        <p className="text-sm text-neutral-500">Welcome, {mockUser.username}</p>
+        {user ? (
+          <div className="flex items-center mt-4">
+            <Avatar className="h-8 w-8 mr-2">
+              <AvatarFallback className="bg-primary text-white">
+                {user.username.substring(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="text-sm font-medium">{user.username}</p>
+              <p className="text-xs text-muted-foreground">{user.email}</p>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-neutral-500 mt-1">Political Debate Platform</p>
+        )}
       </div>
       
       <nav className="flex-1">
         <ul className="space-y-2">
           <li>
             <Link href="/">
-              <a className={`flex items-center p-3 rounded-lg font-medium ${location === '/' ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
+              <div className={`flex items-center p-3 rounded-lg font-medium ${location === '/' ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
                 <Home className="w-5 h-5 mr-3" />
                 <span>Home</span>
-              </a>
-            </Link>
-          </li>
-          <li>
-            <Link href="/debates">
-              <a className={`flex items-center p-3 rounded-lg font-medium ${location.startsWith('/debates') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
-                <MessageSquare className="w-5 h-5 mr-3" />
-                <span>My Debates</span>
-              </a>
+              </div>
             </Link>
           </li>
           <li>
             <Link href="/trending">
-              <a className={`flex items-center p-3 rounded-lg font-medium ${location.startsWith('/trending') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
+              <div className={`flex items-center p-3 rounded-lg font-medium ${location.startsWith('/trending') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
                 <TrendingUp className="w-5 h-5 mr-3" />
                 <span>Trending</span>
-              </a>
+              </div>
             </Link>
           </li>
-          <li>
-            <Link href="/profile">
-              <a className={`flex items-center p-3 rounded-lg font-medium ${location.startsWith('/profile') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
-                <UserCircle className="w-5 h-5 mr-3" />
-                <span>Profile</span>
-              </a>
-            </Link>
-          </li>
-          {mockUser.isAdmin && (
+          
+          {/* User specific menu items */}
+          {user && (
+            <>
+              <li>
+                <Link href="/profile">
+                  <div className={`flex items-center p-3 rounded-lg font-medium ${location.startsWith('/profile') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
+                    <UserCircle className="w-5 h-5 mr-3" />
+                    <span>My Profile</span>
+                  </div>
+                </Link>
+              </li>
+              
+              <Separator className="my-4" />
+            </>
+          )}
+          
+          {/* Admin menu items */}
+          {isAdmin && (
             <li>
               <Link href="/admin/knowledge">
-                <a className={`flex items-center p-3 rounded-lg font-medium ${location.startsWith('/admin') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
+                <div className={`flex items-center p-3 rounded-lg font-medium ${location.startsWith('/admin') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
                   <Database className="w-5 h-5 mr-3" />
                   <span>Knowledge Base</span>
-                </a>
+                </div>
               </Link>
             </li>
           )}
@@ -107,13 +139,26 @@ function MobileSidebar() {
       </nav>
       
       <div className="mt-4 pt-4 border-t border-neutral-200">
-        <Button 
-          onClick={handleLogout} 
-          variant="outline" 
-          className="w-full"
-        >
-          <span>Logout</span>
-        </Button>
+        {user ? (
+          <Button 
+            onClick={handleLogout} 
+            variant="outline" 
+            className="w-full flex items-center justify-center"
+            disabled={logoutMutation.isPending}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            {logoutMutation.isPending ? "Logging out..." : "Logout"}
+          </Button>
+        ) : (
+          <Button 
+            onClick={handleLogin} 
+            variant="outline" 
+            className="w-full flex items-center justify-center"
+          >
+            <LogIn className="mr-2 h-4 w-4" />
+            Login / Register
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -122,31 +167,41 @@ function MobileSidebar() {
 export function MobileNavigation() {
   const [location] = useLocation();
   
+  // Default values for when auth is not available
+  let user = null;
+  
+  try {
+    const auth = useAuth();
+    user = auth.user;
+  } catch (error) {
+    console.log("Auth context not available, showing public mobile nav");
+  }
+  
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 flex justify-around p-2 z-10">
       <Link href="/">
-        <a className={`flex flex-col items-center p-2 ${location === '/' ? 'text-primary' : 'text-neutral-500'}`}>
+        <div className={`flex flex-col items-center p-2 ${location === '/' ? 'text-primary' : 'text-neutral-500'}`}>
           <Home className="h-5 w-5" />
           <span className="text-xs mt-1">Home</span>
-        </a>
+        </div>
       </Link>
-      <Link href="/debates">
-        <a className={`flex flex-col items-center p-2 ${location.startsWith('/debates') || location.startsWith('/debate/') ? 'text-primary' : 'text-neutral-500'}`}>
+      <Link href="/debate">
+        <div className={`flex flex-col items-center p-2 ${location.startsWith('/debate') ? 'text-primary' : 'text-neutral-500'}`}>
           <MessageSquare className="h-5 w-5" />
           <span className="text-xs mt-1">Debates</span>
-        </a>
+        </div>
       </Link>
       <Link href="/trending">
-        <a className={`flex flex-col items-center p-2 ${location.startsWith('/trending') ? 'text-primary' : 'text-neutral-500'}`}>
+        <div className={`flex flex-col items-center p-2 ${location.startsWith('/trending') ? 'text-primary' : 'text-neutral-500'}`}>
           <TrendingUp className="h-5 w-5" />
           <span className="text-xs mt-1">Trending</span>
-        </a>
+        </div>
       </Link>
-      <Link href="/profile">
-        <a className={`flex flex-col items-center p-2 ${location.startsWith('/profile') ? 'text-primary' : 'text-neutral-500'}`}>
+      <Link href={user ? "/profile" : "/auth"}>
+        <div className={`flex flex-col items-center p-2 ${location.startsWith('/profile') || location.startsWith('/auth') ? 'text-primary' : 'text-neutral-500'}`}>
           <UserCircle className="h-5 w-5" />
-          <span className="text-xs mt-1">Profile</span>
-        </a>
+          <span className="text-xs mt-1">{user ? "Profile" : "Login"}</span>
+        </div>
       </Link>
     </nav>
   );

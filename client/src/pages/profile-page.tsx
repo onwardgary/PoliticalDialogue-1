@@ -132,7 +132,7 @@ export default function ProfilePage() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Account created</p>
-                    <p>{format(new Date(user.createdAt), "PPP")}</p>
+                    <p>{user.createdAt ? format(new Date(user.createdAt), "PPP") : "N/A"}</p>
                   </div>
                 </div>
               </CardContent>
@@ -224,7 +224,7 @@ function DebateTable({ debates }: { debates: UserDebate[] }) {
           <TableBody>
             {debates.map((debate) => (
               <TableRow key={debate.id}>
-                <TableCell>{format(new Date(debate.createdAt), "MMM d, yyyy")}</TableCell>
+                <TableCell>{format(new Date(debate.createdAt || ''), "MMM d, yyyy")}</TableCell>
                 <TableCell>
                   <Badge variant="outline" className={partyInfo[debate.partyId]?.color || "bg-gray-200"}>
                     {partyInfo[debate.partyId]?.name || `Party ${debate.partyId}`}

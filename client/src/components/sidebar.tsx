@@ -6,16 +6,38 @@ import {
   BarChart, 
   UserCircle, 
   LogOut,
-  Database
+  Database,
+  LogIn
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from "@/hooks/use-auth";
+import { Separator } from "@/components/ui/separator";
 
 export default function Sidebar() {
-  // Set isAdmin to true for development access to knowledge base
-  const isAdmin = true;
+  const [location, setLocation] = useLocation();
   
-  const [location] = useLocation();
+  // Default values for when auth is not available
+  let user = null;
+  let logoutMutation = { mutate: () => {}, isPending: false };
+  let isAdmin = false;
+  
+  try {
+    const auth = useAuth();
+    user = auth.user;
+    logoutMutation = auth.logoutMutation;
+    isAdmin = user?.isAdmin || false;
+  } catch (error) {
+    console.log("Auth context not available, showing public sidebar");
+  }
+  
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
+  
+  const handleLogin = () => {
+    setLocation("/auth");
+  };
 
   return (
     <aside className="hidden md:flex flex-col w-64 bg-white border-r border-neutral-200 h-screen fixed left-0 top-0">
@@ -52,6 +74,24 @@ export default function Sidebar() {
               </div>
             </Link>
           </li>
+          
+          {/* User specific menu items */}
+          {user && (
+            <>
+              <li>
+                <Link href="/profile">
+                  <div className={`flex items-center p-2 rounded-lg font-medium ${location.startsWith('/profile') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
+                    <UserCircle className="w-5 h-5 mr-3" />
+                    <span>My Profile</span>
+                  </div>
+                </Link>
+              </li>
+              
+              <Separator className="my-4" />
+            </>
+          )}
+          
+          {/* Admin menu items */}
           {isAdmin && (
             <li>
               <Link href="/admin/knowledge">
@@ -66,8 +106,45 @@ export default function Sidebar() {
       </nav>
       
       <div className="p-4 border-t border-neutral-200">
-        <div className="flex items-center justify-center">
-          <p className="text-sm text-neutral-500">Powered by OpenAI's GPT-4o</p>
+        {user ? (
+          <div className="flex flex-col space-y-4">
+            <div className="flex items-center p-2">
+              <Avatar className="h-8 w-8 mr-2">
+                <AvatarFallback className="bg-primary text-white">
+                  {user.username.substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{user.username}</p>
+                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+              </div>
+            </div>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full flex items-center justify-center"
+              onClick={handleLogout}
+              disabled={logoutMutation.isPending}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              {logoutMutation.isPending ? "Logging out..." : "Logout"}
+            </Button>
+          </div>
+        ) : (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full flex items-center justify-center"
+            onClick={handleLogin}
+          >
+            <LogIn className="mr-2 h-4 w-4" />
+            Login / Register
+          </Button>
+        )}
+        
+        <div className="flex items-center justify-center mt-4">
+          <p className="text-xs text-neutral-500">Powered by OpenAI's GPT-4o</p>
         </div>
       </div>
     </aside>
