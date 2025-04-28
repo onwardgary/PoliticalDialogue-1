@@ -44,7 +44,7 @@ export interface IStorage {
   updateKnowledgeBaseEntry(id: number, entry: Partial<InsertKnowledgeBase>): Promise<KnowledgeBase>;
   deleteKnowledgeBaseEntry(id: number): Promise<void>;
   
-  sessionStore: session.SessionStore;
+  sessionStore: session.Store;
 }
 
 export class MemStorage implements IStorage {
@@ -61,7 +61,7 @@ export class MemStorage implements IStorage {
   currentVoteId: number;
   currentSummaryId: number;
   currentKnowledgeBaseId: number;
-  sessionStore: session.SessionStore;
+  sessionStore: session.Store;
 
   constructor() {
     this.users = new Map();
@@ -314,4 +314,9 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Comment out MemStorage usage and replace with DatabaseStorage
+// export const storage = new MemStorage();
+
+// Import and use DatabaseStorage instead
+import { DatabaseStorage } from "./dbStorage";
+export const storage = new DatabaseStorage();
