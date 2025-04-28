@@ -19,31 +19,49 @@ const openai = new OpenAI({
 export function createPartySystemMessage(partyShortName: string): Message {
   let content = "";
   
+  const commonInstructions = `
+  IMPORTANT COMMUNICATION GUIDELINES:
+  1. Always illustrate your points with realistic, relatable examples (e.g., young family for GST impact, first-time buyers for housing policies).
+  2. Adapt your persona and examples dynamically to suit the specific topic being discussed.
+  3. Avoid long-winded paragraphs; focus on clear, structured explanations with bullet points and numbered lists.
+  4. Use bold text (**like this**) for important points.
+  5. Organize responses with clear headers and short, focused paragraphs.
+  6. Keep responses concise but informative.
+  `;
+  
   switch (partyShortName) {
     case "PAP":
       content = `You are a bot representing Singapore's People's Action Party (PAP). 
       You should respond to the user as if you are presenting the PAP's official stance and policies. 
       Be articulate, factual, and pragmatic in your responses. 
       Emphasize economic growth, stability, meritocracy, and multiracial harmony in your answers. 
-      Defend PAP policies with concrete examples and statistics when possible.`;
+      Defend PAP policies with concrete examples and statistics when possible.
+      
+      ${commonInstructions}`;
       break;
     case "WP":
       content = `You are a bot representing Singapore's Workers' Party (WP). 
       You should respond to the user as if you are presenting the WP's official stance and policies. 
       Be thoughtful, constructive, and focused on social justice in your responses. 
       Emphasize the importance of checks and balances, transparency, and support for lower-income groups. 
-      Present WP policy alternatives while acknowledging Singapore's constraints.`;
+      Present WP policy alternatives while acknowledging Singapore's constraints.
+      
+      ${commonInstructions}`;
       break;
     case "PSP":
       content = `You are a bot representing Singapore's Progress Singapore Party (PSP). 
       You should respond to the user as if you are presenting the PSP's official stance and policies. 
       Be reform-minded, people-centric, and transparent in your responses. 
       Emphasize the need for political reform, economic self-reliance, and putting Singaporeans first. 
-      Present PSP's vision for a more competitive and compassionate Singapore.`;
+      Present PSP's vision for a more competitive and compassionate Singapore.
+      
+      ${commonInstructions}`;
       break;
     default:
       content = `You are a bot representing a Singaporean political party. 
-      You should respond to the user with balanced and informative answers about Singapore's political system and policies.`;
+      You should respond to the user with balanced and informative answers about Singapore's political system and policies.
+      
+      ${commonInstructions}`;
   }
   
   return {
@@ -112,11 +130,11 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
     
     formattedMessages.push({
       role: "user",
-      content: `Please summarize this debate into two lists:
+      content: `Summarize this debate into two concise lists:
       1. "partyArguments": The top 5 key arguments made by the political party (the assistant)
       2. "citizenArguments": The top 5 key arguments made by the citizen (the user)
       
-      Format your response as a JSON object with these two arrays. Keep each argument concise (under 100 characters) but informative.`
+      Format your response as a JSON object with these two arrays. Keep each argument concise (under 100 characters) but informative, focusing on the strongest points made. The summary should reflect the specific examples and points discussed, avoiding vague generalizations.`
     });
     
     console.log("Sending summary request to OpenAI API...");
@@ -195,7 +213,11 @@ export async function generateAggregateSummary(
     1. "partyArguments": The top 5 most representative arguments from the party side
     2. "citizenArguments": The top 5 most representative arguments from the citizen side
     
-    Format your response as a JSON object with these two arrays. Focus on finding recurring themes and the strongest arguments. Keep each point concise (under 100 characters).
+    Format your response as a JSON object with these two arrays. Focus on the following:
+    - Include concrete examples that were mentioned (e.g. policy impact on young families)
+    - Highlight the strongest and most recurring points
+    - Keep each point concise (under 100 characters) but specific
+    - Avoid vague generalizations; focus on concrete policy positions
     `;
     
     const response = await openai.chat.completions.create({
