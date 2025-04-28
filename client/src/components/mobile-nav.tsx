@@ -45,10 +45,9 @@ export function MobileHeader() {
 function MobileSidebar() {
   const [location, setLocation] = useLocation();
   
-  const user = null;
-  const logout = async () => {};
+  const { user, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const isAdmin = false;
+  const isAdmin = user?.isAdmin || false;
   
   const handleLogout = async () => {
     try {
@@ -163,9 +162,7 @@ function MobileSidebar() {
 
 export function MobileNavigation() {
   const [location] = useLocation();
-  
-  // Temporary mock implementation without useAuth
-  const user = null;
+  const { user } = useAuth();
   
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 flex justify-around p-2 z-10">

@@ -17,9 +17,9 @@ import { Separator } from "@/components/ui/separator";
 
 export default function Sidebar() {
   const [location, setLocation] = useLocation();
-  const { user, logout } = { user: null, logout: async () => {} };
+  const { user, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const isAdmin = false;
+  const isAdmin = user?.isAdmin || false;
   
   const handleLogout = async () => {
     try {
