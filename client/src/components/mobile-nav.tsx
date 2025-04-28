@@ -4,7 +4,8 @@ import {
   MessageSquare, 
   TrendingUp,
   UserCircle,
-  Menu
+  Menu,
+  Database
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -12,7 +13,6 @@ import {
   SheetContent, 
   SheetTrigger 
 } from "@/components/ui/sheet";
-import { useAuth } from "@/hooks/use-auth";
 
 export function MobileHeader() {
   return (
@@ -37,11 +37,16 @@ export function MobileHeader() {
 }
 
 function MobileSidebar() {
-  const { user, logoutMutation } = useAuth();
+  // Temporary mock user for development
+  const mockUser = {
+    username: "Test User"
+  };
+  
   const [location] = useLocation();
 
   const handleLogout = () => {
-    logoutMutation.mutate();
+    console.log("Logout clicked");
+    // Mock logout for now
   };
 
   return (
@@ -50,7 +55,7 @@ function MobileSidebar() {
         <h2 className="text-xl font-bold text-primary flex items-center">
           <MessageSquare className="mr-2 h-5 w-5" /> Suara.sg
         </h2>
-        <p className="text-sm text-neutral-500">Welcome, {user?.username}</p>
+        <p className="text-sm text-neutral-500">Welcome, {mockUser.username}</p>
       </div>
       
       <nav className="flex-1">
@@ -84,6 +89,14 @@ function MobileSidebar() {
               <a className={`flex items-center p-3 rounded-lg font-medium ${location.startsWith('/profile') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
                 <UserCircle className="w-5 h-5 mr-3" />
                 <span>Profile</span>
+              </a>
+            </Link>
+          </li>
+          <li>
+            <Link href="/admin/knowledge">
+              <a className={`flex items-center p-3 rounded-lg font-medium ${location.startsWith('/admin') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
+                <Database className="w-5 h-5 mr-3" />
+                <span>Knowledge Base</span>
               </a>
             </Link>
           </li>

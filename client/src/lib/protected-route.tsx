@@ -1,7 +1,7 @@
-import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
-import { Redirect, Route } from "wouter";
+import { Route } from "wouter";
 
+// Temporarily modified to not require authentication
 export function ProtectedRoute({
   path,
   component: Component,
@@ -9,25 +9,12 @@ export function ProtectedRoute({
   path: string;
   component: () => React.JSX.Element;
 }) {
-  const { user, isLoading } = useAuth();
-
+  // Instead of using auth, we'll temporarily allow all access
+  // const { user, isLoading } = useAuth();
+  
   return (
     <Route path={path}>
-      {() => {
-        if (isLoading) {
-          return (
-            <div className="flex items-center justify-center min-h-screen">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          );
-        }
-
-        if (!user) {
-          return <Redirect to="/auth" />;
-        }
-
-        return <Component />;
-      }}
+      {() => <Component />}
     </Route>
   );
 }
