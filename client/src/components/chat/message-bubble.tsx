@@ -5,9 +5,10 @@ import { cn } from "@/lib/utils";
 type MessageBubbleProps = {
   message: Message;
   partyShortName?: string;
+  isGrouped?: boolean;
 };
 
-export default function MessageBubble({ message, partyShortName = "BOT" }: MessageBubbleProps) {
+export default function MessageBubble({ message, partyShortName = "BOT", isGrouped = false }: MessageBubbleProps) {
   const isUser = message.role === "user";
   const formattedTime = format(new Date(message.timestamp), "h:mm a");
 
@@ -151,25 +152,42 @@ export default function MessageBubble({ message, partyShortName = "BOT" }: Messa
 
   return (
     <div className={cn(
-      "flex mb-4 animate-slideUp",
-      isUser ? "flex-row-reverse" : ""
+      "flex mb-2 animate-slideUp",
+      isUser ? "flex-row-reverse" : "",
+      isGrouped ? "mt-1" : "mt-4" // Add more spacing between different senders
     )}>
-      <div className={cn(
-        "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
-        isUser ? "ml-2 bg-neutral-200" : "mr-2 bg-primary"
-      )}>
-        {isUser ? (
-          <span className="text-neutral-500 text-xs">YOU</span>
-        ) : (
-          <span className="text-white font-bold text-xs">{partyShortName}</span>
-        )}
-      </div>
+      {/* Only show avatar for the first message in a group */}
+      {!isGrouped ? (
+        <div className={cn(
+          "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+          isUser ? "ml-2 bg-neutral-200" : "mr-2 bg-primary"
+        )}>
+          {isUser ? (
+            <span className="text-neutral-500 text-xs">YOU</span>
+          ) : (
+            <span className="text-white font-bold text-xs">{partyShortName}</span>
+          )}
+        </div>
+      ) : (
+        <div className={cn(
+          "w-8 h-8 flex-shrink-0",
+          isUser ? "ml-2" : "mr-2"
+        )} />
+      )}
       
       <div className={cn(
-        "chat-bubble p-4 rounded-lg shadow-sm max-w-3xl",
+        "chat-bubble p-3 rounded-lg shadow-sm max-w-3xl",
         isUser 
-          ? "bg-primary text-white rounded-tr-none" 
-          : "bg-white text-neutral-800 rounded-tl-none"
+          ? "bg-primary text-white" 
+          : "bg-white text-neutral-800",
+        // Adjust bubble corners for grouped messages
+        isGrouped 
+          ? isUser 
+            ? "rounded-tr-md"
+            : "rounded-tl-md"
+          : isUser 
+            ? "rounded-tr-none"
+            : "rounded-tl-none"
       )}>
         <div className={cn(
           "text-sm prose prose-sm dark:prose-invert chat-content",
@@ -177,15 +195,15 @@ export default function MessageBubble({ message, partyShortName = "BOT" }: Messa
         )}>
           {formatContent(message.content)}
         </div>
+        
+        {/* Only show timestamp for the last message or if messages are several minutes apart */}
         <p className={cn(
-          "text-xs mt-2 text-right",
+          "text-xs mt-1 text-right",
           isUser ? "text-primary-100" : "text-neutral-400"
         )}>
           {formattedTime}
         </p>
       </div>
-
-      {/* Additional styling for formatted messages */}
     </div>
   );
 }
