@@ -23,7 +23,7 @@ export default function ChatInterface({ messages, isLoading }: ChatInterfaceProp
   return (
     <div 
       ref={chatContainerRef}
-      className="chat-container bg-neutral-50 overflow-y-auto p-4 flex flex-col space-y-4"
+      className="chat-container bg-neutral-50 overflow-y-auto p-4 md:p-6 flex flex-col space-y-6"
       style={{ height: "calc(100vh - 180px)" }}
     >
       {/* System welcome message */}
