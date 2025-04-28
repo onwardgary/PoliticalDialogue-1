@@ -1,8 +1,8 @@
 import OpenAI from "openai";
 import { type Message, type DebateSummary } from "@shared/schema";
 
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const MODEL = "gpt-4o";
+// Using the latest version of GPT-4o as requested by the user
+const MODEL = "chatgpt-4o-latest";
 
 // Check for API key in multiple possible environment variables
 const API_KEY = process.env.OPENAI_API_KEY || 

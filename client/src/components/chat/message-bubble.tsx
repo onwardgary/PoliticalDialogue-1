@@ -185,27 +185,7 @@ export default function MessageBubble({ message, partyShortName = "BOT" }: Messa
         </p>
       </div>
 
-      <style jsx>{`
-        .chat-content-bot :global(.list-item-with-header) {
-          margin-bottom: 1rem;
-        }
-        .chat-content-bot :global(.list-header) {
-          margin-bottom: 0.25rem;
-          font-weight: 600;
-        }
-        .chat-content-bot :global(.list-content) {
-          margin-left: 1.5rem;
-        }
-        .chat-content-bot :global(.list-marker) {
-          min-width: 1.5rem;
-          font-weight: 600;
-        }
-        .chat-content-bot :global(.formatted-list) {
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-        }
-      `}</style>
+      {/* Additional styling for formatted messages */}
     </div>
   );
 }
