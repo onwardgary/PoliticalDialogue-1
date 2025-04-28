@@ -133,15 +133,11 @@ export default function DebateSummary({
                 <span className={`px-3 py-1 text-xs font-medium rounded-full ${
                   summary.conclusion.outcome === 'party' 
                     ? 'bg-blue-100 text-blue-800' 
-                    : summary.conclusion.outcome === 'citizen'
-                      ? 'bg-orange-100 text-orange-800'
-                      : 'bg-gray-100 text-gray-800'
+                    : 'bg-orange-100 text-orange-800'
                 }`}>
                   {summary.conclusion.outcome === 'party' 
                     ? `${partyShortName} arguments were stronger` 
-                    : summary.conclusion.outcome === 'citizen'
-                      ? 'Your arguments were stronger'
-                      : 'The debate was balanced'}
+                    : 'Your arguments were stronger'}
                 </span>
               </div>
               
@@ -199,6 +195,21 @@ export default function DebateSummary({
                 <h5 className="text-sm font-semibold text-neutral-800 mb-2">Final Assessment</h5>
                 <p className="text-sm text-neutral-700">{summary.conclusion.reasoning}</p>
               </div>
+
+              {/* Action Recommendations */}
+              {summary.conclusion.actionRecommendations && summary.conclusion.actionRecommendations.length > 0 && (
+                <div className="mt-4 bg-indigo-50 p-4 rounded-lg border border-indigo-100">
+                  <h5 className="text-sm font-semibold text-indigo-800 mb-2">Recommended Actions</h5>
+                  <ul className="space-y-2">
+                    {summary.conclusion.actionRecommendations.map((recommendation, index) => (
+                      <li key={index} className="flex items-start">
+                        <div className="text-indigo-500 mr-2 mt-0.5">→</div>
+                        <p className="text-sm text-indigo-900">{recommendation}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
         )}
