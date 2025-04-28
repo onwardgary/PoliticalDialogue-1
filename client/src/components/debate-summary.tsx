@@ -122,11 +122,13 @@ export default function DebateSummary({
           </div>
         )}
         
-        {/* AI Deliberation */}
+        {/* AI Deliberation with 4-Pillar Framework */}
         {summary.conclusion && (
           <div className="mt-6 border-t border-neutral-200 pt-4">
             <h4 className="text-md font-semibold mb-2">AI Deliberation</h4>
-            <div className="bg-neutral-50 rounded-lg p-4 border border-neutral-200">
+            
+            {/* Outcome Badge */}
+            <div className="bg-neutral-50 rounded-lg p-4 border border-neutral-200 mb-4">
               <div className="flex items-center mb-2">
                 <span className={`px-3 py-1 text-xs font-medium rounded-full ${
                   summary.conclusion.outcome === 'party' 
@@ -142,7 +144,61 @@ export default function DebateSummary({
                       : 'The debate was balanced'}
                 </span>
               </div>
-              <p className="text-sm text-neutral-700">{summary.conclusion.reasoning}</p>
+              
+              {/* 4-Pillar Evaluation */}
+              {summary.conclusion.evaluation && (
+                <div className="space-y-4 mt-4 mb-4">
+                  <h5 className="text-sm font-semibold text-neutral-800">Evaluation Criteria</h5>
+                  
+                  <div className="grid grid-cols-1 gap-3">
+                    {/* Logical Soundness */}
+                    <div className="border border-neutral-200 rounded-lg overflow-hidden">
+                      <div className="bg-blue-50 p-2 border-b border-neutral-200">
+                        <h6 className="text-sm font-medium text-blue-800">Logical Soundness</h6>
+                      </div>
+                      <div className="p-3">
+                        <p className="text-sm text-neutral-700">{summary.conclusion.evaluation.logicalSoundness}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Emotional Reasoning */}
+                    <div className="border border-neutral-200 rounded-lg overflow-hidden">
+                      <div className="bg-purple-50 p-2 border-b border-neutral-200">
+                        <h6 className="text-sm font-medium text-purple-800">Emotional Reasoning</h6>
+                      </div>
+                      <div className="p-3">
+                        <p className="text-sm text-neutral-700">{summary.conclusion.evaluation.emotionalReasoning}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Key Point Resolution */}
+                    <div className="border border-neutral-200 rounded-lg overflow-hidden">
+                      <div className="bg-green-50 p-2 border-b border-neutral-200">
+                        <h6 className="text-sm font-medium text-green-800">Key Point Resolution</h6>
+                      </div>
+                      <div className="p-3">
+                        <p className="text-sm text-neutral-700">{summary.conclusion.evaluation.keyPointResolution}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Tone and Clarity */}
+                    <div className="border border-neutral-200 rounded-lg overflow-hidden">
+                      <div className="bg-amber-50 p-2 border-b border-neutral-200">
+                        <h6 className="text-sm font-medium text-amber-800">Tone and Clarity</h6>
+                      </div>
+                      <div className="p-3">
+                        <p className="text-sm text-neutral-700">{summary.conclusion.evaluation.toneAndClarity}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Final Reasoning */}
+              <div className="mt-4">
+                <h5 className="text-sm font-semibold text-neutral-800 mb-2">Final Assessment</h5>
+                <p className="text-sm text-neutral-700">{summary.conclusion.reasoning}</p>
+              </div>
             </div>
           </div>
         )}
