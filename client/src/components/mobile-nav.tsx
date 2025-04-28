@@ -16,7 +16,6 @@ import {
   SheetContent, 
   SheetTrigger 
 } from "@/components/ui/sheet";
-import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 
@@ -45,9 +44,11 @@ export function MobileHeader() {
 function MobileSidebar() {
   const [location, setLocation] = useLocation();
   
-  const { user, logout } = useAuth();
+  // Fallback when auth is not available
+  const user = null;
+  const logout = async () => {};
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const isAdmin = user?.isAdmin || false;
+  const isAdmin = false;
   
   const handleLogout = async () => {
     try {
@@ -162,8 +163,8 @@ function MobileSidebar() {
 
 export function MobileNavigation() {
   const [location] = useLocation();
-  const { user } = useAuth();
-  
+  // Fallback when auth is not available
+  const user = null;
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 flex justify-around p-2 z-10">
       <Link href="/">

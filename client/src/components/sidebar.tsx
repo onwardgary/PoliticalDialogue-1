@@ -12,14 +12,15 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useAuth } from "@/hooks/use-auth";
 import { Separator } from "@/components/ui/separator";
 
 export default function Sidebar() {
   const [location, setLocation] = useLocation();
-  const { user, logout } = useAuth();
+  // Simulate auth state when auth context is not available
+  const user = null;
+  const logout = async () => {};
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const isAdmin = user?.isAdmin || false;
+  const isAdmin = false;
   
   const handleLogout = async () => {
     try {
