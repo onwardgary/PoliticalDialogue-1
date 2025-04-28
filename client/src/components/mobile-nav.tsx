@@ -45,9 +45,10 @@ export function MobileHeader() {
 function MobileSidebar() {
   const [location, setLocation] = useLocation();
   
-  const { user, logout } = useAuth();
+  const user = null;
+  const logout = async () => {};
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const isAdmin = user?.isAdmin || false;
+  const isAdmin = false;
   
   const handleLogout = async () => {
     try {
