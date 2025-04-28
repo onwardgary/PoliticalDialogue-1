@@ -70,13 +70,16 @@ export default function AuthPage() {
   let isLoading = false;
   
   try {
+    console.log("Before useAuth call");
     const auth = useAuth();
+    console.log("After useAuth call:", auth ? "Auth context found" : "Auth context null");
     user = auth.user;
     loginMutation = auth.loginMutation;
     registerMutation = auth.registerMutation;
     isLoading = auth.isLoading;
+    console.log("Auth context available, user:", user ? `User ${user.username} loaded` : "No user logged in");
   } catch (error) {
-    console.log("Auth context not available, showing public auth page");
+    console.error("Auth context error:", error);
   }
   
   // Define form for login
@@ -159,49 +162,58 @@ export default function AuthPage() {
   // Handle registration form submission
   const onRegisterSubmit = async (data: RegisterData) => {
     console.log("Registration form submitted:", data);
-    try {
-      // Instead of using the mutation directly, let's try a direct fetch for debugging
-      const response = await fetch('/api/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: data.username,
-          email: data.email,
-          password: data.password
-        }),
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Registration API error:', response.status, errorText);
-        throw new Error(`Registration failed: ${errorText}`);
+    // Use the registerMutation from auth context if it's available
+    if (registerMutation && registerMutation.mutate !== createDummyMutation().mutate) {
+      try {
+        registerMutation.mutate(data);
+      } catch (error) {
+        console.error("Registration mutation error:", error);
       }
+    } else {
+      // Fallback to direct fetch approach if auth context is not available
+      try {
+        const response = await fetch('/api/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            username: data.username,
+            email: data.email,
+            password: data.password
+          }),
+          credentials: 'include'
+        });
 
-      const user = await response.json();
-      console.log('Registration successful:', user);
-      
-      // Show success toast
-      toast({
-        title: "Registration successful",
-        description: "Your account has been created!",
-        variant: "default",
-      });
-      
-      // Manually update the auth state
-      queryClient.setQueryData(["/api/user"], user);
-      
-      // Redirect to home
-      setLocation('/');
-    } catch (error) {
-      console.error("Registration error:", error);
-      toast({
-        title: "Registration failed",
-        description: error instanceof Error ? error.message : "Unknown error occurred",
-        variant: "destructive",
-      });
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Registration API error:', response.status, errorText);
+          throw new Error(`Registration failed: ${errorText}`);
+        }
+
+        const user = await response.json();
+        console.log('Registration successful:', user);
+        
+        // Show success toast
+        toast({
+          title: "Registration successful",
+          description: "Your account has been created!",
+          variant: "default",
+        });
+        
+        // Manually update the auth state
+        queryClient.setQueryData(["/api/user"], user);
+        
+        // Redirect to home
+        setLocation('/');
+      } catch (error) {
+        console.error("Registration error:", error);
+        toast({
+          title: "Registration failed",
+          description: error instanceof Error ? error.message : "Unknown error occurred",
+          variant: "destructive",
+        });
+      }
     }
   };
   
