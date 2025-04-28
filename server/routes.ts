@@ -291,6 +291,163 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Knowledge Base API Endpoints
+  
+  // Get all knowledge base entries
+  app.get("/api/knowledge", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "You don't have permission to access the knowledge base" });
+    }
+    
+    try {
+      const entries = await storage.getKnowledgeBaseEntries();
+      res.json(entries);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch knowledge base entries" });
+    }
+  });
+  
+  // Get knowledge base entries for a specific party
+  app.get("/api/knowledge/party/:partyId", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "You don't have permission to access the knowledge base" });
+    }
+    
+    try {
+      const partyId = parseInt(req.params.partyId);
+      const entries = await storage.getKnowledgeBaseEntriesByParty(partyId);
+      res.json(entries);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch knowledge base entries" });
+    }
+  });
+  
+  // Get a specific knowledge base entry
+  app.get("/api/knowledge/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "You don't have permission to access the knowledge base" });
+    }
+    
+    try {
+      const id = parseInt(req.params.id);
+      const entry = await storage.getKnowledgeBaseEntry(id);
+      
+      if (!entry) {
+        return res.status(404).json({ message: "Knowledge base entry not found" });
+      }
+      
+      res.json(entry);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch knowledge base entry" });
+    }
+  });
+  
+  // Create a new knowledge base entry
+  app.post("/api/knowledge", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "You don't have permission to add to the knowledge base" });
+    }
+    
+    const bodySchema = z.object({
+      partyId: z.number(),
+      title: z.string(),
+      content: z.string(),
+      source: z.string().optional(),
+      isActive: z.boolean().optional(),
+    });
+    
+    try {
+      const data = bodySchema.parse(req.body);
+      const entry = await storage.createKnowledgeBaseEntry(data, req.user.id);
+      res.status(201).json(entry);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid entry data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create knowledge base entry" });
+    }
+  });
+  
+  // Update a knowledge base entry
+  app.patch("/api/knowledge/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "You don't have permission to update the knowledge base" });
+    }
+    
+    const bodySchema = z.object({
+      partyId: z.number().optional(),
+      title: z.string().optional(),
+      content: z.string().optional(),
+      source: z.string().optional(),
+      isActive: z.boolean().optional(),
+    });
+    
+    try {
+      const id = parseInt(req.params.id);
+      const data = bodySchema.parse(req.body);
+      
+      // Make sure the entry exists
+      const existingEntry = await storage.getKnowledgeBaseEntry(id);
+      if (!existingEntry) {
+        return res.status(404).json({ message: "Knowledge base entry not found" });
+      }
+      
+      const updatedEntry = await storage.updateKnowledgeBaseEntry(id, data);
+      res.json(updatedEntry);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid entry data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update knowledge base entry" });
+    }
+  });
+  
+  // Delete a knowledge base entry
+  app.delete("/api/knowledge/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "You don't have permission to delete from the knowledge base" });
+    }
+    
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Make sure the entry exists
+      const existingEntry = await storage.getKnowledgeBaseEntry(id);
+      if (!existingEntry) {
+        return res.status(404).json({ message: "Knowledge base entry not found" });
+      }
+      
+      await storage.deleteKnowledgeBaseEntry(id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete knowledge base entry" });
+    }
+  });
+  
   // For demo purposes only: Add sample aggregate summaries
   app.post("/api/demo/add-sample-summaries", async (req, res) => {
     try {

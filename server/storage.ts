@@ -1,4 +1,4 @@
-import { users, parties, debates, votes, aggregateSummaries, type User, type InsertUser, type Party, type Debate, type Vote, type AggregateSummary, type InsertDebate, type InsertVote, type InsertAggregateSummary, type Message, type DebateSummary } from "@shared/schema";
+import { users, parties, debates, votes, aggregateSummaries, knowledgeBase, type User, type InsertUser, type Party, type Debate, type Vote, type AggregateSummary, type InsertDebate, type InsertVote, type InsertAggregateSummary, type Message, type DebateSummary, type KnowledgeBase, type InsertKnowledgeBase } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import { nanoid } from "nanoid";
@@ -69,12 +69,14 @@ export class MemStorage implements IStorage {
     this.debates = new Map();
     this.votes = new Map();
     this.summaries = new Map();
+    this.knowledgeBase = new Map();
     
     this.currentUserId = 1;
     this.currentPartyId = 1;
     this.currentDebateId = 1;
     this.currentVoteId = 1;
     this.currentSummaryId = 1;
+    this.currentKnowledgeBaseId = 1;
     
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000,
@@ -245,8 +247,70 @@ export class MemStorage implements IStorage {
   async getTrendingTopics(period: string, limit: number): Promise<AggregateSummary[]> {
     return Array.from(this.summaries.values())
       .filter((summary) => summary.period === period)
-      .sort((a, b) => (b.partyVotes + b.citizenVotes) - (a.partyVotes + a.citizenVotes))
+      .sort((a, b) => {
+        const bVotes = (b.partyVotes || 0) + (b.citizenVotes || 0);
+        const aVotes = (a.partyVotes || 0) + (a.citizenVotes || 0);
+        return bVotes - aVotes;
+      })
       .slice(0, limit);
+  }
+
+  // Knowledge Base methods
+  async getKnowledgeBaseEntries(): Promise<KnowledgeBase[]> {
+    return Array.from(this.knowledgeBase.values());
+  }
+
+  async getKnowledgeBaseEntriesByParty(partyId: number): Promise<KnowledgeBase[]> {
+    return Array.from(this.knowledgeBase.values()).filter(
+      (entry) => entry.partyId === partyId
+    );
+  }
+
+  async getKnowledgeBaseEntry(id: number): Promise<KnowledgeBase | undefined> {
+    return this.knowledgeBase.get(id);
+  }
+
+  async createKnowledgeBaseEntry(entry: InsertKnowledgeBase, userId: number): Promise<KnowledgeBase> {
+    const id = this.currentKnowledgeBaseId++;
+    const createdAt = new Date();
+    const updatedAt = createdAt;
+    const addedById = userId;
+    
+    const newEntry: KnowledgeBase = { 
+      ...entry, 
+      id, 
+      createdAt, 
+      updatedAt, 
+      addedById 
+    };
+    
+    this.knowledgeBase.set(id, newEntry);
+    return newEntry;
+  }
+
+  async updateKnowledgeBaseEntry(id: number, entry: Partial<InsertKnowledgeBase>): Promise<KnowledgeBase> {
+    const existingEntry = this.knowledgeBase.get(id);
+    if (!existingEntry) {
+      throw new Error("Knowledge base entry not found");
+    }
+    
+    const updatedEntry: KnowledgeBase = {
+      ...existingEntry,
+      ...entry,
+      updatedAt: new Date()
+    };
+    
+    this.knowledgeBase.set(id, updatedEntry);
+    return updatedEntry;
+  }
+
+  async deleteKnowledgeBaseEntry(id: number): Promise<void> {
+    const exists = this.knowledgeBase.has(id);
+    if (!exists) {
+      throw new Error("Knowledge base entry not found");
+    }
+    
+    this.knowledgeBase.delete(id);
   }
 }
 
