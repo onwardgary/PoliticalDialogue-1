@@ -144,13 +144,14 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
          - "partyPosition": The party's stance on this issue
          - "citizenPosition": The citizen's stance on this issue
       4. "conclusion": An in-depth assessment of the debate with:
-         - "outcome": Either "party" (if party arguments were stronger), "citizen" (if citizen arguments were stronger), or "inconclusive" (if the debate was balanced)
+         - "outcome": Must be either "party" (if party arguments were stronger) or "citizen" (if citizen arguments were stronger). Choose the side that presented the overall more convincing case
          - "evaluation": A structured analysis based on four key pillars:
             * "logicalSoundness": Brief assessment (1-2 sentences) of how fact-based and logically coherent each side's arguments were 
             * "emotionalReasoning": Brief assessment (1-2 sentences) of how effectively and appropriately emotional appeals were used
             * "keyPointResolution": Brief assessment (1-2 sentences) of how directly each side addressed the core challenges raised
             * "toneAndClarity": Brief assessment (1-2 sentences) of the professionalism, seriousness, and clarity of communication
          - "reasoning": A final justification explaining the overall outcome based on the four pillars
+         - "actionRecommendations": At least 2 specific, actionable recommendations for either the government or citizens to better address the debate topic
       
       Format your response as a JSON object with these properties. Focus on concrete examples mentioned in the debate rather than generalizations. Evaluate the logical strength of arguments, not just quantity or assertion.`
     });
@@ -186,14 +187,18 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
         citizenArguments: summary.citizenArguments || [],
         keyPoints: summary.keyPoints || [],
         conclusion: summary.conclusion || {
-          outcome: "inconclusive",
+          outcome: "party",
           evaluation: {
             logicalSoundness: "Not enough information to assess logical soundness",
             emotionalReasoning: "Not enough information to assess emotional appeals",
             keyPointResolution: "Not enough information to assess resolution of key points",
             toneAndClarity: "Not enough information to assess tone and clarity"
           },
-          reasoning: "Analysis could not determine a clear winner due to insufficient content"
+          reasoning: "Analysis could not determine a clear winner due to insufficient content",
+          actionRecommendations: [
+            "Provide more detailed policy information to enable better evaluation",
+            "Conduct additional research on economic impacts of proposed policies"
+          ]
         }
       };
     } catch (jsonError) {
@@ -208,14 +213,18 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
           citizenPosition: "Citizen's concerns and questions about this topic"
         }],
         conclusion: {
-          outcome: "inconclusive",
+          outcome: "party",
           evaluation: {
             logicalSoundness: "Could not be evaluated due to technical issues",
             emotionalReasoning: "Could not be evaluated due to technical issues",
             keyPointResolution: "Could not be evaluated due to technical issues",
             toneAndClarity: "Could not be evaluated due to technical issues"
           },
-          reasoning: "Technical issues prevented proper analysis of the debate"
+          reasoning: "Technical issues prevented proper analysis of the debate",
+          actionRecommendations: [
+            "Restart the debate to provide more context for evaluation",
+            "Use more specific examples when discussing policy positions"
+          ]
         }
       };
     }
@@ -236,14 +245,18 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
         citizenPosition: "Could not be analyzed due to technical issues"
       }],
       conclusion: {
-        outcome: "inconclusive",
+        outcome: "party",
         evaluation: {
           logicalSoundness: "Could not be evaluated due to technical issues",
           emotionalReasoning: "Could not be evaluated due to technical issues",
           keyPointResolution: "Could not be evaluated due to technical issues",
           toneAndClarity: "Could not be evaluated due to technical issues"
         },
-        reasoning: "Technical difficulties prevented analysis of the debate"
+        reasoning: "Technical difficulties prevented analysis of the debate",
+        actionRecommendations: [
+          "Try starting a new debate with more specific policy questions",
+          "Consult official sources for accurate information on government policies"
+        ]
       }
     };
   }

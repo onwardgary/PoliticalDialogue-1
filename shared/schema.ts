@@ -95,7 +95,7 @@ export type DebateSummary = {
   }[];
   // Final deliberation with 4-pillar assessment
   conclusion?: {
-    outcome: "party" | "citizen" | "inconclusive";
+    outcome: "party" | "citizen";
     evaluation?: {
       logicalSoundness: string;
       emotionalReasoning: string;
@@ -103,6 +103,7 @@ export type DebateSummary = {
       toneAndClarity: string;
     };
     reasoning: string;
+    actionRecommendations?: string[];
   };
 };
 
