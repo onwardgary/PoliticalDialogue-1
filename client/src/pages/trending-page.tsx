@@ -51,7 +51,7 @@ export default function TrendingPage() {
     <div className="min-h-screen flex flex-col md:flex-row">
       <Sidebar />
       
-      <main className="flex-1 md:ml-64">
+      <main className="flex-1 flex flex-col h-screen">
         <MobileHeader />
         
         <header className="bg-white border-b border-neutral-200 p-4">

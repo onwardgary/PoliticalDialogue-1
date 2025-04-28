@@ -87,14 +87,11 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-neutral-50">
-      {/* Sidebar for desktop */}
-      {!isMobile && <Sidebar />}
-
-      {/* Mobile navigation */}
-      {isMobile && <MobileNavigation />}
-
-      <main className="flex-1 p-4 md:p-8">
+    <div className="min-h-screen flex flex-col md:flex-row">
+      <Sidebar />
+      
+      <main className="flex-1 flex flex-col h-screen">
+        <MobileHeader />
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
             <div>
