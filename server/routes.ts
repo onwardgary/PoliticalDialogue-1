@@ -109,6 +109,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get completed debates with summaries and recommendations
+  app.get("/api/debates/completed", async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string || "10");
+      
+      // Get all user debates
+      const allDebates = await storage.getAllDebates();
+      
+      // Filter to only completed debates with summaries
+      const completedDebates = allDebates
+        .filter(debate => debate.completed && debate.summary)
+        .slice(0, limit);
+      
+      if (completedDebates.length === 0) {
+        return res.json([]);
+      }
+      
+      res.json(completedDebates);
+    } catch (error) {
+      console.error("Error fetching completed debates:", error);
+      res.status(500).json({ message: "Failed to fetch completed debates" });
+    }
+  });
+  
   // Get a specific debate
   app.get("/api/debates/:id", async (req, res) => {
     // For demo purposes, we're allowing anyone to access debates
@@ -380,30 +404,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(trendingTopics);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch trending topics" });
-    }
-  });
-  
-  // Get completed debates with summaries and recommendations
-  app.get("/api/debates/completed", async (req, res) => {
-    try {
-      const limit = parseInt(req.query.limit as string || "10");
-      
-      // Get all user debates
-      const allDebates = await storage.getAllDebates();
-      
-      // Filter to only completed debates with summaries
-      const completedDebates = allDebates
-        .filter(debate => debate.completed && debate.summary)
-        .slice(0, limit);
-      
-      if (completedDebates.length === 0) {
-        return res.json([]);
-      }
-      
-      res.json(completedDebates);
-    } catch (error) {
-      console.error("Error fetching completed debates:", error);
-      res.status(500).json({ message: "Failed to fetch completed debates" });
     }
   });
   

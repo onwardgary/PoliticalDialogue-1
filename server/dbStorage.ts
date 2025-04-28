@@ -138,6 +138,15 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
+  
+  async getAllDebates(): Promise<Debate[]> {
+    try {
+      return await db.select().from(debates);
+    } catch (error) {
+      console.error("Error in getAllDebates:", error);
+      return [];
+    }
+  }
 
   async updateDebateMessages(id: number, messages: Message[]): Promise<Debate> {
     try {
