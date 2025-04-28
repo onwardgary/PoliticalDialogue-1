@@ -23,9 +23,9 @@ export function MobileHeader() {
   return (
     <header className="md:hidden bg-white border-b border-neutral-200 p-4 flex items-center justify-between">
       <Link href="/">
-        <a className="text-xl font-bold text-primary flex items-center">
+        <div className="text-xl font-bold text-primary flex items-center">
           <MessageSquare className="mr-2 h-5 w-5" /> Suara.sg
-        </a>
+        </div>
       </Link>
       <Sheet>
         <SheetTrigger asChild>

@@ -1,14 +1,14 @@
 import { Switch, Route } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/not-found";
-import HomePage from "@/pages/home-page";
-import AuthPage from "@/pages/auth-page";
-import DebatePage from "@/pages/debate-page";
-import SummaryPage from "@/pages/summary-page";
-import TrendingPage from "@/pages/trending-page";
-import ProfilePage from "@/pages/profile-page";
-import AdminKnowledgePage from "@/pages/admin-knowledge-page";
+import NotFound from "./pages/not-found";
+import HomePage from "./pages/home-page";
+import AuthPage from "./pages/auth-page";
+import DebatePage from "./pages/debate-page";
+import SummaryPage from "./pages/summary-page";
+import TrendingPage from "./pages/trending-page";
+import ProfilePage from "./pages/profile-page";
+import AdminKnowledgePage from "./pages/admin-knowledge-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
