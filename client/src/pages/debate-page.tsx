@@ -227,6 +227,8 @@ export default function DebatePage() {
             <ChatInterface 
               messages={debate?.messages || []}
               isLoading={isSendingMessage}
+              onSendMessage={handleSendMessage}
+              partyShortName={party?.shortName}
             />
             <ChatInput 
               onSendMessage={handleSendMessage}

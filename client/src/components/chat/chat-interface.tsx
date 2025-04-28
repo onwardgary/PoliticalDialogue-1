@@ -112,7 +112,7 @@ export default function ChatInterface({ messages, isLoading, onSendMessage, part
       {filteredMessages.map((message, index) => {
         // Check if this message should be grouped with the previous one (same sender)
         const previousMessage = index > 0 ? filteredMessages[index - 1] : null;
-        const isGrouped = previousMessage && previousMessage.role === message.role;
+        const isGrouped = previousMessage && previousMessage.role === message.role ? true : false;
         
         return (
           <MessageBubble 
