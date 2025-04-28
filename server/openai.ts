@@ -96,7 +96,7 @@ export async function generatePartyResponse(messages: Message[]): Promise<string
       model: MODEL,
       messages: formattedMessages,
       temperature: 0.7,
-      max_tokens: 350, // Increased to allow for responses under 1000 characters
+      max_tokens: 650, // Increased to allow for responses under 1000 characters with details and examples
     });
     
     // Race the API promise against the timeout

@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsMobile } from "@/hooks/use-mobile";
+import Sidebar from "@/components/sidebar";
+import { MobileHeader } from "@/components/mobile-nav";
 import { 
   Card, 
   CardContent, 
@@ -26,8 +28,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { MessageSquare, ChevronRight, User, LogOut } from "lucide-react";
-import Sidebar from "@/components/sidebar";
-import { MobileNavigation } from "@/components/mobile-nav";
 
 type UserDebate = {
   id: number;
