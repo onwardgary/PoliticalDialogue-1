@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 import { Message } from "@shared/schema";
 import { cn } from "@/lib/utils";
+import ReactMarkdown from "react-markdown";
 
 type MessageBubbleProps = {
   message: Message;
@@ -193,7 +194,9 @@ export default function MessageBubble({ message, partyShortName = "BOT", isGroup
           "text-sm prose prose-sm dark:prose-invert chat-content",
           isUser ? "chat-content-user" : "chat-content-bot"
         )}>
-          {formatContent(message.content)}
+          <ReactMarkdown>
+            {message.content}
+          </ReactMarkdown>
         </div>
         
         {/* Only show timestamp for the last message or if messages are several minutes apart */}
