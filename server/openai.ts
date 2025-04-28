@@ -57,29 +57,53 @@ export function createPartySystemMessage(partyShortName: string): Message {
 // Generate a response from the AI based on the conversation history
 export async function generatePartyResponse(messages: Message[]): Promise<string> {
   try {
+    console.log("Generating party response with API key present:", !!API_KEY);
+    console.log("Number of messages:", messages.length);
+    
     // Convert Messages to OpenAI format
     const formattedMessages = messages.map(msg => ({
       role: msg.role,
       content: msg.content
     }));
     
-    const response = await openai.chat.completions.create({
+    console.log("Sending request to OpenAI API...");
+    
+    // Add a timeout to the OpenAI request
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error("OpenAI API request timed out after 15 seconds")), 15000);
+    });
+    
+    const apiPromise = openai.chat.completions.create({
       model: MODEL,
       messages: formattedMessages,
       temperature: 0.7,
       max_tokens: 800,
     });
     
+    // Race the API promise against the timeout
+    const response = await Promise.race([apiPromise, timeoutPromise]);
+    
+    console.log("Received response from OpenAI API");
     return response.choices[0].message.content || "I'm sorry, I couldn't generate a response.";
   } catch (error) {
     console.error("Error generating party response:", error);
-    throw new Error("Failed to generate response from the AI");
+    // Provide more detailed error information
+    if (error instanceof Error) {
+      console.error("Error details:", error.message);
+      console.error("Error stack:", error.stack);
+    }
+    
+    // Return a fallback response instead of throwing
+    return "I apologize, but I'm having trouble connecting to our AI service at the moment. Please try again shortly.";
   }
 }
 
 // Generate a debate summary
 export async function generateDebateSummary(messages: Message[]): Promise<DebateSummary> {
   try {
+    console.log("Generating debate summary with API key present:", !!API_KEY);
+    console.log("Number of messages for summary:", messages.length);
+    
     // Create a prompt for generating a summary
     const formattedMessages = messages.map(msg => ({
       role: msg.role,
@@ -95,7 +119,14 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
       Format your response as a JSON object with these two arrays. Keep each argument concise (under 100 characters) but informative.`
     });
     
-    const response = await openai.chat.completions.create({
+    console.log("Sending summary request to OpenAI API...");
+    
+    // Add a timeout to the OpenAI request
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error("OpenAI API request timed out after 20 seconds")), 20000);
+    });
+    
+    const apiPromise = openai.chat.completions.create({
       model: MODEL,
       messages: formattedMessages,
       temperature: 0.5,
@@ -103,16 +134,40 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
       response_format: { type: "json_object" }
     });
     
-    const summaryText = response.choices[0].message.content || "{}";
-    const summary = JSON.parse(summaryText) as DebateSummary;
+    // Race the API promise against the timeout
+    const response = await Promise.race([apiPromise, timeoutPromise]);
     
-    return {
-      partyArguments: summary.partyArguments || [],
-      citizenArguments: summary.citizenArguments || []
-    };
+    console.log("Received summary response from OpenAI API");
+    const summaryText = response.choices[0].message.content || "{}";
+    
+    try {
+      console.log("Parsing summary JSON response:", summaryText);
+      const summary = JSON.parse(summaryText) as DebateSummary;
+      
+      return {
+        partyArguments: summary.partyArguments || [],
+        citizenArguments: summary.citizenArguments || []
+      };
+    } catch (jsonError) {
+      console.error("Error parsing JSON response:", jsonError);
+      // Provide a fallback summary
+      return {
+        partyArguments: ["The AI provided arguments about this topic"],
+        citizenArguments: ["The citizen raised questions about this topic"]
+      };
+    }
   } catch (error) {
     console.error("Error generating debate summary:", error);
-    throw new Error("Failed to generate debate summary");
+    if (error instanceof Error) {
+      console.error("Error details:", error.message);
+      console.error("Error stack:", error.stack);
+    }
+    
+    // Return a fallback summary instead of throwing
+    return {
+      partyArguments: ["Technical difficulties prevented proper summary"],
+      citizenArguments: ["Technical difficulties prevented proper summary"]
+    };
   }
 }
 

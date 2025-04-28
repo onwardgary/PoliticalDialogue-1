@@ -177,6 +177,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { content } = bodySchema.parse(req.body);
       const debateId = parseInt(req.params.id);
+      console.log(`Processing message for debate ${debateId}`);
+      
       const debate = await storage.getDebate(debateId);
       
       if (!debate) {
@@ -192,6 +194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "This debate has already been completed" });
       }
       
+      console.log(`Creating user message for debate ${debateId}`);
       // Add user message
       const userMessage = {
         id: nanoid(),
@@ -202,30 +205,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const updatedMessages = [...debate.messages, userMessage];
       
-      // Update debate with user message
+      // Update debate with user message before generating AI response
       await storage.updateDebateMessages(debateId, updatedMessages);
       
-      // Generate AI response
-      const assistantResponse = await generatePartyResponse(updatedMessages);
+      console.log(`Generating AI response for debate ${debateId}...`);
       
-      // Add assistant message
-      const assistantMessage = {
-        id: nanoid(),
-        role: "assistant" as const,
-        content: assistantResponse,
-        timestamp: Date.now(),
-      };
-      
-      const finalMessages = [...updatedMessages, assistantMessage];
-      
-      // Update debate with assistant message
-      const updatedDebate = await storage.updateDebateMessages(debateId, finalMessages);
-      
-      // Return both messages
-      res.status(201).json({
-        userMessage,
-        assistantMessage,
-      });
+      try {
+        // Generate AI response with a timeout
+        const assistantResponse = await generatePartyResponse(updatedMessages);
+        
+        console.log(`Got AI response, creating assistant message for debate ${debateId}`);
+        // Add assistant message
+        const assistantMessage = {
+          id: nanoid(),
+          role: "assistant" as const,
+          content: assistantResponse,
+          timestamp: Date.now(),
+        };
+        
+        const finalMessages = [...updatedMessages, assistantMessage];
+        
+        // Update debate with assistant message
+        await storage.updateDebateMessages(debateId, finalMessages);
+        
+        // Return both messages
+        res.status(201).json({
+          userMessage,
+          assistantMessage,
+        });
+      } catch (openAiError) {
+        console.error(`OpenAI API error for debate ${debateId}:`, openAiError);
+        
+        // Create a fallback message when OpenAI fails
+        const fallbackMessage = {
+          id: nanoid(),
+          role: "assistant" as const,
+          content: "I'm sorry, I'm having trouble connecting to our AI service. Please try again in a moment.",
+          timestamp: Date.now(),
+        };
+        
+        const fallbackMessages = [...updatedMessages, fallbackMessage];
+        await storage.updateDebateMessages(debateId, fallbackMessages);
+        
+        // Return the user message and fallback message
+        res.status(201).json({
+          userMessage,
+          assistantMessage: fallbackMessage,
+        });
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid message content", errors: error.errors });
@@ -242,6 +269,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       const debateId = parseInt(req.params.id);
+      console.log(`Ending debate ${debateId}`);
+      
       const debate = await storage.getDebate(debateId);
       
       if (!debate) {
@@ -257,14 +286,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "This debate has already been completed" });
       }
       
-      // Generate summary
-      const summary = await generateDebateSummary(debate.messages);
+      console.log(`Generating summary for debate ${debateId}...`);
       
-      // Update debate with summary and mark as completed
-      const updatedDebate = await storage.completeDebate(debateId, summary);
-      
-      // Return summary
-      res.json({ summary });
+      try {
+        // Generate summary
+        const summary = await generateDebateSummary(debate.messages);
+        
+        console.log(`Got summary, completing debate ${debateId}`);
+        // Update debate with summary and mark as completed
+        const updatedDebate = await storage.completeDebate(debateId, summary);
+        
+        // Return summary
+        res.json({ summary });
+      } catch (openAiError) {
+        console.error(`OpenAI API error for debate summary ${debateId}:`, openAiError);
+        
+        // Create a fallback summary when OpenAI fails
+        const fallbackSummary = {
+          partyArguments: ["The party presented their official position on this topic",
+                         "The party highlighted key policy initiatives",
+                         "The party explained the reasoning behind their approach",
+                         "The party addressed specific concerns raised",
+                         "The party outlined their vision for the future"],
+          citizenArguments: ["The citizen asked about specific policies",
+                           "The citizen raised concerns about implementation",
+                           "The citizen shared personal perspectives",
+                           "The citizen questioned certain aspects of the policy",
+                           "The citizen engaged with different viewpoints"]
+        };
+        
+        // Still complete the debate with the fallback summary
+        await storage.completeDebate(debateId, fallbackSummary);
+        
+        // Return the fallback summary
+        res.json({ summary: fallbackSummary });
+      }
     } catch (error) {
       console.error("Error ending debate:", error);
       res.status(500).json({ message: "Failed to end debate and generate summary" });

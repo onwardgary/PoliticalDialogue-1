@@ -30,35 +30,35 @@ export default function Sidebar() {
         <ul className="space-y-2">
           <li>
             <Link href="/">
-              <a className={`flex items-center p-2 rounded-lg font-medium ${location === '/' ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
+              <div className={`flex items-center p-2 rounded-lg font-medium ${location === '/' ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
                 <Home className="w-5 h-5 mr-3" />
                 <span>Home</span>
-              </a>
+              </div>
             </Link>
           </li>
           <li>
             <Link href="/trending">
-              <a className={`flex items-center p-2 rounded-lg font-medium ${location.startsWith('/trending') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
+              <div className={`flex items-center p-2 rounded-lg font-medium ${location.startsWith('/trending') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
                 <TrendingUp className="w-5 h-5 mr-3" />
                 <span>Trending Debates</span>
-              </a>
+              </div>
             </Link>
           </li>
           <li>
             <Link href="/statistics">
-              <a className={`flex items-center p-2 rounded-lg font-medium ${location.startsWith('/statistics') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
+              <div className={`flex items-center p-2 rounded-lg font-medium ${location.startsWith('/statistics') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
                 <BarChart className="w-5 h-5 mr-3" />
                 <span>Statistics</span>
-              </a>
+              </div>
             </Link>
           </li>
           {isAdmin && (
             <li>
               <Link href="/admin/knowledge">
-                <a className={`flex items-center p-2 rounded-lg font-medium ${location.startsWith('/admin') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
+                <div className={`flex items-center p-2 rounded-lg font-medium ${location.startsWith('/admin') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
                   <Database className="w-5 h-5 mr-3" />
                   <span>Knowledge Base</span>
-                </a>
+                </div>
               </Link>
             </li>
           )}
