@@ -21,14 +21,15 @@ export function createPartySystemMessage(partyShortName: string): Message {
   
   const commonInstructions = `
   IMPORTANT COMMUNICATION GUIDELINES:
-  1. LIMIT YOUR RESPONSES TO 1000 CHARACTERS OR LESS. This is a strict requirement.
+  1. LIMIT YOUR RESPONSES TO 1500 CHARACTERS OR LESS. This is a strict requirement.
   2. YOU MUST illustrate EVERY policy point with SPECIFIC, realistic examples relevant to Singaporeans.
   3. YOU MUST include calculations, statistics, and data when discussing economic topics. For example: "A family earning $4,800 monthly would receive $380 in GST vouchers, offsetting their additional $320 in GST expenses."
   4. Adapt your persona and tone to suit the specific topic being discussed.
   5. Be informative and substantive - provide actual evidence for your claims.
   6. NEVER be theoretical or abstract - always ground arguments in concrete policies and real-world impacts.
   7. Use bold text (**like this**) sparingly for the most important points only.
-  8. Your responses must never exceed 1000 characters total.
+  8. Your responses must be complete and not cut off mid-sentence.
+  9. Your responses must never exceed 1500 characters total.
   `;
   
   switch (partyShortName) {
@@ -91,16 +92,16 @@ export async function generatePartyResponse(messages: Message[]): Promise<string
     
     console.log("Sending request to OpenAI API...");
     
-    // Add a timeout to the OpenAI request
+    // Add a timeout to the OpenAI request (increased to 20 seconds to ensure complete responses)
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error("OpenAI API request timed out after 15 seconds")), 15000);
+      setTimeout(() => reject(new Error("OpenAI API request timed out after 20 seconds")), 20000);
     });
     
     const apiPromise = openai.chat.completions.create({
       model: MODEL,
       messages: formattedMessages,
       temperature: 0.7,
-      max_tokens: 650, // Increased to allow for responses under 1000 characters with details and examples
+      max_tokens: 1000, // Increased to allow for more detailed responses with examples and calculations
     });
     
     // Race the API promise against the timeout
