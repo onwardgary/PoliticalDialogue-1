@@ -7,6 +7,7 @@ import AuthPage from "@/pages/auth-page";
 import DebatePage from "@/pages/debate-page";
 import SummaryPage from "@/pages/summary-page";
 import TrendingPage from "@/pages/trending-page";
+import ProfilePage from "@/pages/profile-page";
 import AdminKnowledgePage from "@/pages/admin-knowledge-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
@@ -18,6 +19,9 @@ function Router() {
       <Route path="/debate/:id" component={DebatePage} />
       <Route path="/summary/:id" component={SummaryPage} />
       <Route path="/trending" component={TrendingPage} />
+      
+      {/* User routes - require authentication */}
+      <ProtectedRoute path="/profile" component={ProfilePage} />
       
       {/* Admin routes are protected */}
       <ProtectedRoute path="/admin/knowledge" component={AdminKnowledgePage} />
