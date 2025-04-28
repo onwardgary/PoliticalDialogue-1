@@ -1,66 +1,54 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
+import { MessageSquare, Loader2 } from "lucide-react";
+
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, MessageSquare } from "lucide-react";
 
-// Login form schema
+// Form validation schemas
 const loginSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
-type LoginData = z.infer<typeof loginSchema>;
-
-// Registration form schema
 const registerSchema = z.object({
-  username: z.string().min(3, { message: "Username must be at least 3 characters" }),
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
   path: ["confirmPassword"],
 });
 
+type LoginData = z.infer<typeof loginSchema>;
 type RegisterData = z.infer<typeof registerSchema>;
 
-// We no longer need the dummy mutation since auth context is always available
-
 export default function AuthPage() {
-  const [_, setLocation] = useLocation();
-  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  const { user, isLoading, login, register } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // We no longer need to use try/catch since useAuth will always return a valid context
-  console.log("Before useAuth call");
-  const { user, loginMutation, registerMutation, isLoading } = useAuth();
-  console.log("After useAuth call:", "Auth context loaded");
-  console.log("Auth context available, user:", user ? `User ${user.username} loaded` : "No user logged in");
-  
-  // Define form for login
+  // Form management for login
   const loginForm = useForm<LoginData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -69,7 +57,7 @@ export default function AuthPage() {
     },
   });
   
-  // Define form for registration
+  // Form management for registration
   const registerForm = useForm<RegisterData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -82,71 +70,29 @@ export default function AuthPage() {
   
   // Handle login form submission
   const onLoginSubmit = async (data: LoginData) => {
-    console.log("Login form submitted:", data);
-    
-    // Print current cookie info 
-    console.log("Current cookies before login:", document.cookie);
-    
-    // Use mutation - should always be available now
     try {
-      console.log("Starting login mutation");
-      loginMutation.mutate(data, {
-        onSuccess: (userData) => {
-          console.log("Login successful through mutation:", userData);
-          console.log("Cookies after successful login:", document.cookie);
-          
-          // Manually navigate to home after successful login
-          setTimeout(() => {
-            console.log("Redirecting to home page after login");
-            setLocation('/');
-          }, 500);
-        },
-        onError: (error) => {
-          console.error("Login mutation error callback:", error);
-        }
-      });
+      setIsSubmitting(true);
+      await login(data.email, data.password);
+      // No need to navigate, the auth provider will handle it
     } catch (error) {
-      console.error("Exception during login mutation execution:", error);
-      toast({
-        title: "Login failed",
-        description: error instanceof Error ? error.message : "Unknown error occurred",
-        variant: "destructive",
-      });
+      console.error("Login failed:", error);
+      // Error toast is handled by the auth provider
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
   // Handle registration form submission
   const onRegisterSubmit = async (data: RegisterData) => {
-    console.log("Registration form submitted:", {...data, password: "***REDACTED***"});
-    
-    // Print current cookie info 
-    console.log("Current cookies before registration:", document.cookie);
-    
-    // Use mutation - should always be available now
     try {
-      console.log("Starting registration mutation");
-      registerMutation.mutate(data, {
-        onSuccess: (userData) => {
-          console.log("Registration successful through mutation:", userData);
-          console.log("Cookies after successful registration:", document.cookie);
-          
-          // Manually navigate to home after successful registration
-          setTimeout(() => {
-            console.log("Redirecting to home page after registration");
-            setLocation('/');
-          }, 500);
-        },
-        onError: (error) => {
-          console.error("Registration mutation error callback:", error);
-        }
-      });
+      setIsSubmitting(true);
+      await register(data.username, data.email, data.password);
+      // No need to navigate, the auth provider will handle it
     } catch (error) {
-      console.error("Exception during registration mutation execution:", error);
-      toast({
-        title: "Registration failed",
-        description: error instanceof Error ? error.message : "Unknown error occurred",
-        variant: "destructive",
-      });
+      console.error("Registration failed:", error);
+      // Error toast is handled by the auth provider
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
@@ -214,9 +160,9 @@ export default function AuthPage() {
                   <Button 
                     type="submit" 
                     className="w-full" 
-                    disabled={loginMutation.isPending || isLoading}
+                    disabled={isLoading || isSubmitting}
                   >
-                    {loginMutation.isPending ? (
+                    {isSubmitting ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : null}
                     Sign In
@@ -287,9 +233,9 @@ export default function AuthPage() {
                   <Button 
                     type="submit" 
                     className="w-full" 
-                    disabled={registerMutation.isPending || isLoading}
+                    disabled={isLoading || isSubmitting}
                   >
-                    {registerMutation.isPending ? (
+                    {isSubmitting ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : null}
                     Create Account

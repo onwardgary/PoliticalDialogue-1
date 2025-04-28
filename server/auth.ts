@@ -32,12 +32,15 @@ export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "suara-sg-secret-key",
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: false, 
     store: storage.sessionStore,
+    name: 'suara.sid', // Set a custom name instead of default connect.sid
     cookie: {
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       sameSite: "lax",
-      secure: false // Set to true in production with HTTPS
+      secure: false, // Set to true in production with HTTPS
+      path: '/', // Make sure cookie is available for all paths
+      httpOnly: true // For security, make cookie accessible only server-side
     }
   };
 
@@ -108,28 +111,74 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
+    console.log("Login API called with:", {
+      email: req.body.email,
+      hasPassword: !!req.body.password
+    });
+    
     passport.authenticate("local", (err, user, info) => {
       if (err) {
+        console.error("Login authentication error:", err);
         return next(err);
       }
       if (!user) {
+        console.log("Login failed: Invalid credentials");
         return res.status(401).json({ message: "Invalid email or password" });
       }
+      
       req.login(user, (err) => {
         if (err) {
+          console.error("Session login error:", err);
           return next(err);
         }
+        
         // Don't send password back to client
         const { password, ...userWithoutPassword } = user;
+        
+        // Log session info
+        console.log("Login success for user:", {
+          id: user.id,
+          username: user.username,
+          email: user.email
+        });
+        
+        console.log("Session info:", {
+          id: req.sessionID,
+          authenticated: req.isAuthenticated()
+        });
+        
         return res.status(200).json(userWithoutPassword);
       });
     })(req, res, next);
   });
 
   app.post("/api/logout", (req, res, next) => {
+    const userId = req.user?.id;
+    const username = req.user?.username;
+    
+    console.log("Logout requested for user:", {
+      userId,
+      username,
+      authenticated: req.isAuthenticated()
+    });
+    
     req.logout((err) => {
-      if (err) return next(err);
-      res.sendStatus(200);
+      if (err) {
+        console.error("Logout error:", err);
+        return next(err);
+      }
+      
+      console.log("Logout successful, session destroyed");
+      // Also destroy the session completely
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Session destruction error:", err);
+          return next(err);
+        }
+        // Clear cookie on client side
+        res.clearCookie('suara.sid');
+        res.sendStatus(200);
+      });
     });
   });
 

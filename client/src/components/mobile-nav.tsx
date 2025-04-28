@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { 
   Home, 
@@ -44,14 +45,17 @@ export function MobileHeader() {
 function MobileSidebar() {
   const [location, setLocation] = useLocation();
   
-  // We no longer need to use try/catch since useAuth will always return a valid context
-  const auth = useAuth();
-  const user = auth.user;
-  const logoutMutation = auth.logoutMutation;
+  const { user, logout } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const isAdmin = user?.isAdmin || false;
   
-  const handleLogout = () => {
-    logoutMutation.mutate();
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      await logout();
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
   
   const handleLogin = () => {
@@ -136,10 +140,10 @@ function MobileSidebar() {
             onClick={handleLogout} 
             variant="outline" 
             className="w-full flex items-center justify-center"
-            disabled={logoutMutation.isPending}
+            disabled={isLoggingOut}
           >
             <LogOut className="mr-2 h-4 w-4" />
-            {logoutMutation.isPending ? "Logging out..." : "Logout"}
+            {isLoggingOut ? "Logging out..." : "Logout"}
           </Button>
         ) : (
           <Button 
