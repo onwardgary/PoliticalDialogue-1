@@ -22,8 +22,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Start a new debate
   app.post("/api/debates", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
+    // For demo purposes, we'll use a fixed guest user ID if not authenticated
+    const isGuest = !req.isAuthenticated();
+    let userId = isGuest ? 1 : req.user.id;
+    
+    // Create a guest user if needed
+    if (isGuest) {
+      try {
+        // Check if there's already a guest user
+        let guestUser = await storage.getUserByUsername("guest");
+        
+        if (!guestUser) {
+          // Create a demo guest user for testing purposes
+          guestUser = await storage.createUser({
+            username: "guest",
+            password: "guest-password-not-for-login", // This is just for demo, never used for login
+            email: "guest@example.com",
+            isAdmin: false
+          });
+        }
+        
+        userId = guestUser.id;
+      } catch (error) {
+        console.error("Error creating guest user:", error);
+        return res.status(500).json({ message: "Failed to create guest user" });
+      }
     }
     
     const bodySchema = z.object({
@@ -42,17 +65,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create system message
       const systemMessage = createPartySystemMessage(party.shortName);
       
+      // Customize welcome message based on topic
+      let welcomeContent = `Hello! I'm the ${party.name} Bot, representing the positions of the ${party.name}.`;
+      
+      if (topic) {
+        welcomeContent += ` I understand you want to discuss ${topic}. What specific aspects of this issue would you like to explore?`;
+      } else {
+        welcomeContent += ` What would you like to discuss today? We can talk about housing, education, healthcare, the economy, or any other policy area you're interested in.`;
+      }
+      
       // Create welcome message
       const welcomeMessage = {
         id: nanoid(),
         role: "assistant" as const,
-        content: `Hello! I'm the ${party.name} Bot, representing the positions of the ${party.name}. What would you like to discuss today? We can talk about housing, education, healthcare, the economy, or any other policy area you're interested in.`,
+        content: welcomeContent,
         timestamp: Date.now(),
       };
       
       // Create debate
       const debate = await storage.createDebate({
-        userId: req.user.id,
+        userId,
         partyId,
         topic: topic || null,
         messages: [systemMessage, welcomeMessage],
@@ -70,15 +102,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid request data", errors: error.errors });
       }
+      console.error("Error creating debate:", error);
       res.status(500).json({ message: "Failed to create debate" });
     }
   });
   
   // Get a specific debate
   app.get("/api/debates/:id", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
+    // For demo purposes, we're allowing anyone to access debates
+    const isGuest = !req.isAuthenticated();
     
     try {
       const debateId = parseInt(req.params.id);
@@ -88,7 +120,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Debate not found" });
       }
       
-      if (debate.userId !== req.user.id) {
+      // Only check authorization if user is authenticated and not the owner
+      if (!isGuest && debate.userId !== req.user.id) {
         return res.status(403).json({ message: "Not authorized to access this debate" });
       }
       
@@ -100,6 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         messages: filteredMessages,
       });
     } catch (error) {
+      console.error("Error fetching debate:", error);
       res.status(500).json({ message: "Failed to fetch debate" });
     }
   });
@@ -131,9 +165,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Send message in debate
   app.post("/api/debates/:id/messages", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
+    // For demo purposes, we're allowing anyone to send messages
+    const isGuest = !req.isAuthenticated();
     
     const bodySchema = z.object({
       content: z.string().min(1),
@@ -148,7 +181,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Debate not found" });
       }
       
-      if (debate.userId !== req.user.id) {
+      // Only check authorization if user is authenticated and not the owner
+      if (!isGuest && debate.userId !== req.user.id) {
         return res.status(403).json({ message: "Not authorized to access this debate" });
       }
       
@@ -201,9 +235,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // End debate and generate summary
   app.post("/api/debates/:id/end", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
+    // For demo purposes, we're allowing anyone to end debates
+    const isGuest = !req.isAuthenticated();
     
     try {
       const debateId = parseInt(req.params.id);
@@ -213,7 +246,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Debate not found" });
       }
       
-      if (debate.userId !== req.user.id) {
+      // Only check authorization if user is authenticated and not the owner
+      if (!isGuest && debate.userId !== req.user.id) {
         return res.status(403).json({ message: "Not authorized to access this debate" });
       }
       

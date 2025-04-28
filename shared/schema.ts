@@ -15,6 +15,12 @@ export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
   email: true,
+  isAdmin: true,
+});
+
+// Default the isAdmin to false when not provided
+export const createUserSchema = insertUserSchema.extend({
+  isAdmin: z.boolean().default(false).optional(),
 });
 
 export type Message = {
