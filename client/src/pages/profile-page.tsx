@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Debate } from "@shared/schema";
 import { 
   Card, 
   CardContent, 
@@ -41,7 +40,8 @@ type UserDebate = {
 
 export default function ProfilePage() {
   const [_, setLocation] = useLocation();
-  const { user, logoutMutation } = useAuth();
+  const { user, logout } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const isMobile = useIsMobile();
 
   // Redirect to auth page if user is not logged in
@@ -72,8 +72,13 @@ export default function ProfilePage() {
   const completedDebates = userDebates?.filter(debate => debate.completed) || [];
   const ongoingDebates = userDebates?.filter(debate => !debate.completed) || [];
 
-  const handleLogout = () => {
-    logoutMutation.mutate();
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      await logout();
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   // Return early if user is not logged in (will redirect via useEffect)
@@ -103,10 +108,10 @@ export default function ProfilePage() {
                 variant="outline" 
                 className="flex items-center"
                 onClick={handleLogout}
-                disabled={logoutMutation.isPending}
+                disabled={isLoggingOut}
               >
                 <LogOut className="mr-2 h-4 w-4" />
-                {logoutMutation.isPending ? "Logging out..." : "Logout"}
+                {isLoggingOut ? "Logging out..." : "Logout"}
               </Button>
             </div>
           </div>
