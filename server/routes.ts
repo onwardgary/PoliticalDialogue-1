@@ -22,12 +22,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Start a new debate
   app.post("/api/debates", async (req, res) => {
-    // For demo purposes, we'll use a fixed guest user ID if not authenticated
-    const isGuest = !req.isAuthenticated();
-    let userId = isGuest ? 1 : req.user.id;
+    // Allow both authenticated and unauthenticated users to start debates
+    let userId;
     
-    // Create a guest user if needed
-    if (isGuest) {
+    if (req.isAuthenticated()) {
+      // Use the authenticated user's ID
+      userId = req.user.id;
+    } else {
+      // Use a guest user for unauthenticated sessions
       try {
         // Check if there's already a guest user
         let guestUser = await storage.getUserByUsername("guest");
