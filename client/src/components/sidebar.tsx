@@ -35,7 +35,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="hidden md:flex flex-col w-64 bg-white border-r border-neutral-200 h-screen fixed left-0 top-0">
+    <aside className="hidden md:flex flex-col w-64 bg-white border-r border-neutral-200 h-screen sticky left-0 top-0">
       <div className="p-4 border-b border-neutral-200">
         <h1 className="text-2xl font-bold text-primary flex items-center">
           <MessageSquare className="mr-2 h-6 w-6" /> Suara.sg
