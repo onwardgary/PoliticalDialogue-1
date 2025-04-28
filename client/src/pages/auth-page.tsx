@@ -4,6 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Card, 
   CardContent, 
@@ -58,6 +60,7 @@ function createDummyMutation() {
 
 export default function AuthPage() {
   const [_, setLocation] = useLocation();
+  const { toast } = useToast();
   
   // Try to use auth hooks, but don't error if they're not available
   // This is a workaround for the case where we just want to show the public auth page UI
@@ -122,6 +125,13 @@ export default function AuthPage() {
       const user = await response.json();
       console.log('Login successful:', user);
       
+      // Show success toast
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+        variant: "default",
+      });
+      
       // Manually update the auth state
       queryClient.setQueryData(["/api/user"], user);
       
@@ -164,6 +174,13 @@ export default function AuthPage() {
       const user = await response.json();
       console.log('Registration successful:', user);
       
+      // Show success toast
+      toast({
+        title: "Registration successful",
+        description: "Your account has been created!",
+        variant: "default",
+      });
+      
       // Manually update the auth state
       queryClient.setQueryData(["/api/user"], user);
       
@@ -171,6 +188,11 @@ export default function AuthPage() {
       setLocation('/');
     } catch (error) {
       console.error("Registration error:", error);
+      toast({
+        title: "Registration failed",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
     }
   };
   
