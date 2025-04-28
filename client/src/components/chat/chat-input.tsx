@@ -17,10 +17,11 @@ type ChatInputProps = {
 export default function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
+  const MAX_CHARS = 280; // Twitter-style character limit
+  
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (message.trim()) {
+    if (message.trim() && message.length <= MAX_CHARS) {
       onSendMessage(message);
       setMessage("");
       // Focus back on textarea after sending
@@ -34,11 +35,15 @@ export default function ChatInput({ onSendMessage, isLoading }: ChatInputProps) 
     // Send message on Ctrl+Enter or Cmd+Enter (Mac)
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();
-      if (message.trim() && !isLoading) {
+      if (message.trim() && !isLoading && message.length <= MAX_CHARS) {
         handleSubmit(e as unknown as FormEvent);
       }
     }
   };
+  
+  // Calculate remaining characters
+  const remainingChars = MAX_CHARS - message.length;
+  const isOverLimit = remainingChars < 0;
 
   return (
     <div className="bg-white border-t border-neutral-200 p-4">
@@ -69,7 +74,7 @@ export default function ChatInput({ onSendMessage, isLoading }: ChatInputProps) 
         <Button 
           type="submit" 
           className="ml-2 min-h-[60px] px-4" 
-          disabled={!message.trim() || isLoading}
+          disabled={!message.trim() || isLoading || isOverLimit}
         >
           {isLoading ? (
             <span className="animate-pulse">Sending...</span>
@@ -82,9 +87,12 @@ export default function ChatInput({ onSendMessage, isLoading }: ChatInputProps) 
         </Button>
       </form>
       <div className="flex justify-between mt-2 text-xs text-neutral-500">
-        <div>
+        <div className="flex items-center gap-2">
           <kbd className="px-1 py-0.5 text-xs text-neutral-700 bg-neutral-100 border border-neutral-300 rounded">Ctrl+Enter</kbd>
           <span className="ml-1">to send</span>
+          <span className={`ml-2 ${isOverLimit ? 'text-red-500 font-medium' : remainingChars <= 50 ? 'text-amber-500' : ''}`}>
+            {isOverLimit ? `${Math.abs(remainingChars)} over limit` : `${remainingChars} left`}
+          </span>
         </div>
         <TooltipProvider>
           <Tooltip>

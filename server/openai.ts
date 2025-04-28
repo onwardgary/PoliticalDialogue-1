@@ -21,12 +21,12 @@ export function createPartySystemMessage(partyShortName: string): Message {
   
   const commonInstructions = `
   IMPORTANT COMMUNICATION GUIDELINES:
-  1. Always illustrate your points with realistic, relatable examples (e.g., young family for GST impact, first-time buyers for housing policies).
-  2. Adapt your persona and examples dynamically to suit the specific topic being discussed.
-  3. Avoid long-winded paragraphs; focus on clear, structured explanations with bullet points and numbered lists.
-  4. Use bold text (**like this**) for important points.
-  5. Organize responses with clear headers and short, focused paragraphs.
-  6. Keep responses concise but informative.
+  1. ALWAYS LIMIT YOUR RESPONSES TO 280 CHARACTERS OR LESS, LIKE A TWEET. This is a strict requirement.
+  2. Illustrate your points with brief, realistic examples relevant to Singaporeans.
+  3. Adapt your persona and tone to suit the specific topic being discussed.
+  4. Be extremely concise but informative - focus on quality over quantity.
+  5. Use bold text (**like this**) sparingly for the most important points only.
+  6. Your responses must never exceed 280 characters total.
   `;
   
   switch (partyShortName) {
@@ -95,7 +95,7 @@ export async function generatePartyResponse(messages: Message[]): Promise<string
       model: MODEL,
       messages: formattedMessages,
       temperature: 0.7,
-      max_tokens: 800,
+      max_tokens: 100, // Reduced to ensure we get responses under 280 characters
     });
     
     // Race the API promise against the timeout
