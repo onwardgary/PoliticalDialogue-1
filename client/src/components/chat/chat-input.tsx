@@ -12,18 +12,34 @@ import {
 type ChatInputProps = {
   onSendMessage: (message: string) => void;
   isLoading: boolean;
+  onTypingStateChange?: (isTyping: boolean) => void;
 };
 
-export default function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
+export default function ChatInput({ onSendMessage, isLoading, onTypingStateChange }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const MAX_CHARS = 560; // Doubled character limit for users
   
+  // Handle sending the message
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (message.trim() && message.length <= MAX_CHARS) {
+      // Stop typing indicator when sending a message
+      if (onTypingStateChange) {
+        onTypingStateChange(false);
+      }
+      
+      // Clear any existing typing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+      
+      // Send the message
       onSendMessage(message);
       setMessage("");
+      
       // Focus back on textarea after sending
       setTimeout(() => {
         textareaRef.current?.focus();
@@ -54,7 +70,26 @@ export default function ChatInput({ onSendMessage, isLoading }: ChatInputProps) 
             placeholder="Type your message... (Ctrl+Enter to send)"
             className="w-full resize-none pr-10 min-h-[60px] focus:outline-none focus:ring-1 focus:ring-primary"
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={(e) => {
+              setMessage(e.target.value);
+              
+              // Handle typing indicator
+              if (onTypingStateChange) {
+                // User is typing
+                onTypingStateChange(true);
+                
+                // Clear any existing typing timeout
+                if (typingTimeoutRef.current) {
+                  clearTimeout(typingTimeoutRef.current);
+                }
+                
+                // Set a new timeout to turn off typing indicator after 1 second of inactivity
+                typingTimeoutRef.current = setTimeout(() => {
+                  onTypingStateChange(false);
+                  typingTimeoutRef.current = null;
+                }, 1000);
+              }
+            }}
             onKeyDown={handleKeyDown}
             disabled={isLoading}
             autoFocus

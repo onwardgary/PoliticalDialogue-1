@@ -8,6 +8,7 @@ type ChatInterfaceProps = {
   isLoading: boolean;
   onSendMessage?: (message: string) => void;
   partyShortName?: string;
+  userTyping?: boolean;
 };
 
 // Suggested topics to help start the conversation

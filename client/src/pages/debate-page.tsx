@@ -31,6 +31,7 @@ export default function DebatePage() {
   const { toast } = useToast();
   const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
   const [pendingMessages, setPendingMessages] = useState<Message[]>([]);
+  const [isUserTyping, setIsUserTyping] = useState(false);
   
   // Fetch debate data
   const { data: debate, isLoading: isLoadingDebate } = useQuery({
@@ -273,10 +274,12 @@ export default function DebatePage() {
               isLoading={isSendingMessage}
               onSendMessage={handleSendMessage}
               partyShortName={party?.shortName}
+              userTyping={isUserTyping}
             />
             <ChatInput 
               onSendMessage={handleSendMessage}
               isLoading={isSendingMessage}
+              onTypingStateChange={setIsUserTyping}
             />
           </>
         )}
