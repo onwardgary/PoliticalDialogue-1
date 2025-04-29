@@ -19,11 +19,97 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { InfoIcon, XIcon } from "lucide-react";
+import { InfoIcon, XIcon, CheckCircle2, Scale, MedalIcon, BrainCircuit } from "lucide-react";
 import { Message, DebateSummary as DebateSummaryType } from "@shared/schema";
 import DebateSummary from "@/components/debate-summary";
 import { Separator } from "@/components/ui/separator";
 import { Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Card, CardContent } from "@/components/ui/card";
+
+// Component to display summary generation progress
+function SummaryGenerationLoader({ step }: { step: number }) {
+  const steps = [
+    { id: 1, name: "Analyzing Arguments", icon: BrainCircuit, description: "Identifying key points from both sides" },
+    { id: 2, name: "Evaluating Logic", icon: Scale, description: "Assessing the strength of each argument" },
+    { id: 3, name: "Determining Outcome", icon: MedalIcon, description: "Deciding on the debate winner" },
+    { id: 4, name: "Creating Summary", icon: CheckCircle2, description: "Finalizing the debate summary and recommendations" },
+  ];
+  
+  return (
+    <div className="flex flex-col items-center justify-center h-full p-6">
+      <Card className="w-full max-w-lg">
+        <CardContent className="pt-6">
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-semibold">Generating Debate Summary</h3>
+              <p className="text-muted-foreground text-sm">Please wait while we analyze your debate</p>
+            </div>
+            
+            <Progress value={(step / steps.length) * 100} className="h-2 mb-8" />
+            
+            <div className="space-y-4">
+              {steps.map((s) => {
+                const Icon = s.icon;
+                const isActive = s.id === step;
+                const isCompleted = s.id < step;
+                
+                return (
+                  <div 
+                    key={s.id} 
+                    className={`flex items-center p-3 rounded-lg transition-all ${
+                      isActive 
+                        ? "bg-primary/10 border border-primary/20" 
+                        : isCompleted 
+                          ? "bg-green-50 border border-green-100"
+                          : "bg-neutral-50 border border-neutral-100"
+                    }`}
+                  >
+                    <div 
+                      className={`rounded-full p-2 mr-3 ${
+                        isActive 
+                          ? "bg-primary/20 text-primary" 
+                          : isCompleted 
+                            ? "bg-green-100 text-green-700"
+                            : "bg-neutral-100 text-neutral-400"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className={`font-medium ${
+                        isActive 
+                          ? "text-primary" 
+                          : isCompleted 
+                            ? "text-green-700"
+                            : "text-neutral-500"
+                      }`}>
+                        {s.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {s.description}
+                      </p>
+                    </div>
+                    {isActive && (
+                      <div className="ml-auto">
+                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      </div>
+                    )}
+                    {isCompleted && (
+                      <div className="ml-auto">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 export default function DebatePage() {
   const { id } = useParams();
@@ -32,6 +118,7 @@ export default function DebatePage() {
   const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
   const [pendingMessages, setPendingMessages] = useState<Message[]>([]);
   const [isUserTyping, setIsUserTyping] = useState(false);
+  const [summaryGenerationStep, setSummaryGenerationStep] = useState<number | null>(null);
   
   // Fetch debate data
   const { data: debate, isLoading: isLoadingDebate } = useQuery({
@@ -140,6 +227,16 @@ export default function DebatePage() {
         };
       });
       setIsEndDialogOpen(false);
+      // Reset the summary generation step when summary is complete
+      setSummaryGenerationStep(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to generate summary",
+        description: "There was a problem generating the debate summary. Please try again.",
+        variant: "destructive",
+      });
+      setSummaryGenerationStep(null);
     },
   });
   
@@ -168,6 +265,20 @@ export default function DebatePage() {
   };
   
   const handleEndDebate = () => {
+    // Start the progress animation
+    setSummaryGenerationStep(1);
+    
+    // Simulate progress steps (the actual generation will take several seconds)
+    const totalSteps = 4;
+    const stepInterval = 1000; // 1 second between steps
+    
+    for (let step = 2; step <= totalSteps; step++) {
+      setTimeout(() => {
+        setSummaryGenerationStep(step);
+      }, stepInterval * (step - 1));
+    }
+    
+    // Start the actual summary generation
     endDebateMutation.mutate();
   };
   
@@ -266,6 +377,11 @@ export default function DebatePage() {
                 Start a New Debate
               </Button>
             </div>
+          </div>
+        ) : summaryGenerationStep ? (
+          // Show the summary generation loading UI when generating summary
+          <div className="flex-1 overflow-auto bg-neutral-50">
+            <SummaryGenerationLoader step={summaryGenerationStep} />
           </div>
         ) : (
           <>
