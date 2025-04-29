@@ -20,11 +20,11 @@ const SUGGESTED_TOPICS = [
   { topic: "Public transport", prompt: "What are your plans to improve public transportation?" },
 ];
 
-export default function ChatInterface({ messages, isLoading, onSendMessage, partyShortName = "BOT" }: ChatInterfaceProps) {
+export default function ChatInterface({ messages, isLoading, onSendMessage, partyShortName = "BOT", userTyping = false }: ChatInterfaceProps) {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll to bottom when messages change or typing indicators appear
   useEffect(() => {
     const container = chatContainerRef.current;
     if (container) {
@@ -38,7 +38,7 @@ export default function ChatInterface({ messages, isLoading, onSendMessage, part
         setShowScrollButton(true);
       }
     }
-  }, [messages]);
+  }, [messages, isLoading, userTyping]);
 
   // Handle scroll events to show/hide scroll button
   useEffect(() => {
@@ -125,7 +125,7 @@ export default function ChatInterface({ messages, isLoading, onSendMessage, part
         );
       })}
 
-      {/* Typing indicator */}
+      {/* Bot typing indicator */}
       {isLoading && (
         <div className="flex mb-4 animate-fadeIn">
           <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center mr-2 flex-shrink-0">
@@ -137,6 +137,22 @@ export default function ChatInterface({ messages, isLoading, onSendMessage, part
               <div className="w-2 h-2 bg-neutral-300 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
               <div className="w-2 h-2 bg-neutral-300 rounded-full animate-bounce" style={{ animationDelay: "0.4s" }}></div>
             </div>
+          </div>
+        </div>
+      )}
+      
+      {/* User typing indicator */}
+      {userTyping && (
+        <div className="flex mb-4 animate-fadeIn justify-end">
+          <div className="bg-primary/10 p-3 rounded-lg rounded-tr-none shadow-sm flex items-center h-10">
+            <div className="flex space-x-1">
+              <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce"></div>
+              <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+              <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "0.4s" }}></div>
+            </div>
+          </div>
+          <div className="w-8 h-8 bg-primary/90 rounded-full flex items-center justify-center ml-2 flex-shrink-0">
+            <span className="text-white font-bold text-xs">YOU</span>
           </div>
         </div>
       )}
