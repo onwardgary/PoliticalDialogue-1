@@ -7,6 +7,7 @@ import { MobileHeader, MobileNavigation } from "@/components/mobile-nav";
 import ChatInterface from "@/components/chat/chat-interface";
 import ChatInput from "@/components/chat/chat-input";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -27,7 +28,9 @@ import { Loader2 } from "lucide-react";
 export default function DebatePage() {
   const { id } = useParams();
   const [_, setLocation] = useLocation();
+  const { toast } = useToast();
   const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
+  const [pendingMessages, setPendingMessages] = useState<Message[]>([]);
   
   // Fetch debate data
   const { data: debate, isLoading: isLoadingDebate } = useQuery({
@@ -75,25 +78,47 @@ export default function DebatePage() {
     onSuccess: (data) => {
       console.log("Updating UI with new messages:", data);
       
-      // Force refetch debate data
-      queryClient.invalidateQueries({ queryKey: [`/api/debates/${id}`] });
-      
-      // Direct update of cache
+      // Direct update of cache - remove temp message and add the official ones
       queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
         if (!old) {
           console.log("No existing debate data to update");
           return old;
         }
-        console.log("Existing messages:", old.messages.length);
+        
+        // Filter out the temporary message we added
+        const filteredMessages = old.messages.filter((msg: Message) => !msg.id.startsWith('temp-'));
+        console.log("Filtered messages:", filteredMessages.length);
+        
         return {
           ...old,
-          messages: [...old.messages, data.userMessage, data.assistantMessage],
+          // Add the real user message and assistant response from the API
+          messages: [...filteredMessages, data.userMessage, data.assistantMessage],
           updatedAt: new Date().toISOString(),
         };
       });
     },
     onError: (error) => {
       console.error("Error sending message:", error);
+      
+      // Show error toast to the user
+      toast({
+        title: "Message failed to send",
+        description: "There was a problem sending your message. Please try again.",
+        variant: "destructive",
+      });
+      
+      // Remove the temporary message from the UI
+      queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
+        if (!old) return old;
+        
+        // Filter out any temporary messages
+        const filteredMessages = old.messages.filter((msg: Message) => !msg.id.startsWith('temp-'));
+        
+        return {
+          ...old,
+          messages: filteredMessages,
+        };
+      });
     }
   });
   
@@ -119,6 +144,25 @@ export default function DebatePage() {
   
   const handleSendMessage = (content: string) => {
     if (debate?.completed) return;
+    
+    // Create temporary user message and add it to the UI immediately
+    const tempUserMessage: Message = {
+      id: `temp-${Date.now()}`,
+      role: "user",
+      content: content,
+      timestamp: Date.now()
+    };
+    
+    // Update local state to show the message right away
+    queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
+      if (!old) return old;
+      return {
+        ...old,
+        messages: [...old.messages, tempUserMessage],
+      };
+    });
+    
+    // Then send to the API
     sendMessageMutation.mutate(content);
   };
   
