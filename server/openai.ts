@@ -202,12 +202,13 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
          - "citizenPosition": The citizen's stance on this issue
       4. "conclusion": An in-depth assessment of the debate with:
          - "outcome": Must be either "party" (if party arguments were stronger) or "citizen" (if citizen arguments were stronger). Choose the side that presented the overall more convincing case
-         - "evaluation": A structured analysis based on four key pillars:
+         - "evaluation": A structured analysis based on five key pillars:
             * "logicalSoundness": Brief assessment (1-2 sentences) of how fact-based and logically coherent each side's arguments were 
             * "emotionalReasoning": Brief assessment (1-2 sentences) of how effectively and appropriately emotional appeals were used
             * "keyPointResolution": Brief assessment (1-2 sentences) of how directly each side addressed the core challenges raised
             * "toneAndClarity": Brief assessment (1-2 sentences) of the professionalism, seriousness, and clarity of communication
-         - "reasoning": A final justification explaining the overall outcome based on the four pillars
+            * "pragmatism": Brief assessment (1-2 sentences) of how practical, implementable, and cost-effective each side's proposals are in the Singaporean context
+         - "reasoning": A final justification explaining the overall outcome based on the five pillars
          - "actionRecommendations": At least 2 specific, actionable recommendations for either the government or citizens to better address the debate topic
       
       IMPORTANT: Use your web search capabilities to verify facts and claims made by both the party and citizen when needed. This may include looking up official policy positions, economic statistics, or recent political developments in Singapore (2024-2025).
@@ -255,7 +256,8 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
             logicalSoundness: "Not enough information to assess logical soundness",
             emotionalReasoning: "Not enough information to assess emotional appeals",
             keyPointResolution: "Not enough information to assess resolution of key points",
-            toneAndClarity: "Not enough information to assess tone and clarity"
+            toneAndClarity: "Not enough information to assess tone and clarity",
+            pragmatism: "Not enough information to assess pragmatism and implementability"
           },
           reasoning: "Analysis could not determine a clear winner due to insufficient content",
           actionRecommendations: [
@@ -281,7 +283,8 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
             logicalSoundness: "Could not be evaluated due to technical issues",
             emotionalReasoning: "Could not be evaluated due to technical issues",
             keyPointResolution: "Could not be evaluated due to technical issues",
-            toneAndClarity: "Could not be evaluated due to technical issues"
+            toneAndClarity: "Could not be evaluated due to technical issues",
+            pragmatism: "Could not be evaluated due to technical issues"
           },
           reasoning: "Technical issues prevented proper analysis of the debate",
           actionRecommendations: [
@@ -313,7 +316,8 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
           logicalSoundness: "Could not be evaluated due to technical issues",
           emotionalReasoning: "Could not be evaluated due to technical issues",
           keyPointResolution: "Could not be evaluated due to technical issues",
-          toneAndClarity: "Could not be evaluated due to technical issues"
+          toneAndClarity: "Could not be evaluated due to technical issues",
+          pragmatism: "Could not be evaluated due to technical issues"
         },
         reasoning: "Technical difficulties prevented analysis of the debate",
         actionRecommendations: [
