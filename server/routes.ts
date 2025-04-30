@@ -269,12 +269,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const assistantResponse = await generatePartyResponse(updatedMessages);
           
           console.log(`Got AI response, creating assistant message for debate ${debateId}`);
-          // Add assistant message
+          // Add assistant message with searchEnabled flag
           const assistantMessage = {
             id: nanoid(),
             role: "assistant" as const,
-            content: assistantResponse,
+            content: assistantResponse.content,
             timestamp: Date.now(),
+            searchEnabled: assistantResponse.searchEnabled
           };
           
           const finalMessages = [...updatedMessages, assistantMessage];
@@ -367,12 +368,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const assistantResponse = await generatePartyResponse(updatedMessages);
           
           console.log(`Got AI response, creating assistant message for debate ${debate.id} (${secureId})`);
-          // Add assistant message
+          // Add assistant message with searchEnabled flag
           const assistantMessage = {
             id: nanoid(),
             role: "assistant" as const,
-            content: assistantResponse,
+            content: assistantResponse.content,
             timestamp: Date.now(),
+            searchEnabled: assistantResponse.searchEnabled
           };
           
           const finalMessages = [...updatedMessages, assistantMessage];

@@ -114,7 +114,7 @@ export function createPartySystemMessage(partyShortName: string): Message {
 }
 
 // Generate a response from the AI based on the conversation history
-export async function generatePartyResponse(messages: Message[]): Promise<string> {
+export async function generatePartyResponse(messages: Message[]): Promise<{content: string, searchEnabled: boolean}> {
   try {
     console.log("Generating party response with API key present:", !!API_KEY);
     console.log("Number of messages:", messages.length);
@@ -126,6 +126,9 @@ export async function generatePartyResponse(messages: Message[]): Promise<string
     // Select the appropriate model based on the user's query
     const model = selectModel('conversation', latestUserMessage);
     console.log(`Using model for party response: ${model}`);
+    
+    // Track if search was used for this message
+    const searchEnabled = model === MODELS.SEARCH;
     
     // Convert Messages to OpenAI format
     const formattedMessages = messages.map(msg => ({
@@ -163,7 +166,8 @@ export async function generatePartyResponse(messages: Message[]): Promise<string
     
     console.log("Received response from OpenAI API");
     // @ts-ignore - Type definitions don't match the actual API response structure
-    return response.choices[0].message.content || "I'm sorry, I couldn't generate a response.";
+    const content = response.choices[0].message.content || "I'm sorry, I couldn't generate a response.";
+    return { content, searchEnabled };
   } catch (error) {
     console.error("Error generating party response:", error);
     // Provide more detailed error information
@@ -173,7 +177,10 @@ export async function generatePartyResponse(messages: Message[]): Promise<string
     }
     
     // Return a fallback response instead of throwing
-    return "I apologize, but I'm having trouble connecting to our AI service at the moment. Please try again shortly.";
+    return { 
+      content: "I apologize, but I'm having trouble connecting to our AI service at the moment. Please try again shortly.",
+      searchEnabled: false 
+    };
   }
 }
 
