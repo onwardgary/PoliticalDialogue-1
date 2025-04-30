@@ -112,7 +112,15 @@ export class DatabaseStorage implements IStorage {
   // Debate methods
   async createDebate(debate: InsertDebate): Promise<Debate> {
     try {
-      const [newDebate] = await db.insert(debates).values(debate).returning();
+      // Generate a secure unique ID using nanoid
+      const { nanoid } = await import('nanoid');
+      const secureId = nanoid(16); // Create a 16-character secure ID
+      
+      const [newDebate] = await db.insert(debates).values({
+        ...debate,
+        secureId
+      }).returning();
+      
       return newDebate;
     } catch (error) {
       console.error("Error in createDebate:", error);
@@ -126,6 +134,16 @@ export class DatabaseStorage implements IStorage {
       return debate;
     } catch (error) {
       console.error("Error in getDebate:", error);
+      return undefined;
+    }
+  }
+  
+  async getDebateBySecureId(secureId: string): Promise<Debate | undefined> {
+    try {
+      const [debate] = await db.select().from(debates).where(eq(debates.secureId, secureId));
+      return debate;
+    } catch (error) {
+      console.error("Error in getDebateBySecureId:", error);
       return undefined;
     }
   }

@@ -40,6 +40,7 @@ export const parties = pgTable("parties", {
 
 export const debates = pgTable("debates", {
   id: serial("id").primaryKey(),
+  secureId: text("secure_id").notNull().unique(), // Unique, secure identifier for public URLs
   userId: integer("user_id").references(() => users.id).notNull(),
   partyId: integer("party_id").references(() => parties.id).notNull(),
   topic: text("topic"),

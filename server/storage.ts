@@ -22,6 +22,7 @@ export interface IStorage {
   // Debate methods
   createDebate(debate: InsertDebate): Promise<Debate>;
   getDebate(id: number): Promise<Debate | undefined>;
+  getDebateBySecureId(secureId: string): Promise<Debate | undefined>;
   getUserDebates(userId: number): Promise<Debate[]>;
   getAllDebates(): Promise<Debate[]>;
   updateDebateMessages(id: number, messages: Message[]): Promise<Debate>;
