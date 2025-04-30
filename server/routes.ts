@@ -221,7 +221,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Send message in debate
-  app.post("/api/debates/:id/messages", async (req, res) => {
+  // Send message in debate - legacy numeric ID version
+  app.post("/api/debates/:id([0-9]+)/messages", async (req, res) => {
     // For demo purposes, we're allowing anyone to send messages
     const isGuest = !req.isAuthenticated();
     
@@ -318,8 +319,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // End debate and generate summary
-  app.post("/api/debates/:id/end", async (req, res) => {
+  // Send message in debate - secure ID version
+  app.post("/api/debates/s/:secureId/messages", async (req, res) => {
+    // For demo purposes, we're allowing anyone to send messages
+    const isGuest = !req.isAuthenticated();
+    
+    const bodySchema = z.object({
+      content: z.string().min(1),
+    });
+    
+    try {
+      const { content } = bodySchema.parse(req.body);
+      const secureId = req.params.secureId;
+      console.log(`Processing message for debate with secure ID ${secureId}`);
+      
+      const debate = await storage.getDebateBySecureId(secureId);
+      
+      if (!debate) {
+        return res.status(404).json({ message: "Debate not found" });
+      }
+      
+      // Only check authorization if user is authenticated and not the owner
+      if (!isGuest && debate.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to access this debate" });
+      }
+      
+      if (debate.completed) {
+        return res.status(400).json({ message: "This debate has already been completed" });
+      }
+      
+      console.log(`Creating user message for debate ${debate.id} (${secureId})`);
+      // Add user message
+      const userMessage = {
+        id: nanoid(),
+        role: "user" as const,
+        content,
+        timestamp: Date.now(),
+      };
+      
+      const updatedMessages = [...debate.messages, userMessage];
+      
+      // First, immediately update the debate with the user message
+      // This ensures the user message is saved right away
+      await storage.updateDebateMessages(debate.id, updatedMessages);
+      
+      // Begin an asynchronous process to generate and save the AI response
+      // Don't await this - we'll respond to the client immediately
+      (async () => {
+        try {
+          console.log(`Generating AI response for debate ${debate.id} (${secureId})...`);
+          // Generate AI response with a timeout
+          const assistantResponse = await generatePartyResponse(updatedMessages);
+          
+          console.log(`Got AI response, creating assistant message for debate ${debate.id} (${secureId})`);
+          // Add assistant message
+          const assistantMessage = {
+            id: nanoid(),
+            role: "assistant" as const,
+            content: assistantResponse,
+            timestamp: Date.now(),
+          };
+          
+          const finalMessages = [...updatedMessages, assistantMessage];
+          
+          // Update debate with assistant message
+          await storage.updateDebateMessages(debate.id, finalMessages);
+          console.log(`Updated debate ${debate.id} (${secureId}) with AI response`);
+        } catch (openAiError) {
+          console.error(`OpenAI API error for debate ${debate.id} (${secureId}):`, openAiError);
+          
+          // Create a fallback message when OpenAI fails
+          const fallbackMessage = {
+            id: nanoid(),
+            role: "assistant" as const,
+            content: "I'm sorry, I'm having trouble connecting to our AI service. Please try again in a moment.",
+            timestamp: Date.now(),
+          };
+          
+          const fallbackMessages = [...updatedMessages, fallbackMessage];
+          await storage.updateDebateMessages(debate.id, fallbackMessages);
+          console.log(`Updated debate ${debate.id} (${secureId}) with fallback message due to API error`);
+        }
+      })().catch(err => console.error(`Unhandled error in AI response generation for debate ${debate.id} (${secureId}):`, err));
+      
+      // Respond to the client immediately with just the user message
+      // This reduces latency since we don't wait for the AI response
+      res.status(201).json({
+        userMessage,
+        // No assistantMessage here; the client will get it via polling or socket update
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid message content", errors: error.errors });
+      }
+      console.error("Error sending message:", error);
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+  
+  // End debate and generate summary - legacy numeric ID version
+  app.post("/api/debates/:id([0-9]+)/end", async (req, res) => {
     // For demo purposes, we're allowing anyone to end debates
     const isGuest = !req.isAuthenticated();
     
@@ -383,8 +482,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Vote on a debate
-  app.post("/api/debates/:id/vote", async (req, res) => {
+  // End debate and generate summary - secure ID version
+  app.post("/api/debates/s/:secureId/end", async (req, res) => {
+    // For demo purposes, we're allowing anyone to end debates
+    const isGuest = !req.isAuthenticated();
+    
+    try {
+      const secureId = req.params.secureId;
+      console.log(`Ending debate with secure ID ${secureId}`);
+      
+      const debate = await storage.getDebateBySecureId(secureId);
+      
+      if (!debate) {
+        return res.status(404).json({ message: "Debate not found" });
+      }
+      
+      // Only check authorization if user is authenticated and not the owner
+      if (!isGuest && debate.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to access this debate" });
+      }
+      
+      if (debate.completed) {
+        return res.status(400).json({ message: "This debate has already been completed" });
+      }
+      
+      console.log(`Generating summary for debate ${debate.id} (${secureId})...`);
+      
+      try {
+        // Generate summary
+        const summary = await generateDebateSummary(debate.messages);
+        
+        console.log(`Got summary, completing debate ${debate.id} (${secureId})`);
+        // Update debate with summary and mark as completed
+        const updatedDebate = await storage.completeDebate(debate.id, summary);
+        
+        // Return summary
+        res.json({ summary });
+      } catch (openAiError) {
+        console.error(`OpenAI API error for debate summary ${debate.id} (${secureId}):`, openAiError);
+        
+        // Create a fallback summary when OpenAI fails
+        const fallbackSummary = {
+          partyArguments: ["The party presented their official position on this topic",
+                         "The party highlighted key policy initiatives",
+                         "The party explained the reasoning behind their approach",
+                         "The party addressed specific concerns raised",
+                         "The party outlined their vision for the future"],
+          citizenArguments: ["The citizen asked about specific policies",
+                           "The citizen raised concerns about implementation",
+                           "The citizen shared personal perspectives",
+                           "The citizen questioned certain aspects of the policy",
+                           "The citizen engaged with different viewpoints"]
+        };
+        
+        // Still complete the debate with the fallback summary
+        await storage.completeDebate(debate.id, fallbackSummary);
+        
+        // Return the fallback summary
+        res.json({ summary: fallbackSummary });
+      }
+    } catch (error) {
+      console.error("Error ending debate:", error);
+      res.status(500).json({ message: "Failed to end debate and generate summary" });
+    }
+  });
+
+  // Vote on a debate - legacy numeric ID version
+  app.post("/api/debates/:id([0-9]+)/vote", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
     }
