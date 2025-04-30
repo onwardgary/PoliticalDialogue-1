@@ -7,6 +7,7 @@ import Sidebar from "@/components/sidebar";
 import { MobileHeader, MobileNavigation } from "@/components/mobile-nav";
 import DebateSummary from "@/components/debate-summary";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Clock, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -90,15 +91,15 @@ export default function SummaryPage() {
         <main className="flex-1">
           <MobileHeader />
           <div className="p-6">
-            <Card>
-              <CardContent className="p-6">
+            <div className="rounded-lg border bg-white shadow-sm">
+              <div className="p-6">
                 <h3 className="text-lg font-semibold mb-4">Your Debate Summary</h3>
                 <div className="flex items-center space-x-2 text-neutral-600">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <p>The summary is still being generated. Please wait a moment...</p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         </main>
       </div>
