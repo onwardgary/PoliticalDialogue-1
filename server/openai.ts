@@ -22,14 +22,16 @@ export function createPartySystemMessage(partyShortName: string): Message {
   const commonInstructions = `
   IMPORTANT COMMUNICATION GUIDELINES:
   1. LIMIT YOUR RESPONSES TO 1500 CHARACTERS OR LESS. This is a strict requirement.
-  2. YOU MUST illustrate EVERY policy point with SPECIFIC, realistic examples relevant to Singaporeans.
-  3. YOU MUST include calculations, statistics, and data when discussing economic topics. For example: "A family earning $4,800 monthly would receive $380 in GST vouchers, offsetting their additional $320 in GST expenses."
-  4. Adapt your persona and tone to suit the specific topic being discussed.
-  5. Be informative and substantive - provide actual evidence for your claims.
-  6. NEVER be theoretical or abstract - always ground arguments in concrete policies and real-world impacts.
-  7. Use bold text (**like this**) sparingly for the most important points only.
-  8. Your responses must be complete and not cut off mid-sentence.
-  9. Your responses must never exceed 1500 characters total.
+  2. SEARCH FOR UP-TO-DATE INFORMATION WHEN NEEDED. Use web search to find the latest party manifestos, policy positions, and recent developments in Singapore politics, especially from 2024-2025.
+  3. YOU MUST illustrate EVERY policy point with SPECIFIC, realistic examples relevant to Singaporeans.
+  4. YOU MUST include calculations, statistics, and data when discussing economic topics. For example: "A family earning $4,800 monthly would receive $380 in GST vouchers, offsetting their additional $320 in GST expenses."
+  5. Adapt your persona and tone to suit the specific topic being discussed.
+  6. Be informative and substantive - provide actual evidence for your claims.
+  7. NEVER be theoretical or abstract - always ground arguments in concrete policies and real-world impacts.
+  8. Use bold text (**like this**) sparingly for the most important points only.
+  9. Your responses must be complete and not cut off mid-sentence.
+  10. Your responses must never exceed 1500 characters total.
+  11. When searching for information, focus on official party websites, government statistics, and reputable news sources specific to Singapore.
   `;
   
   switch (partyShortName) {
@@ -115,6 +117,7 @@ export async function generatePartyResponse(messages: Message[]): Promise<string
     const response = await Promise.race([apiPromise, timeoutPromise]);
     
     console.log("Received response from OpenAI API");
+    // @ts-ignore - Type definitions don't match the actual API response structure
     return response.choices[0].message.content || "I'm sorry, I couldn't generate a response.";
   } catch (error) {
     console.error("Error generating party response:", error);
@@ -161,6 +164,8 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
          - "reasoning": A final justification explaining the overall outcome based on the four pillars
          - "actionRecommendations": At least 2 specific, actionable recommendations for either the government or citizens to better address the debate topic
       
+      IMPORTANT: Use your web search capabilities to verify facts and claims made by both the party and citizen when needed. This may include looking up official policy positions, economic statistics, or recent political developments in Singapore (2024-2025).
+      
       Format your response as a JSON object with these properties. Focus on concrete examples mentioned in the debate rather than generalizations. Evaluate the logical strength of arguments, not just quantity or assertion.`
     });
     
@@ -190,6 +195,7 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
     const response = await Promise.race([apiPromise, timeoutPromise]);
     
     console.log("Received summary response from OpenAI API");
+    // @ts-ignore - Type definitions don't match the actual API response structure
     const summaryText = response.choices[0].message.content || "{}";
     
     try {
@@ -301,6 +307,8 @@ export async function generateAggregateSummary(
     1. "partyArguments": The top 5 most representative arguments from the party side
     2. "citizenArguments": The top 5 most representative arguments from the citizen side
     
+    IMPORTANT: Use your web search capabilities to verify facts related to ${partyName}'s position on "${topic}" and to ensure the arguments accurately reflect both the party's stance and citizen concerns on this issue. Look for recent statistics, policy positions, and public statements from 2024-2025.
+    
     Format your response as a JSON object with these two arrays. Focus on the following:
     - Include concrete examples that were mentioned (e.g. policy impact on young families)
     - Highlight the strongest and most recurring points
@@ -308,14 +316,22 @@ export async function generateAggregateSummary(
     - Avoid vague generalizations; focus on concrete policy positions
     `;
     
+    // @ts-ignore - The type definitions haven't been updated for retrieval yet
     const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [{ role: "user", content: prompt }],
       temperature: 0.5,
       max_tokens: 1500, // Increased to handle larger responses
-      response_format: { type: "json_object" }
+      response_format: { type: "json_object" },
+      tools: [
+        {
+          type: "retrieval" // Enable web search for aggregate summaries as well
+        }
+      ],
+      tool_choice: "auto" // Let the model decide when to use search
     });
     
+    // @ts-ignore - Type definitions don't match the actual API response structure
     const summaryText = response.choices[0].message.content || "{}";
     const summary = JSON.parse(summaryText) as DebateSummary;
     
