@@ -252,30 +252,71 @@ export default function DebatePage() {
         };
       });
       
-      // Add a brief delay before starting polling to ensure smooth UI
-      setTimeout(() => {
-        // Start polling with an increasing delay to reduce server load
-        // but also ensure we get the response in a reasonable time
-        let pollCount = 0;
-        let currentDelay = 1000; // Start with 1s delay
+      // Start polling with an adaptive delay
+      // We'll start polling right away but do so intelligently
+      let pollCount = 0;
+      let currentDelay = 1200; // Start with 1.2s delay (after typing indicator appears)
+      let hasReceivedResponse = false;
+      
+      const pollInterval = setInterval(() => {
+        pollCount++;
         
-        const pollInterval = setInterval(() => {
-          pollCount++;
+        if (pollCount <= 30 && !hasReceivedResponse) { // Poll for 30 attempts max
+          console.log("Polling for AI response...");
           
-          if (pollCount <= 30) { // Poll for 30 attempts max
-            console.log("Polling for AI response...");
-            queryClient.invalidateQueries({ queryKey: [`/api/debates/${id}`] });
+          // When we query for new data, check if the response has arrived
+          queryClient.fetchQuery({ 
+            queryKey: [`/api/debates/${id}`],
+            staleTime: 0 
+          }).then((fetchedData: any) => {
+            // Check if the messages array has grown compared to our known message count
+            // This means a new AI message has arrived
+            const currentMessageCount = fetchedData?.messages?.length || 0;
+            const previousMessages = queryClient.getQueryData([`/api/debates/${id}`]) as any;
+            const previousMessageCount = previousMessages?.messages?.length || 0;
             
-            // Gradually increase polling delay after the first few attempts
-            if (pollCount > 5) {
-              currentDelay = Math.min(currentDelay * 1.2, 3000); // Increase delay up to 3s max
+            // If we have more messages now than before, the AI response has arrived
+            if (currentMessageCount > previousMessageCount) {
+              console.log("AI response received, updating UI");
+              hasReceivedResponse = true;
+              
+              // Update the UI with the new message, preserving typing indicators if present
+              queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
+                if (!old) return fetchedData;
+                
+                // Keep the typing indicator if it exists (don't remove it abruptly)
+                const hasTypingIndicator = old.messages.some((msg: Message) => msg.id.startsWith('typing-'));
+                
+                if (hasTypingIndicator) {
+                  // Replace the typing indicator with the actual AI response
+                  const messagesWithoutTyping = old.messages.filter((msg: Message) => !msg.id.startsWith('typing-'));
+                  // Add the latest AI message
+                  const latestAIMessage = fetchedData.messages[fetchedData.messages.length - 1];
+                  
+                  return {
+                    ...fetchedData,
+                    messages: [...messagesWithoutTyping, latestAIMessage]
+                  };
+                }
+                
+                return fetchedData;
+              });
+              
+              // Clear polling since we got our response
+              clearInterval(pollInterval);
+              setMessageStatus(prev => ({ ...prev, polling: false }));
             }
-          } else {
-            clearInterval(pollInterval);
-            setMessageStatus(prev => ({ ...prev, polling: false }));
+          });
+          
+          // Gradually increase polling delay after the first few attempts
+          if (pollCount > 5) {
+            currentDelay = Math.min(currentDelay * 1.2, 3000); // Increase delay up to 3s max
           }
-        }, currentDelay);
-      }, 1000); // Wait 1 second before starting to poll
+        } else {
+          clearInterval(pollInterval);
+          setMessageStatus(prev => ({ ...prev, polling: false }));
+        }
+      }, currentDelay);
     },
     onError: (error) => {
       console.error("Error sending message:", error);
@@ -350,7 +391,7 @@ export default function DebatePage() {
     // Generate a consistent ID for the temporary message
     const tempId = `temp-${Date.now()}`;
     
-    // Create temporary user message and add it to the UI immediately
+    // Create temporary user message to add to the UI INSTANTLY
     const tempUserMessage: Message = {
       id: tempId,
       role: "user",
@@ -360,8 +401,7 @@ export default function DebatePage() {
     
     console.log("Adding temporary message to UI:", tempUserMessage);
     
-    // Update local state to show the message right away
-    // This ensures the message appears in the UI before any network request
+    // STEP 1: Show user message IMMEDIATELY in the UI with NO DELAY
     queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
       if (!old) return old;
       
@@ -374,9 +414,12 @@ export default function DebatePage() {
       };
     });
     
-    // Step 1: Give time for the user message to render and be seen (500ms)
+    // STEP 2: Immediately start sending the API request 
+    // This happens in parallel with the UI updates so no delay in server processing
+    sendMessageMutation.mutate(content);
+    
+    // STEP 3: Show typing indicator (after a natural thinking delay)
     setTimeout(() => {
-      // Step 2: Add the "typing" indicator message after the user's message has been displayed
       const typingIndicatorId = `typing-${Date.now()}`;
       const typingIndicatorMessage: Message = {
         id: typingIndicatorId,
@@ -389,7 +432,7 @@ export default function DebatePage() {
       queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
         if (!old) return old;
         
-        // Make sure we're working with the latest state
+        // Make sure we're working with the latest state (including user's message)
         const currentMessages = [...old.messages];
         
         // Add typing indicator only if it doesn't already exist
@@ -402,27 +445,7 @@ export default function DebatePage() {
         
         return old;
       });
-      
-      // Step 3: After showing typing indicator for a moment, send the actual API request
-      setTimeout(() => {
-        // Then send to the API
-        sendMessageMutation.mutate(content);
-        
-        // Remove typing indicator once we've sent the request
-        queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
-          if (!old) return old;
-          
-          // Filter out typing indicators
-          const filteredMessages = old.messages.filter((msg: Message) => !msg.id.startsWith('typing-'));
-          
-          return {
-            ...old,
-            messages: filteredMessages,
-          };
-        });
-      }, 800); // Wait 800ms with the typing indicator visible
-      
-    }, 500); // Wait 500ms for user message to be visible
+    }, 800); // Natural thinking delay before typing indicator appears (800ms)
   };
   
   const handleEndDebate = () => {
