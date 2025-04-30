@@ -87,17 +87,18 @@ export default function SummaryPage() {
   
   const isLoading = isLoadingDebate || isLoadingParty || isLoadingAggregate;
   
-  // Redirect if debate doesn't exist or user doesn't own it
+  // Only redirect if debate doesn't exist
   useEffect(() => {
-    if (!isLoading && (!debate || (debate && user && debate.userId !== user.id))) {
+    if (!isLoading && !debate) {
       toast({
-        title: "Access denied",
-        description: "You can only view your own debate summaries.",
+        title: "Debate not found",
+        description: "The debate you are looking for does not exist.",
         variant: "destructive",
       });
       setLocation("/");
     }
-  }, [isLoading, debate, user, setLocation, toast]);
+    // No ownership check - we're allowing any user to view debates
+  }, [isLoading, debate, setLocation, toast]);
   
   if (isLoading || !debate || !party) {
     return (
