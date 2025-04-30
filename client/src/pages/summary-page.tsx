@@ -1,5 +1,5 @@
 import { useParams, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
@@ -8,7 +8,8 @@ import { MobileHeader, MobileNavigation } from "@/components/mobile-nav";
 import DebateSummary from "@/components/debate-summary";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Clock, Loader2 } from "lucide-react";
+import { ArrowLeft, Clock, Loader2, RefreshCw } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 
 export default function SummaryPage() {
@@ -20,6 +21,33 @@ export default function SummaryPage() {
   const [_, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  // Handle regenerating a summary if it failed
+  const regenerateMutation = useMutation({
+    mutationFn: async () => {
+      if (!secureId && !id) throw new Error("No debate ID available");
+      const endpoint = secureId 
+        ? `/api/debates/s/${secureId}/regenerate-summary`
+        : `/api/debates/${id}/regenerate-summary`;
+      const res = await apiRequest("POST", endpoint);
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Summary regenerated",
+        description: "A new summary has been generated for your debate.",
+      });
+      // Force refetch to show new summary
+      refetch();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Could not regenerate summary: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
   
   // Determine which API endpoint to use based on which parameter is available
   const apiEndpoint = secureId 
@@ -163,16 +191,38 @@ export default function SummaryPage() {
         <MobileHeader />
         
         <header className="bg-white border-b border-neutral-200 p-4">
-          <div className="flex items-center">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="mr-2 text-neutral-500 hover:text-neutral-700"
-              onClick={() => setLocation("/")}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="mr-2 text-neutral-500 hover:text-neutral-700"
+                onClick={() => setLocation("/")}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <h2 className="text-xl font-semibold">Debate Summary</h2>
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-sm hover:bg-neutral-100"
+              onClick={() => regenerateMutation.mutate()}
+              disabled={regenerateMutation.isPending}
             >
-              <ArrowLeft className="h-4 w-4" />
+              {regenerateMutation.isPending ? (
+                <span className="flex items-center">
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  Regenerating...
+                </span>
+              ) : (
+                <span className="flex items-center">
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  Regenerate Summary
+                </span>
+              )}
             </Button>
-            <h2 className="text-xl font-semibold">Debate Summary</h2>
           </div>
           <div className="flex items-center mt-2">
             <div className={`w-8 h-8 bg-primary rounded-full flex items-center justify-center mr-2`}>

@@ -108,7 +108,7 @@ export default function DebateSummary({
   
   const voteMutation = useMutation({
     mutationFn: async (vote: { votedFor: "party" | "citizen" }) => {
-      const res = await apiRequest("POST", `/api/debates/${debateId}/vote`, vote);
+      const res = await apiRequest("POST", `/api/debates/s/${debateId}/vote`, vote);
       return await res.json();
     },
     onSuccess: () => {
