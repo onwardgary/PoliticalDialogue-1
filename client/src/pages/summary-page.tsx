@@ -12,32 +12,48 @@ import { ArrowLeft, Clock, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
 export default function SummaryPage() {
-  const { id } = useParams();
+  // Extract parameters from the URL - could be either regular ID or secure ID
+  const params = useParams();
+  const id = params.id;
+  const secureId = params.secureId;
+  
   const [_, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
   
+  // Determine which API endpoint to use based on which parameter is available
+  const apiEndpoint = secureId 
+    ? `/api/debates/s/${secureId}` 
+    : `/api/debates/${id}`;
+  
   // Fetch debate data with automatic polling if summary is not available
-  const { data: debate, isLoading: isLoadingDebate, refetch, refetchInterval, setRefetchInterval } = useQuery({
-    queryKey: [`/api/debates/${id}`],
+  const { 
+    data: debate, 
+    isLoading: isLoadingDebate, 
+    refetch
+  } = useQuery({
+    queryKey: [apiEndpoint],
     queryFn: async () => {
-      const response = await fetch(`/api/debates/${id}`);
+      console.log("Fetching debate summary from:", apiEndpoint);
+      const response = await fetch(apiEndpoint, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       if (!response.ok) {
         throw new Error("Failed to fetch debate");
       }
       return response.json();
     },
     refetchOnWindowFocus: false,
-    refetchInterval: 2000, // Poll every 2 seconds while waiting for summary
-  });
-  
-  // Stop polling when we have the summary data
-  useEffect(() => {
-    if (debate?.summary && refetchInterval) {
-      setRefetchInterval(false);
+    refetchInterval: (data) => {
+      // If we have a summary, stop polling
+      if (data?.summary) return false;
+      // Otherwise, poll every 2 seconds
+      return 2000;
     }
-  }, [debate?.summary, refetchInterval, setRefetchInterval]);
-  
+  });
   // Fetch party data
   const { data: party, isLoading: isLoadingParty } = useQuery({
     queryKey: ["/api/parties", debate?.partyId],

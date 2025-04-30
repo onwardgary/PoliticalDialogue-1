@@ -424,7 +424,12 @@ export default function DebatePage() {
       // Directly navigate to summary page as soon as the summary is generated
       // This is the most direct path to showing the summary
       console.log("Summary generated! Navigating directly to summary page");
-      setLocation(`/summary/${id}`);
+      // Use secure ID for navigation if available
+      if (secureId) {
+        setLocation(`/summary/s/${secureId}`);
+      } else {
+        setLocation(`/summary/${id}`);
+      }
       
       // Reset the animation steps
       setSummaryGenerationStep(null);
@@ -547,8 +552,12 @@ export default function DebatePage() {
   useEffect(() => {
     if (!isLoadingDebate && debate?.completed) {
       console.log("Debate completion detected - REDIRECTING TO SUMMARY PAGE");
-      // Navigate to the dedicated summary page
-      setLocation(`/summary/${id}`);
+      // Use secure ID for navigation if available
+      if (secureId) {
+        setLocation(`/summary/s/${secureId}`);
+      } else {
+        setLocation(`/summary/${id}`);
+      }
     } else if (isLoadingDebate) {
       setViewState('loading');
     } else if (summaryGenerationStep !== null) {
@@ -556,7 +565,7 @@ export default function DebatePage() {
     } else {
       setViewState('chat');
     }
-  }, [isLoadingDebate, debate?.completed, summaryGenerationStep, setLocation, id]);
+  }, [isLoadingDebate, debate?.completed, summaryGenerationStep, setLocation, id, secureId]);
   
   if (isLoading) {
     return (
