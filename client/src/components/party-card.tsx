@@ -36,7 +36,8 @@ export default function PartyCard({ party }: { party: Party }) {
       });
       setIsDialogOpen(false);
       setTopic("");
-      setLocation(`/debate/${data.id}`);
+      // Use the secure ID for navigation if available
+      setLocation(data.secureId ? `/debate/s/${data.secureId}` : `/debate/${data.id}`);
     },
     onError: (error: Error) => {
       toast({

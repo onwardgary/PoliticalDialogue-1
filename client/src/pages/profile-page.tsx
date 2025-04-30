@@ -31,6 +31,7 @@ import { MessageSquare, ChevronRight, User, LogOut } from "lucide-react";
 
 type UserDebate = {
   id: number;
+  secureId?: string;  // Optional for backward compatibility
   partyId: number;
   topic: string | null;
   completed: boolean;
@@ -248,7 +249,13 @@ function DebateTable({ debates }: { debates: UserDebate[] }) {
                 </TableCell>
                 <TableCell className="text-right">
                   <Button asChild variant="ghost" size="sm">
-                    <Link href={debate.completed ? `/summary/${debate.id}` : `/debate/${debate.id}`}>
+                    <Link 
+                      href={
+                        debate.completed 
+                          ? (debate.secureId ? `/summary/s/${debate.secureId}` : `/summary/${debate.id}`) 
+                          : (debate.secureId ? `/debate/s/${debate.secureId}` : `/debate/${debate.id}`)
+                      }
+                    >
                       <span className="flex items-center">
                         {debate.completed ? "View Summary" : "Continue"} <ChevronRight className="ml-1 h-4 w-4" />
                       </span>
