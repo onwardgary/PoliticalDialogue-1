@@ -273,7 +273,7 @@ export default function DebatePage() {
       });
       
       // Also update the React Query cache for consistency
-      queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
+      queryClient.setQueryData([apiEndpoint], (old: any) => {
         if (!old) return old;
         
         const updatedMessages = old.messages.map((msg: Message) => {
@@ -334,7 +334,7 @@ export default function DebatePage() {
               setMessageStatus(prev => ({ ...prev, polling: false }));
               
               // Also update React Query cache
-              queryClient.setQueryData([`/api/debates/${id}`], fetchedData);
+              queryClient.setQueryData([apiEndpoint], fetchedData);
             }
           })
           .catch(error => {
@@ -378,7 +378,7 @@ export default function DebatePage() {
       });
       
       // Also update React Query cache for consistency
-      queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
+      queryClient.setQueryData([apiEndpoint], (old: any) => {
         if (!old) return old;
         
         // Mark temporary messages as failed by appending "(Failed to send)" to content
@@ -470,9 +470,10 @@ export default function DebatePage() {
     }
     
     // Also update React Query cache (but this is secondary, UI already updated)
-    queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
+    queryClient.setQueryData([apiEndpoint], (old: any) => {
       if (!old) return { 
         id: parseInt(id || "0"),
+        secureId: secureId || "",
         messages: [tempUserMessage],
         userId: 1,
         partyId: 1
