@@ -17,8 +17,8 @@ export default function SummaryPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   
-  // Fetch debate data
-  const { data: debate, isLoading: isLoadingDebate } = useQuery({
+  // Fetch debate data with automatic polling if summary is not available
+  const { data: debate, isLoading: isLoadingDebate, refetch, refetchInterval, setRefetchInterval } = useQuery({
     queryKey: [`/api/debates/${id}`],
     queryFn: async () => {
       const response = await fetch(`/api/debates/${id}`);
@@ -28,7 +28,15 @@ export default function SummaryPage() {
       return response.json();
     },
     refetchOnWindowFocus: false,
+    refetchInterval: 2000, // Poll every 2 seconds while waiting for summary
   });
+  
+  // Stop polling when we have the summary data
+  useEffect(() => {
+    if (debate?.summary && refetchInterval) {
+      setRefetchInterval(false);
+    }
+  }, [debate?.summary, refetchInterval, setRefetchInterval]);
   
   // Fetch party data
   const { data: party, isLoading: isLoadingParty } = useQuery({
@@ -94,9 +102,27 @@ export default function SummaryPage() {
             <div className="rounded-lg border bg-white shadow-sm">
               <div className="p-6">
                 <h3 className="text-lg font-semibold mb-4">Your Debate Summary</h3>
-                <div className="flex items-center space-x-2 text-neutral-600">
+                <div className="flex items-center space-x-2 text-neutral-600 mb-4">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <p>The summary is still being generated. Please wait a moment...</p>
+                </div>
+                <div className="text-center mt-6">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => refetch()}
+                    className="text-sm hover:bg-neutral-100"
+                  >
+                    <span className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 2v6h-6"></path>
+                        <path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path>
+                        <path d="M3 22v-6h6"></path>
+                        <path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path>
+                      </svg>
+                      Check Again
+                    </span>
+                  </Button>
                 </div>
               </div>
             </div>
