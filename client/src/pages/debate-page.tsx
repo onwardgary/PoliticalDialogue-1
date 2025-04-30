@@ -153,8 +153,17 @@ export default function DebatePage() {
       console.log("Message count:", data.messages.length);
       
       // Update local messages whenever we get new data from server
+      // IMPORTANT FIX: Don't set local messages if the debate is already completed
+      // This prevents temporarily showing messages when transitioning to summary view
       if (data.messages) {
-        setLocalMessages(data.messages);
+        if (!data.completed) {
+          // Only update local messages for active debates
+          setLocalMessages(data.messages);
+        } else {
+          // For completed debates, clear local messages to avoid showing
+          // chat history temporarily before displaying the summary
+          setLocalMessages([]);
+        }
       }
       
       return data;
@@ -379,6 +388,12 @@ export default function DebatePage() {
       return res.json();
     },
     onSuccess: (data) => {
+      // IMPORTANT FIX: Clear localMessages state when debate is completed
+      // This prevents the previous messages from being displayed briefly 
+      // before showing the summary view
+      setLocalMessages([]);
+      
+      // Update React Query cache
       queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
         if (!old) return old;
         return {
@@ -388,6 +403,7 @@ export default function DebatePage() {
           updatedAt: new Date().toISOString(),
         };
       });
+      
       setIsEndDialogOpen(false);
       // Reset the summary generation step when summary is complete
       setSummaryGenerationStep(null);
