@@ -90,7 +90,7 @@ export default function ChatInterface({ messages, isLoading, onSendMessage, part
     <div 
       ref={chatContainerRef}
       className="chat-container bg-neutral-50 overflow-y-auto p-4 md:p-6 flex flex-col space-y-4"
-      style={{ height: "calc(100vh - 180px)" }}
+      style={{ height: "calc(100vh - 180px - env(safe-area-inset-bottom, 0px))" }}
     >
       {/* System welcome message */}
       <div className="flex justify-center mb-4">

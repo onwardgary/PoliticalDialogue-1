@@ -164,7 +164,7 @@ export function MobileNavigation() {
   const [location] = useLocation();
   const { user } = useAuth();
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 flex justify-around p-2 z-10">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 flex justify-around p-2 z-10 pb-safe">
       <Link href="/">
         <div className={`flex flex-col items-center p-2 ${location === '/' ? 'text-primary' : 'text-neutral-500'}`}>
           <Home className="h-5 w-5" />

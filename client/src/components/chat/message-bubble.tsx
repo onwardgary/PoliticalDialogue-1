@@ -177,7 +177,7 @@ export default function MessageBubble({ message, partyShortName = "BOT", isGroup
       )}
       
       <div className={cn(
-        "chat-bubble p-3 rounded-lg shadow-sm max-w-3xl",
+        "chat-bubble p-3 rounded-lg shadow-sm max-w-[88%] md:max-w-3xl",
         isUser 
           ? "bg-primary text-white" 
           : "bg-white text-neutral-800",

@@ -347,7 +347,7 @@ export default function DebatePage() {
     <div className="min-h-screen flex flex-col md:flex-row">
       <Sidebar />
       
-      <main className="flex-1 flex flex-col h-screen">
+      <main className="flex-1 flex flex-col h-screen pb-[60px] md:pb-0">
         <MobileHeader />
         
         {/* Debate header */}

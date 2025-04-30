@@ -1,4 +1,4 @@
-import { useState, useRef, FormEvent, KeyboardEvent } from "react";
+import { useState, useRef, useEffect, FormEvent, KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SendIcon, InfoIcon, SmileIcon } from "lucide-react";
@@ -66,14 +66,23 @@ export default function ChatInput({ onSendMessage, isLoading, onTypingStateChang
   const remainingChars = MAX_CHARS - message.length;
   const isOverLimit = remainingChars < 0;
 
+  // Auto-adjust height of textarea effect
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      const scrollHeight = Math.min(textareaRef.current.scrollHeight, 100); // Max 100px height on mobile
+      textareaRef.current.style.height = `${scrollHeight}px`;
+    }
+  }, [message]);
+
   return (
-    <div className="bg-white border-t border-neutral-200 p-4">
+    <div className="bg-white border-t border-neutral-200 p-4 pb-safe sticky bottom-0 z-20">
       <form className="flex items-end" onSubmit={handleSubmit}>
         <div className="flex-1 relative">
           <Textarea
             ref={textareaRef}
             placeholder="Type your message... (Ctrl+Enter to send)"
-            className="w-full resize-none pr-10 min-h-[60px] focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full resize-none pr-10 min-h-[45px] md:min-h-[60px] focus:outline-none focus:ring-1 focus:ring-primary"
             value={message}
             onChange={(e) => {
               setMessage(e.target.value);
@@ -99,7 +108,15 @@ export default function ChatInput({ onSendMessage, isLoading, onTypingStateChang
             disabled={isLoading}
             autoFocus
           />
-          <div className="absolute bottom-2 right-3 flex items-center gap-2">
+          {/* Character counter on mobile */}
+          {message.length > 0 && (
+            <div className="absolute bottom-2 right-10 text-xs text-neutral-400 md:hidden">
+              <span className={isOverLimit ? 'text-red-500 font-medium' : ''}>
+                {message.length}/{MAX_CHARS}
+              </span>
+            </div>
+          )}
+          <div className="absolute bottom-2 right-2 flex items-center gap-2">
             <Button 
               type="button" 
               variant="ghost" 
