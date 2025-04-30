@@ -392,10 +392,8 @@ export default function DebatePage() {
       return res.json();
     },
     onSuccess: (data) => {
-      // IMPORTANT FIX: Clear localMessages state when debate is completed
-      // This prevents the previous messages from being displayed briefly 
-      // before showing the summary view
-      setLocalMessages([]);
+      // Close the dialog
+      setIsEndDialogOpen(false);
       
       // Update React Query cache
       queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
@@ -408,8 +406,12 @@ export default function DebatePage() {
         };
       });
       
-      setIsEndDialogOpen(false);
-      // Reset the summary generation step when summary is complete
+      // Directly navigate to summary page as soon as the summary is generated
+      // This is the most direct path to showing the summary
+      console.log("Summary generated! Navigating directly to summary page");
+      setLocation(`/summary/${id}`);
+      
+      // Reset the animation steps
       setSummaryGenerationStep(null);
     },
     onError: (error) => {
@@ -525,21 +527,21 @@ export default function DebatePage() {
     }
   }, [isLoading, debate, user, setLocation, toast]);
   
-  // CRITICAL FIX: Set view state based on debate status 
-  // This creates a state machine to ensure correct rendering sequence
+  // NEW SOLUTION: Redirect to dedicated summary page when debate is completed
+  // This completely avoids any state transition issues
   useEffect(() => {
-    if (isLoadingDebate) {
+    if (!isLoadingDebate && debate?.completed) {
+      console.log("Debate completion detected - REDIRECTING TO SUMMARY PAGE");
+      // Navigate to the dedicated summary page
+      setLocation(`/summary/${id}`);
+    } else if (isLoadingDebate) {
       setViewState('loading');
-    } else if (debate?.completed) {
-      console.log("Debate completion detected - SWITCHING TO SUMMARY VIEW");
-      setLocalMessages([]); // Clear messages as an extra precaution
-      setViewState('summary');
     } else if (summaryGenerationStep !== null) {
       setViewState('generating');
     } else {
       setViewState('chat');
     }
-  }, [isLoadingDebate, debate?.completed, summaryGenerationStep]);
+  }, [isLoadingDebate, debate?.completed, summaryGenerationStep, setLocation, id]);
   
   if (isLoading) {
     return (
@@ -608,34 +610,12 @@ export default function DebatePage() {
           </div>
         </div>
         
-        {/* ELEGANT SOLUTION: Clean state machine approach using viewState */}
-        {/* Each view state is completely separate with no overlap in rendering conditions */}
+        {/* ELEGANT SOLUTION: Only show the relevant view based on state */}
         
         {/* Loading View */}
         {viewState === 'loading' && (
           <div className="flex-1 flex items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        )}
-        
-        {/* Summary View */}
-        {viewState === 'summary' && debate?.completed && (
-          <div className="flex-1 overflow-auto p-6 bg-neutral-50">
-            <DebateSummary 
-              debateId={parseInt(id || "0")}
-              summary={debate.summary as DebateSummaryType}
-              partyName={party?.name || "Party"}
-              partyShortName={party?.shortName || "BOT"}
-            />
-            
-            <div className="text-center">
-              <Button 
-                onClick={() => setLocation("/")}
-                variant="outline"
-              >
-                Start a New Debate
-              </Button>
-            </div>
           </div>
         )}
         

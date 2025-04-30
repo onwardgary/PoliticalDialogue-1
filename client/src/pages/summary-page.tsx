@@ -97,7 +97,12 @@ export default function SummaryPage() {
         
         <header className="bg-white border-b border-neutral-200 p-4">
           <div className="flex items-center">
-            <Button variant="ghost" size="sm" className="mr-2 text-neutral-500 hover:text-neutral-700">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="mr-2 text-neutral-500 hover:text-neutral-700"
+              onClick={() => setLocation("/")}
+            >
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <h2 className="text-xl font-semibold">Debate Summary</h2>
