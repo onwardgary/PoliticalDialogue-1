@@ -125,6 +125,10 @@ export default function DebatePage() {
   // This bypasses React Query's asynchronous cache updates
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
   
+  // NEW: Add a simple view state to control what's rendered
+  // This creates a clear state machine that prevents race conditions
+  const [viewState, setViewState] = useState<'loading' | 'chat' | 'generating' | 'summary'>('loading');
+  
   // Track message sending state and other UI states
   const [messageStatus, setMessageStatus] = useState({
     sending: false,
@@ -479,6 +483,13 @@ export default function DebatePage() {
   };
   
   const handleEndDebate = () => {
+    // Immediately change view state to generating
+    // This guarantees messages are hidden before any other changes occur
+    setViewState('generating');
+    
+    // Clear local messages as an extra safeguard
+    setLocalMessages([]);
+    
     // Start the progress animation
     setSummaryGenerationStep(1);
     
@@ -514,15 +525,21 @@ export default function DebatePage() {
     }
   }, [isLoading, debate, user, setLocation, toast]);
   
-  // CRITICAL FIX: Reset localMessages completely when debate completion status changes
-  // This prevents any possible flash of chat content during summary transitions
+  // CRITICAL FIX: Set view state based on debate status 
+  // This creates a state machine to ensure correct rendering sequence
   useEffect(() => {
-    // If debate becomes completed, immediately clear all local messages
-    if (debate?.completed) {
-      console.log("Debate completion detected - CLEARING ALL LOCAL MESSAGES");
-      setLocalMessages([]);
+    if (isLoadingDebate) {
+      setViewState('loading');
+    } else if (debate?.completed) {
+      console.log("Debate completion detected - SWITCHING TO SUMMARY VIEW");
+      setLocalMessages([]); // Clear messages as an extra precaution
+      setViewState('summary');
+    } else if (summaryGenerationStep !== null) {
+      setViewState('generating');
+    } else {
+      setViewState('chat');
     }
-  }, [debate?.completed]);
+  }, [isLoadingDebate, debate?.completed, summaryGenerationStep]);
   
   if (isLoading) {
     return (
@@ -591,11 +608,18 @@ export default function DebatePage() {
           </div>
         </div>
         
-        {/* RADICAL CHANGE: Completely separate content rendering based on debate state */}
-        {/* Each section is completely isolated from others to prevent transition flashes */}
+        {/* ELEGANT SOLUTION: Clean state machine approach using viewState */}
+        {/* Each view state is completely separate with no overlap in rendering conditions */}
         
-        {/* 1. SUMMARY VIEW: Show when debate is completed */}
-        {debate?.completed && (
+        {/* Loading View */}
+        {viewState === 'loading' && (
+          <div className="flex-1 flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
+        
+        {/* Summary View */}
+        {viewState === 'summary' && debate?.completed && (
           <div className="flex-1 overflow-auto p-6 bg-neutral-50">
             <DebateSummary 
               debateId={parseInt(id || "0")}
@@ -615,25 +639,18 @@ export default function DebatePage() {
           </div>
         )}
         
-        {/* 2. LOADING VIEW: Show when generating summary */}
-        {!debate?.completed && summaryGenerationStep !== null && (
+        {/* Summary Generation View */}
+        {viewState === 'generating' && (
           <div className="flex-1 overflow-auto bg-neutral-50">
-            <SummaryGenerationLoader step={summaryGenerationStep} />
+            <SummaryGenerationLoader step={summaryGenerationStep || 1} />
           </div>
         )}
         
-        {/* 3. CHAT VIEW: Show only when debate is active (not completed and not generating summary) */}
-        {!debate?.completed && summaryGenerationStep === null && (
+        {/* Chat View */}
+        {viewState === 'chat' && (
           <>
             <ChatInterface 
-              messages={
-                // CRUCIAL SAFEGUARD: Only provide messages if we're in active debate state
-                // This is a defense-in-depth approach - if a component renders during transition,
-                // it will never get message content to show
-                !debate?.completed && summaryGenerationStep === null 
-                  ? (localMessages.length > 0 ? localMessages : (debate?.messages || []))
-                  : [] // Empty array if transitioning to summary
-              }
+              messages={localMessages.length > 0 ? localMessages : (debate?.messages || [])}
               isLoading={messageStatus.sending}
               onSendMessage={handleSendMessage}
               partyShortName={party?.shortName}
