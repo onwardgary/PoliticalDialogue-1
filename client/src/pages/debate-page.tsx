@@ -244,22 +244,38 @@ export default function DebatePage() {
   const handleSendMessage = (content: string) => {
     if (debate?.completed) return;
     
+    // Generate a consistent ID for the temporary message
+    const tempId = `temp-${Date.now()}`;
+    
     // Create temporary user message and add it to the UI immediately
     const tempUserMessage: Message = {
-      id: `temp-${Date.now()}`,
+      id: tempId,
       role: "user",
       content: content,
       timestamp: Date.now()
     };
     
+    console.log("Adding temporary message to UI:", tempUserMessage);
+    
     // Update local state to show the message right away
+    // This ensures the message appears in the UI before any network request
     queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
       if (!old) return old;
+      
+      const updatedMessages = [...old.messages, tempUserMessage];
+      console.log("Updated messages count:", updatedMessages.length);
+      
       return {
         ...old,
-        messages: [...old.messages, tempUserMessage],
+        messages: updatedMessages,
       };
     });
+    
+    // Force a rerender by triggering a cache invalidation
+    setTimeout(() => {
+      console.log("Forcing refresh of message list");
+      queryClient.invalidateQueries({ queryKey: [`/api/debates/${id}`] });
+    }, 10);
     
     // Then send to the API
     sendMessageMutation.mutate(content);
