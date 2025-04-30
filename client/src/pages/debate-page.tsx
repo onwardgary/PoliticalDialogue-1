@@ -121,12 +121,23 @@ export default function DebatePage() {
   const [isUserTyping, setIsUserTyping] = useState(false);
   const [summaryGenerationStep, setSummaryGenerationStep] = useState<number | null>(null);
   
-  // Fetch debate data
+  // Declare mutation placeholders to fix reference order
+  const [isPendingMessage, setIsPendingMessage] = useState(false);
+  
+  // Fetch debate data with adaptive polling for improved responsiveness
   const { data: debate, isLoading: isLoadingDebate } = useQuery({
     queryKey: [`/api/debates/${id}`],
     queryFn: async () => {
       console.log("Fetching debate data for ID:", id);
-      const response = await fetch(`/api/debates/${id}`);
+      const response = await fetch(`/api/debates/${id}`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        },
+        // Add priority hints for faster performance
+        priority: 'high'
+      } as RequestInit);
+      
       if (!response.ok) {
         throw new Error("Failed to fetch debate");
       }
@@ -136,23 +147,59 @@ export default function DebatePage() {
       return data;
     },
     refetchOnWindowFocus: true,
-    refetchInterval: 3000, // Poll every 3 seconds to ensure we get the latest messages
+    // Adaptive polling strategy based on conversation state
+    refetchInterval: (data) => {
+      // If debate is completed, stop polling entirely
+      if (data?.completed) return false;
+      
+      const messages = data?.messages || [];
+      const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+      
+      // If last message is from user (waiting for AI response), poll more frequently
+      if (lastMessage?.role === 'user') {
+        return 1000; // Poll every 1 second while waiting for AI response
+      }
+      
+      // If conversation is active (within last minute), poll regularly
+      const lastMessageTime = lastMessage?.timestamp || 0;
+      const timeSinceLastMessage = Date.now() - lastMessageTime;
+      if (timeSinceLastMessage < 60000) { // Less than a minute
+        return 3000; // Poll every 3 seconds for active conversations
+      }
+      
+      // Otherwise, reduce polling frequency to save resources
+      return 10000; // Poll every 10 seconds for inactive conversations
+    },
+    enabled: !!id && !isPendingMessage, // Don't poll while sending a message
   });
   
-  // Fetch party data
+  // Fetch party data with optimized caching
   const { data: party, isLoading: isLoadingParty } = useQuery({
     queryKey: ["/api/parties", debate?.partyId],
     queryFn: async () => {
       if (!debate) return null;
-      const response = await fetch("/api/parties");
+      
+      // Use cache-optimized fetch
+      const response = await fetch("/api/parties", {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        },
+        // Add priority hints but lower than debate data
+        priority: 'auto'
+      } as RequestInit);
+      
       if (!response.ok) {
         throw new Error("Failed to fetch parties");
       }
+      
       const parties = await response.json();
       return parties.find((p: any) => p.id === debate.partyId);
     },
     enabled: !!debate,
     refetchOnWindowFocus: false,
+    staleTime: 24 * 60 * 60 * 1000, // Party data is static, cache for 24 hours
+    cacheTime: 24 * 60 * 60 * 1000,  // Keep in cache for 24 hours
   });
   
   // Send message mutation
