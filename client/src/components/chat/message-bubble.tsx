@@ -1,7 +1,9 @@
 import { format } from "date-fns";
+import { useState } from "react";
 import { Message } from "@shared/schema";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
+import { Typewriter } from "@/components/ui/typewriter";
 
 type MessageBubbleProps = {
   message: Message;
@@ -11,7 +13,11 @@ type MessageBubbleProps = {
 
 export default function MessageBubble({ message, partyShortName = "BOT", isGrouped = false }: MessageBubbleProps) {
   const isUser = message.role === "user";
+  const isBot = message.role === "assistant";
   const formattedTime = format(new Date(message.timestamp), "h:mm a");
+  
+  // For tracking if the typewriter effect is complete
+  const [typewriterComplete, setTypewriterComplete] = useState(false);
 
   // Format the content to handle paragraphs, lists, and formatting
   const formatContent = (content: string) => {
@@ -194,9 +200,17 @@ export default function MessageBubble({ message, partyShortName = "BOT", isGroup
           "text-sm prose prose-sm dark:prose-invert chat-content",
           isUser ? "chat-content-user" : "chat-content-bot"
         )}>
-          <ReactMarkdown>
-            {message.content}
-          </ReactMarkdown>
+          {isUser ? (
+            <ReactMarkdown>
+              {message.content}
+            </ReactMarkdown>
+          ) : (
+            <Typewriter 
+              text={message.content} 
+              speed={7} 
+              onComplete={() => setTypewriterComplete(true)}
+            />
+          )}
         </div>
         
         {/* Only show timestamp for the last message or if messages are several minutes apart */}
