@@ -105,12 +105,13 @@ export async function generatePartyResponse(messages: Message[]): Promise<string
       messages: formattedMessages,
       temperature: 0.7,
       max_tokens: 1000, // Increased to allow for more detailed responses with examples and calculations
-      tools: [
-        {
-          type: "retrieval" // Enable web search to get the latest information
-        }
-      ],
-      tool_choice: "auto" // Let the model decide when to use search
+      // Don't use the retrieval tool for now - it's causing API errors
+      // tools: [
+      //   {
+      //     type: "retrieval" // Enable web search to get the latest information
+      //   }
+      // ],
+      // tool_choice: "auto" // Let the model decide when to use search
     });
     
     // Race the API promise against the timeout
@@ -183,12 +184,13 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
       temperature: 0.5,
       max_tokens: 2000, // Increased to handle larger and more detailed responses
       response_format: { type: "json_object" },
-      tools: [
-        {
-          type: "retrieval" // Enable web search to get the latest information for summaries
-        }
-      ],
-      tool_choice: "auto" // Let the model decide when to use search
+      // Don't use the retrieval tool for now - it's causing API errors
+      // tools: [
+      //   {
+      //     type: "retrieval" // Enable web search to get the latest information for summaries
+      //   }
+      // ],
+      // tool_choice: "auto" // Let the model decide when to use search
     });
     
     // Race the API promise against the timeout
@@ -323,12 +325,13 @@ export async function generateAggregateSummary(
       temperature: 0.5,
       max_tokens: 1500, // Increased to handle larger responses
       response_format: { type: "json_object" },
-      tools: [
-        {
-          type: "retrieval" // Enable web search for aggregate summaries as well
-        }
-      ],
-      tool_choice: "auto" // Let the model decide when to use search
+      // Don't use the retrieval tool for now - it's causing API errors
+      // tools: [
+      //   {
+      //     type: "retrieval" // Enable web search for aggregate summaries as well
+      //   }
+      // ],
+      // tool_choice: "auto" // Let the model decide when to use search
     });
     
     // @ts-ignore - Type definitions don't match the actual API response structure
