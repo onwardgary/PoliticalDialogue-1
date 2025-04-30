@@ -1,8 +1,13 @@
 import OpenAI from "openai";
 import { type Message, type DebateSummary } from "@shared/schema";
 
-// Using the search-enabled version of GPT-4o to access the latest information
-const MODEL = "gpt-4o-search-preview-2025-03-11";
+// Models for different purposes
+const MODELS = {
+  // Standard model for normal conversations and structured output
+  STANDARD: "gpt-4o",
+  // Search-enabled model for queries requiring up-to-date information
+  SEARCH: "gpt-4o-search-preview-2025-03-11"
+};
 
 // Check for API key in multiple possible environment variables
 const API_KEY = process.env.OPENAI_API_KEY || 
@@ -14,6 +19,33 @@ const API_KEY = process.env.OPENAI_API_KEY ||
 const openai = new OpenAI({
   apiKey: API_KEY,
 });
+
+// Helper function to determine if a query requires search capabilities
+function requiresSearch(message: string): boolean {
+  const searchTerms = [
+    'latest', 'recent', 'new', 'current', 'update', 'today', 
+    '2024', '2025', 'this year', 'last month', 'this month',
+    'manifesto', 'election', 'campaign', 'announcement', 'speech',
+    'policy changes', 'introduced', 'announced', 'unveiled',
+    'what is your position on', 'what do you think about'
+  ];
+  
+  return searchTerms.some(term => 
+    message.toLowerCase().includes(term.toLowerCase())
+  );
+}
+
+// Select appropriate model based on the purpose and content
+function selectModel(purpose: 'conversation' | 'summary' | 'aggregation', userMessage?: string): string {
+  // For conversation, check if the query likely needs search
+  if (purpose === 'conversation' && userMessage && requiresSearch(userMessage)) {
+    console.log("Using search model for query:", userMessage);
+    return MODELS.SEARCH;
+  }
+  
+  // For other purposes or non-search queries, use the standard model
+  return MODELS.STANDARD;
+}
 
 // Create a system message for the specific political party
 export function createPartySystemMessage(partyShortName: string): Message {
@@ -86,6 +118,14 @@ export async function generatePartyResponse(messages: Message[]): Promise<string
     console.log("Generating party response with API key present:", !!API_KEY);
     console.log("Number of messages:", messages.length);
     
+    // Find the latest user message, if any, to determine if we need search capabilities
+    const userMessages = messages.filter(msg => msg.role === 'user');
+    const latestUserMessage = userMessages.length > 0 ? userMessages[userMessages.length - 1].content : '';
+    
+    // Select the appropriate model based on the user's query
+    const model = selectModel('conversation', latestUserMessage);
+    console.log(`Using model for party response: ${model}`);
+    
     // Convert Messages to OpenAI format
     const formattedMessages = messages.map(msg => ({
       role: msg.role,
@@ -99,13 +139,23 @@ export async function generatePartyResponse(messages: Message[]): Promise<string
       setTimeout(() => reject(new Error("OpenAI API request timed out after 20 seconds")), 20000);
     });
     
-    // @ts-ignore - The type definitions haven't been updated for the search tools yet
-    const apiPromise = openai.chat.completions.create({
-      model: MODEL,
+    // Create the basic configuration
+    const config: any = {
+      model: model,
       messages: formattedMessages,
-      web_search_options: {}, // Enable web search capabilities
       max_tokens: 1000, // Increased to allow for more detailed responses with examples and calculations
-    });
+    };
+    
+    // Add model-specific parameters
+    if (model === MODELS.SEARCH) {
+      config.web_search_options = {}; // Enable web search capabilities for search model
+    } else {
+      // For standard model, we can add temperature
+      config.temperature = 0.7;
+    }
+    
+    // @ts-ignore - The type definitions haven't been updated for the search tools yet
+    const apiPromise = openai.chat.completions.create(config);
     
     // Race the API promise against the timeout
     const response = await Promise.race([apiPromise, timeoutPromise]);
@@ -131,6 +181,7 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
   try {
     console.log("Generating debate summary with API key present:", !!API_KEY);
     console.log("Number of messages for summary:", messages.length);
+    console.log("Using standard model for summary generation (json_object is required)");
     
     // Create a prompt for generating a summary
     const formattedMessages = messages.map(msg => ({
@@ -170,13 +221,15 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
       setTimeout(() => reject(new Error("OpenAI API request timed out after 30 seconds")), 30000);
     });
     
+    // For summary generation, we need structured JSON output which isn't compatible with search
+    // So we always use the standard model for summaries, but include web search instructions in the prompt
     // @ts-ignore - The type definitions haven't been updated for retrieval yet
     const apiPromise = openai.chat.completions.create({
-      model: MODEL,
+      model: MODELS.STANDARD,
       messages: formattedMessages,
-      web_search_options: {}, // Enable web search capabilities
       max_tokens: 2000, // Increased to handle larger and more detailed responses
       response_format: { type: "json_object" },
+      temperature: 0.5,
     });
     
     // Race the API promise against the timeout
@@ -304,14 +357,27 @@ export async function generateAggregateSummary(
     - Avoid vague generalizations; focus on concrete policy positions
     `;
     
-    // @ts-ignore - The type definitions haven't been updated for retrieval yet
-    const response = await openai.chat.completions.create({
-      model: MODEL,
+    // Determine if the topic likely needs search
+    const model = requiresSearch(topic) ? MODELS.SEARCH : MODELS.STANDARD;
+    
+    // Create the configuration based on the selected model
+    const config: any = {
+      model: model,
       messages: [{ role: "user", content: prompt }],
-      web_search_options: {}, // Enable web search capabilities
       max_tokens: 1500, // Increased to handle larger responses
-      response_format: { type: "json_object" },
-    });
+    };
+    
+    // Add model-specific parameters
+    if (model === MODELS.SEARCH) {
+      config.web_search_options = {}; // Enable web search for the search model
+    } else {
+      // For standard model, add response format and temperature
+      config.response_format = { type: "json_object" };
+      config.temperature = 0.5;
+    }
+    
+    // @ts-ignore - The type definitions haven't been updated for retrieval yet
+    const response = await openai.chat.completions.create(config);
     
     // @ts-ignore - Type definitions don't match the actual API response structure
     const summaryText = response.choices[0].message.content || "{}";
