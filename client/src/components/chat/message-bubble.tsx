@@ -4,6 +4,7 @@ import { Message } from "@shared/schema";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { Typewriter } from "@/components/ui/typewriter";
+import { Globe } from "lucide-react";
 
 type MessageBubbleProps = {
   message: Message;
@@ -220,13 +221,24 @@ export default function MessageBubble({ message, partyShortName = "BOT", isGroup
           )}
         </div>
         
-        {/* Only show timestamp for the last message or if messages are several minutes apart */}
-        <p className={cn(
-          "text-xs mt-1 text-right",
-          isUser ? "text-primary-100" : "text-neutral-400"
-        )}>
-          {formattedTime}
-        </p>
+        {/* Footer with timestamp and search indicator if applicable */}
+        <div className="flex justify-between items-center mt-1">
+          {/* Show search icon for assistant messages that used search */}
+          {!isUser && message.searchEnabled && (
+            <div className="flex items-center text-blue-500" title="Web search was used to generate this response">
+              <Globe className="w-3 h-3 mr-1" />
+              <span className="text-xs">Search-enhanced</span>
+            </div>
+          )}
+          
+          {/* Always show timestamp */}
+          <p className={cn(
+            "text-xs",
+            isUser ? "text-primary-100 ml-auto" : "text-neutral-400 ml-auto"
+          )}>
+            {formattedTime}
+          </p>
+        </div>
       </div>
     </div>
   );
