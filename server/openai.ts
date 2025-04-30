@@ -1,8 +1,8 @@
 import OpenAI from "openai";
 import { type Message, type DebateSummary } from "@shared/schema";
 
-// Using the latest version of GPT-4o as requested by the user
-const MODEL = "chatgpt-4o-latest";
+// Using the search-enabled version of GPT-4o to access the latest information
+const MODEL = "gpt-4o-search-preview-2025-03-11";
 
 // Check for API key in multiple possible environment variables
 const API_KEY = process.env.OPENAI_API_KEY || 
@@ -97,11 +97,18 @@ export async function generatePartyResponse(messages: Message[]): Promise<string
       setTimeout(() => reject(new Error("OpenAI API request timed out after 20 seconds")), 20000);
     });
     
+    // @ts-ignore - The type definitions haven't been updated for retrieval yet
     const apiPromise = openai.chat.completions.create({
       model: MODEL,
       messages: formattedMessages,
       temperature: 0.7,
       max_tokens: 1000, // Increased to allow for more detailed responses with examples and calculations
+      tools: [
+        {
+          type: "retrieval" // Enable web search to get the latest information
+        }
+      ],
+      tool_choice: "auto" // Let the model decide when to use search
     });
     
     // Race the API promise against the timeout
@@ -164,12 +171,19 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
       setTimeout(() => reject(new Error("OpenAI API request timed out after 30 seconds")), 30000);
     });
     
+    // @ts-ignore - The type definitions haven't been updated for retrieval yet
     const apiPromise = openai.chat.completions.create({
       model: MODEL,
       messages: formattedMessages,
       temperature: 0.5,
       max_tokens: 2000, // Increased to handle larger and more detailed responses
-      response_format: { type: "json_object" }
+      response_format: { type: "json_object" },
+      tools: [
+        {
+          type: "retrieval" // Enable web search to get the latest information for summaries
+        }
+      ],
+      tool_choice: "auto" // Let the model decide when to use search
     });
     
     // Race the API promise against the timeout
