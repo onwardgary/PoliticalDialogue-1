@@ -25,6 +25,12 @@ export default function ChatInput({ onSendMessage, isLoading, onTypingStateChang
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (message.trim() && message.length <= MAX_CHARS) {
+      // Capture the message to send
+      const messageToSend = message;
+      
+      // Clear input field immediately (for instant UI feedback)
+      setMessage("");
+      
       // Stop typing indicator when sending a message
       if (onTypingStateChange) {
         onTypingStateChange(false);
@@ -36,9 +42,8 @@ export default function ChatInput({ onSendMessage, isLoading, onTypingStateChang
         typingTimeoutRef.current = null;
       }
       
-      // Send the message
-      onSendMessage(message);
-      setMessage("");
+      // Send the message (after clearing input for better UX)
+      onSendMessage(messageToSend);
       
       // Focus back on textarea after sending
       setTimeout(() => {

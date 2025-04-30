@@ -28,11 +28,21 @@ export default function ChatInterface({ messages, isLoading, onSendMessage, part
   useEffect(() => {
     const container = chatContainerRef.current;
     if (container) {
-      // Only auto-scroll if user is already near the bottom
+      // Always auto-scroll when the user sends a new message
+      const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+      const isLastMessageFromUser = lastMessage && lastMessage.role === "user";
+      
+      // Auto-scroll immediately if:
+      // 1. User is already near the bottom
+      // 2. User just sent a message (their message should always be visible)
+      // 3. User is typing (typing indicator should be visible)
       const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200;
       
-      if (isNearBottom) {
-        container.scrollTop = container.scrollHeight;
+      if (isNearBottom || isLastMessageFromUser || userTyping) {
+        // Use requestAnimationFrame for smoother scrolling and to ensure DOM is updated first
+        requestAnimationFrame(() => {
+          container.scrollTop = container.scrollHeight;
+        });
       } else if (messages.length > 0 && messages[messages.length - 1].role === "assistant") {
         // Show scroll button if we received a new message and didn't scroll
         setShowScrollButton(true);

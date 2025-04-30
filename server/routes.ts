@@ -229,54 +229,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const updatedMessages = [...debate.messages, userMessage];
       
-      // Update debate with user message before generating AI response
+      // First, immediately update the debate with the user message
+      // This ensures the user message is saved right away
       await storage.updateDebateMessages(debateId, updatedMessages);
       
-      console.log(`Generating AI response for debate ${debateId}...`);
+      // Begin an asynchronous process to generate and save the AI response
+      // Don't await this - we'll respond to the client immediately
+      (async () => {
+        try {
+          console.log(`Generating AI response for debate ${debateId}...`);
+          // Generate AI response with a timeout
+          const assistantResponse = await generatePartyResponse(updatedMessages);
+          
+          console.log(`Got AI response, creating assistant message for debate ${debateId}`);
+          // Add assistant message
+          const assistantMessage = {
+            id: nanoid(),
+            role: "assistant" as const,
+            content: assistantResponse,
+            timestamp: Date.now(),
+          };
+          
+          const finalMessages = [...updatedMessages, assistantMessage];
+          
+          // Update debate with assistant message
+          await storage.updateDebateMessages(debateId, finalMessages);
+          console.log(`Updated debate ${debateId} with AI response`);
+        } catch (openAiError) {
+          console.error(`OpenAI API error for debate ${debateId}:`, openAiError);
+          
+          // Create a fallback message when OpenAI fails
+          const fallbackMessage = {
+            id: nanoid(),
+            role: "assistant" as const,
+            content: "I'm sorry, I'm having trouble connecting to our AI service. Please try again in a moment.",
+            timestamp: Date.now(),
+          };
+          
+          const fallbackMessages = [...updatedMessages, fallbackMessage];
+          await storage.updateDebateMessages(debateId, fallbackMessages);
+          console.log(`Updated debate ${debateId} with fallback message due to API error`);
+        }
+      })().catch(err => console.error(`Unhandled error in AI response generation for debate ${debateId}:`, err));
       
-      try {
-        // Generate AI response with a timeout
-        const assistantResponse = await generatePartyResponse(updatedMessages);
-        
-        console.log(`Got AI response, creating assistant message for debate ${debateId}`);
-        // Add assistant message
-        const assistantMessage = {
-          id: nanoid(),
-          role: "assistant" as const,
-          content: assistantResponse,
-          timestamp: Date.now(),
-        };
-        
-        const finalMessages = [...updatedMessages, assistantMessage];
-        
-        // Update debate with assistant message
-        await storage.updateDebateMessages(debateId, finalMessages);
-        
-        // Return both messages
-        res.status(201).json({
-          userMessage,
-          assistantMessage,
-        });
-      } catch (openAiError) {
-        console.error(`OpenAI API error for debate ${debateId}:`, openAiError);
-        
-        // Create a fallback message when OpenAI fails
-        const fallbackMessage = {
-          id: nanoid(),
-          role: "assistant" as const,
-          content: "I'm sorry, I'm having trouble connecting to our AI service. Please try again in a moment.",
-          timestamp: Date.now(),
-        };
-        
-        const fallbackMessages = [...updatedMessages, fallbackMessage];
-        await storage.updateDebateMessages(debateId, fallbackMessages);
-        
-        // Return the user message and fallback message
-        res.status(201).json({
-          userMessage,
-          assistantMessage: fallbackMessage,
-        });
-      }
+      // Respond to the client immediately with just the user message
+      // This reduces latency since we don't wait for the AI response
+      res.status(201).json({
+        userMessage,
+        // No assistantMessage here; the client will get it via polling or socket update
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid message content", errors: error.errors });

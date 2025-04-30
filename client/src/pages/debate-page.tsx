@@ -165,26 +165,43 @@ export default function DebatePage() {
       return data;
     },
     onSuccess: (data) => {
-      console.log("Updating UI with new messages:", data);
+      console.log("Message sent successfully:", data);
       
-      // Direct update of cache - remove temp message and add the official ones
+      // The server now responds with just the userMessage (no assistantMessage yet)
+      // The assistantMessage will be fetched when the server finishes processing
+      
+      // Replace the temporary message with the official user message from the server
       queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
         if (!old) {
           console.log("No existing debate data to update");
           return old;
         }
         
-        // Filter out the temporary message we added
+        // Filter out the temporary message we added and use the confirmed message from server
         const filteredMessages = old.messages.filter((msg: Message) => !msg.id.startsWith('temp-'));
-        console.log("Filtered messages:", filteredMessages.length);
+        
+        // Only add the userMessage - the AI response will come later through polling
+        const updatedMessages = [...filteredMessages, data.userMessage];
+        console.log("Confirmed user message in place, waiting for AI response...");
         
         return {
           ...old,
-          // Add the real user message and assistant response from the API
-          messages: [...filteredMessages, data.userMessage, data.assistantMessage],
+          messages: updatedMessages,
           updatedAt: new Date().toISOString(),
         };
       });
+      
+      // Start polling more frequently for a short time to get the AI response quickly
+      let pollCount = 0;
+      const pollInterval = setInterval(() => {
+        pollCount++;
+        if (pollCount <= 30) { // Poll for 30 seconds max
+          console.log("Polling for AI response...");
+          queryClient.invalidateQueries({ queryKey: [`/api/debates/${id}`] });
+        } else {
+          clearInterval(pollInterval);
+        }
+      }, 1000);
     },
     onError: (error) => {
       console.error("Error sending message:", error);
