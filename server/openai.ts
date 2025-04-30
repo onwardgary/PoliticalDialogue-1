@@ -103,10 +103,8 @@ export async function generatePartyResponse(messages: Message[]): Promise<string
     const apiPromise = openai.chat.completions.create({
       model: MODEL,
       messages: formattedMessages,
-      temperature: 0.7,
+      web_search_options: {}, // Enable web search capabilities
       max_tokens: 1000, // Increased to allow for more detailed responses with examples and calculations
-      // The search-enabled model has built-in search capabilities
-      // We don't need to specify tools for retrieval
     });
     
     // Race the API promise against the timeout
@@ -176,11 +174,9 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
     const apiPromise = openai.chat.completions.create({
       model: MODEL,
       messages: formattedMessages,
-      temperature: 0.5,
+      web_search_options: {}, // Enable web search capabilities
       max_tokens: 2000, // Increased to handle larger and more detailed responses
       response_format: { type: "json_object" },
-      // The search-enabled model has built-in search capabilities
-      // We don't need to specify tools for retrieval
     });
     
     // Race the API promise against the timeout
@@ -312,11 +308,9 @@ export async function generateAggregateSummary(
     const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [{ role: "user", content: prompt }],
-      temperature: 0.5,
+      web_search_options: {}, // Enable web search capabilities
       max_tokens: 1500, // Increased to handle larger responses
       response_format: { type: "json_object" },
-      // The search-enabled model has built-in search capabilities
-      // We don't need to specify tools for retrieval
     });
     
     // @ts-ignore - Type definitions don't match the actual API response structure
