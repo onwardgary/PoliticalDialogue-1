@@ -151,7 +151,7 @@ export default function DebatePage() {
     },
     refetchOnWindowFocus: true,
     // Adaptive polling strategy based on conversation state
-    refetchInterval: (data) => {
+    refetchInterval: (data: any) => {
       // If debate is completed, stop polling entirely
       if (data?.completed) return false;
       
@@ -208,6 +208,8 @@ export default function DebatePage() {
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
+      // Update message status to sending
+      setMessageStatus(prev => ({ ...prev, sending: true }));
       console.log("Sending message to debate", id, ":", content);
       const res = await apiRequest("POST", `/api/debates/${id}/messages`, { content });
       const data = await res.json();
@@ -216,6 +218,9 @@ export default function DebatePage() {
     },
     onSuccess: (data) => {
       console.log("Message sent successfully:", data);
+      
+      // Update message status
+      setMessageStatus(prev => ({ ...prev, sending: false, polling: true }));
       
       // The server now responds with just the userMessage (no assistantMessage yet)
       // The assistantMessage will be fetched when the server finishes processing
@@ -250,11 +255,15 @@ export default function DebatePage() {
           queryClient.invalidateQueries({ queryKey: [`/api/debates/${id}`] });
         } else {
           clearInterval(pollInterval);
+          setMessageStatus(prev => ({ ...prev, polling: false }));
         }
       }, 1000);
     },
     onError: (error) => {
       console.error("Error sending message:", error);
+      
+      // Reset message status on error
+      setMessageStatus(prev => ({ ...prev, sending: false, polling: false }));
       
       // Show error toast to the user
       toast({
@@ -364,11 +373,6 @@ export default function DebatePage() {
   };
   
   const isLoading = isLoadingDebate || isLoadingParty;
-  // Update the message sending state based on mutation status
-  useEffect(() => {
-    setMessageStatus(prev => ({ ...prev, sending: sendMessageMutation.isPending }));
-  }, [sendMessageMutation.isPending]);
-  
   const isEndingDebate = endDebateMutation.isPending;
   
   // Get current user
@@ -480,14 +484,14 @@ export default function DebatePage() {
           <>
             <ChatInterface 
               messages={debate?.messages || []}
-              isLoading={isSendingMessage}
+              isLoading={messageStatus.sending}
               onSendMessage={handleSendMessage}
               partyShortName={party?.shortName}
               userTyping={isUserTyping}
             />
             <ChatInput 
               onSendMessage={handleSendMessage}
-              isLoading={isSendingMessage}
+              isLoading={messageStatus.sending}
               onTypingStateChange={setIsUserTyping}
             />
           </>
