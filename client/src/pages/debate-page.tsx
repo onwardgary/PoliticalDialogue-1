@@ -226,17 +226,23 @@ export default function DebatePage() {
       // The assistantMessage will be fetched when the server finishes processing
       
       // Replace the temporary message with the official user message from the server
+      // but do NOT remove it - the user already sees it, we just need to update it
       queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
         if (!old) {
           console.log("No existing debate data to update");
           return old;
         }
         
-        // Filter out the temporary message we added and use the confirmed message from server
-        const filteredMessages = old.messages.filter((msg: Message) => !msg.id.startsWith('temp-'));
+        // Replace temp messages with confirmed messages from server
+        // but keep the message visible in the UI (don't remove and re-add)
+        const updatedMessages = old.messages.map((msg: Message) => {
+          // If it's a temporary message, replace it with the confirmed one
+          if (msg.id.startsWith('temp-')) {
+            return data.userMessage;
+          }
+          return msg;
+        });
         
-        // Only add the userMessage - the AI response will come later through polling
-        const updatedMessages = [...filteredMessages, data.userMessage];
         console.log("Confirmed user message in place, waiting for AI response...");
         
         return {
@@ -246,18 +252,30 @@ export default function DebatePage() {
         };
       });
       
-      // Start polling more frequently for a short time to get the AI response quickly
-      let pollCount = 0;
-      const pollInterval = setInterval(() => {
-        pollCount++;
-        if (pollCount <= 30) { // Poll for 30 seconds max
-          console.log("Polling for AI response...");
-          queryClient.invalidateQueries({ queryKey: [`/api/debates/${id}`] });
-        } else {
-          clearInterval(pollInterval);
-          setMessageStatus(prev => ({ ...prev, polling: false }));
-        }
-      }, 1000);
+      // Add a brief delay before starting polling to ensure smooth UI
+      setTimeout(() => {
+        // Start polling with an increasing delay to reduce server load
+        // but also ensure we get the response in a reasonable time
+        let pollCount = 0;
+        let currentDelay = 1000; // Start with 1s delay
+        
+        const pollInterval = setInterval(() => {
+          pollCount++;
+          
+          if (pollCount <= 30) { // Poll for 30 attempts max
+            console.log("Polling for AI response...");
+            queryClient.invalidateQueries({ queryKey: [`/api/debates/${id}`] });
+            
+            // Gradually increase polling delay after the first few attempts
+            if (pollCount > 5) {
+              currentDelay = Math.min(currentDelay * 1.2, 3000); // Increase delay up to 3s max
+            }
+          } else {
+            clearInterval(pollInterval);
+            setMessageStatus(prev => ({ ...prev, polling: false }));
+          }
+        }, currentDelay);
+      }, 1000); // Wait 1 second before starting to poll
     },
     onError: (error) => {
       console.error("Error sending message:", error);
@@ -272,16 +290,25 @@ export default function DebatePage() {
         variant: "destructive",
       });
       
-      // Remove the temporary message from the UI
+      // Keep temporary messages in the UI to preserve the conversation flow
+      // but mark them as failed
       queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
         if (!old) return old;
         
-        // Filter out any temporary messages
-        const filteredMessages = old.messages.filter((msg: Message) => !msg.id.startsWith('temp-'));
+        // Mark temporary messages as failed by appending "(Failed to send)" to content
+        const updatedMessages = old.messages.map((msg: Message) => {
+          if (msg.id.startsWith('temp-') && !msg.content.includes('(Failed to send)')) {
+            return {
+              ...msg,
+              content: `${msg.content} (Failed to send)`,
+            };
+          }
+          return msg;
+        });
         
         return {
           ...old,
-          messages: filteredMessages,
+          messages: updatedMessages,
         };
       });
     }
@@ -347,11 +374,55 @@ export default function DebatePage() {
       };
     });
     
-    // Immediate UI update, no delay needed
-    // The React Query cache is already updated and should reflect in the UI
-    
-    // Then send to the API
-    sendMessageMutation.mutate(content);
+    // Step 1: Give time for the user message to render and be seen (500ms)
+    setTimeout(() => {
+      // Step 2: Add the "typing" indicator message after the user's message has been displayed
+      const typingIndicatorId = `typing-${Date.now()}`;
+      const typingIndicatorMessage: Message = {
+        id: typingIndicatorId,
+        role: "assistant",
+        content: "...",
+        timestamp: Date.now()
+      };
+      
+      // Add typing indicator to the UI
+      queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
+        if (!old) return old;
+        
+        // Make sure we're working with the latest state
+        const currentMessages = [...old.messages];
+        
+        // Add typing indicator only if it doesn't already exist
+        if (!currentMessages.some(msg => msg.id.startsWith('typing-'))) {
+          return {
+            ...old,
+            messages: [...currentMessages, typingIndicatorMessage],
+          };
+        }
+        
+        return old;
+      });
+      
+      // Step 3: After showing typing indicator for a moment, send the actual API request
+      setTimeout(() => {
+        // Then send to the API
+        sendMessageMutation.mutate(content);
+        
+        // Remove typing indicator once we've sent the request
+        queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
+          if (!old) return old;
+          
+          // Filter out typing indicators
+          const filteredMessages = old.messages.filter((msg: Message) => !msg.id.startsWith('typing-'));
+          
+          return {
+            ...old,
+            messages: filteredMessages,
+          };
+        });
+      }, 800); // Wait 800ms with the typing indicator visible
+      
+    }, 500); // Wait 500ms for user message to be visible
   };
   
   const handleEndDebate = () => {

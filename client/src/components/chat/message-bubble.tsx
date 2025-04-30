@@ -204,6 +204,13 @@ export default function MessageBubble({ message, partyShortName = "BOT", isGroup
             <ReactMarkdown>
               {message.content}
             </ReactMarkdown>
+          ) : message.id.startsWith('typing-') ? (
+            // Special case for typing indicator
+            <div className="flex space-x-1 items-center py-2 px-1">
+              <div className="w-2 h-2 bg-neutral-300 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
+              <div className="w-2 h-2 bg-neutral-300 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
+              <div className="w-2 h-2 bg-neutral-300 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+            </div>
           ) : (
             <Typewriter 
               text={message.content} 
