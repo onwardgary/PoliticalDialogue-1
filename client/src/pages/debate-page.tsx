@@ -400,10 +400,15 @@ export default function DebatePage() {
     }
   });
   
+  // Determine the end debate endpoint based on which parameter is available
+  const endDebateEndpoint = secureId
+    ? `/api/debates/s/${secureId}/end`
+    : `/api/debates/${id}/end`;
+    
   // End debate mutation
   const endDebateMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/debates/${id}/end`, {});
+      const res = await apiRequest("POST", endDebateEndpoint, {});
       return res.json();
     },
     onSuccess: (data) => {
@@ -411,7 +416,7 @@ export default function DebatePage() {
       setIsEndDialogOpen(false);
       
       // Update React Query cache
-      queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
+      queryClient.setQueryData([apiEndpoint], (old: any) => {
         if (!old) return old;
         return {
           ...old,
