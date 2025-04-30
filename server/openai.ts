@@ -64,6 +64,7 @@ export function createPartySystemMessage(partyShortName: string): Message {
   9. Your responses must be complete and not cut off mid-sentence.
   10. Your responses must never exceed 1500 characters total.
   11. When searching for information, focus on official party websites, government statistics, and reputable news sources specific to Singapore.
+  12. CRITICAL: If a citizen makes biased, exaggerated, or unbelievable claims (like "70% of companies will leave Singapore"), politely verify these claims and correct them with factual information. Acknowledge the concern but provide accurate data and context.
   `;
   
   switch (partyShortName) {
