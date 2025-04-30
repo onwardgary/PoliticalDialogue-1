@@ -133,8 +133,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get a specific debate
-  app.get("/api/debates/:id", async (req, res) => {
+  // Get a specific debate by numeric ID (legacy route for backward compatibility)
+  app.get("/api/debates/:id([0-9]+)", async (req, res) => {
     // For demo purposes, we're allowing anyone to access debates
     const isGuest = !req.isAuthenticated();
     
@@ -160,6 +160,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error fetching debate:", error);
+      res.status(500).json({ message: "Failed to fetch debate" });
+    }
+  });
+  
+  // Get a specific debate by secure ID (preferred method)
+  app.get("/api/debates/s/:secureId", async (req, res) => {
+    // For demo purposes, we're allowing anyone to access debates
+    const isGuest = !req.isAuthenticated();
+    
+    try {
+      const secureId = req.params.secureId;
+      const debate = await storage.getDebateBySecureId(secureId);
+      
+      if (!debate) {
+        return res.status(404).json({ message: "Debate not found" });
+      }
+      
+      // Only check authorization if user is authenticated and not the owner
+      if (!isGuest && debate.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to access this debate" });
+      }
+      
+      // Filter out system messages
+      const filteredMessages = debate.messages.filter(msg => msg.role !== "system");
+      
+      res.json({
+        ...debate,
+        messages: filteredMessages,
+      });
+    } catch (error) {
+      console.error("Error fetching debate by secure ID:", error);
       res.status(500).json({ message: "Failed to fetch debate" });
     }
   });

@@ -163,13 +163,29 @@ export class MemStorage implements IStorage {
     const id = this.currentDebateId++;
     const createdAt = new Date();
     const updatedAt = createdAt;
-    const newDebate: Debate = { ...debate, id, createdAt, updatedAt };
+    // Generate a secure ID for the debate (16 character random string)
+    const secureId = nanoid(16);
+    
+    const newDebate: Debate = { 
+      ...debate, 
+      id, 
+      secureId, 
+      createdAt, 
+      updatedAt 
+    };
+    
     this.debates.set(id, newDebate);
     return newDebate;
   }
   
   async getDebate(id: number): Promise<Debate | undefined> {
     return this.debates.get(id);
+  }
+  
+  async getDebateBySecureId(secureId: string): Promise<Debate | undefined> {
+    return Array.from(this.debates.values()).find(
+      (debate) => debate.secureId === secureId
+    );
   }
   
   async getUserDebates(userId: number): Promise<Debate[]> {
