@@ -542,6 +542,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Regenerate a debate summary with secure ID
+  app.post("/api/debates/s/:secureId/regenerate-summary", async (req, res) => {
+    // For demo purposes, we're allowing anyone to regenerate summaries
+    const isGuest = !req.isAuthenticated();
+    
+    try {
+      const secureId = req.params.secureId;
+      console.log(`Regenerating summary for debate with secure ID ${secureId}`);
+      
+      const debate = await storage.getDebateBySecureId(secureId);
+      
+      if (!debate) {
+        return res.status(404).json({ message: "Debate not found" });
+      }
+      
+      // Only check authorization if user is authenticated and not the owner
+      if (!isGuest && debate.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to access this debate" });
+      }
+      
+      if (!debate.completed) {
+        return res.status(400).json({ message: "This debate is not completed yet" });
+      }
+      
+      console.log(`Generating new summary for debate ${debate.id} (${secureId})...`);
+      
+      try {
+        // Generate summary
+        const summary = await generateDebateSummary(debate.messages);
+        
+        console.log(`Got new summary, updating debate ${debate.id} (${secureId})`);
+        // Update debate with new summary
+        const updatedDebate = await storage.completeDebate(debate.id, summary);
+        
+        // Return summary
+        res.json({ summary });
+      } catch (openAiError) {
+        console.error(`OpenAI API error for regenerating debate summary ${debate.id} (${secureId}):`, openAiError);
+        
+        // Return error so the user can try again
+        res.status(500).json({ 
+          message: "Failed to regenerate summary. Please try again.",
+          error: openAiError.message
+        });
+      }
+    } catch (error) {
+      console.error("Error regenerating debate summary:", error);
+      res.status(500).json({ message: "Failed to regenerate debate summary" });
+    }
+  });
+  
   // Vote on a debate - legacy numeric ID version
   app.post("/api/debates/:id([0-9]+)/vote", async (req, res) => {
     if (!req.isAuthenticated()) {
