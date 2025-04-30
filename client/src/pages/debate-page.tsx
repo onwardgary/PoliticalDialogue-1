@@ -121,6 +121,10 @@ export default function DebatePage() {
   const [isUserTyping, setIsUserTyping] = useState(false);
   const [summaryGenerationStep, setSummaryGenerationStep] = useState<number | null>(null);
   
+  // Add a local cache of messages for immediate updates
+  // This bypasses React Query's asynchronous cache updates
+  const [localMessages, setLocalMessages] = useState<Message[]>([]);
+  
   // Track message sending state and other UI states
   const [messageStatus, setMessageStatus] = useState({
     sending: false,
@@ -147,6 +151,12 @@ export default function DebatePage() {
       const data = await response.json();
       console.log("Fetched debate data:", data);
       console.log("Message count:", data.messages.length);
+      
+      // Update local messages whenever we get new data from server
+      if (data.messages) {
+        setLocalMessages(data.messages);
+      }
+      
       return data;
     },
     refetchOnWindowFocus: true,
@@ -401,7 +411,11 @@ export default function DebatePage() {
     
     console.log("Adding temporary message to UI:", tempUserMessage);
     
-    // STEP 1: Show user message IMMEDIATELY in the UI with NO DELAY
+    // STEP 1: Show user message IMMEDIATELY in local state first
+    // This bypasses React Query's cache delays and renders instantly
+    setLocalMessages(prevMessages => [...prevMessages, tempUserMessage]);
+    
+    // Then also update the query cache (after local state is already updated)
     queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
       if (!old) return old;
       
@@ -428,11 +442,20 @@ export default function DebatePage() {
         timestamp: Date.now()
       };
       
-      // Add typing indicator to the UI
+      // Add typing indicator directly to local state first (instant UI update)
+      setLocalMessages(prevMessages => {
+        // Only add if it doesn't already exist
+        if (!prevMessages.some(msg => msg.id.startsWith('typing-'))) {
+          return [...prevMessages, typingIndicatorMessage];
+        }
+        return prevMessages;
+      });
+      
+      // Then also update the query cache
       queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
         if (!old) return old;
         
-        // Make sure we're working with the latest state (including user's message)
+        // Make sure we're working with the latest state
         const currentMessages = [...old.messages];
         
         // Add typing indicator only if it doesn't already exist
@@ -577,7 +600,7 @@ export default function DebatePage() {
         ) : (
           <>
             <ChatInterface 
-              messages={debate?.messages || []}
+              messages={localMessages.length > 0 ? localMessages : (debate?.messages || [])}
               isLoading={messageStatus.sending}
               onSendMessage={handleSendMessage}
               partyShortName={party?.shortName}
