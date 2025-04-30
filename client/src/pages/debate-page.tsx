@@ -232,28 +232,28 @@ export default function DebatePage() {
       // Update message status
       setMessageStatus(prev => ({ ...prev, sending: false, polling: true }));
       
-      // The server now responds with just the userMessage (no assistantMessage yet)
-      // The assistantMessage will be fetched when the server finishes processing
-      
-      // Replace the temporary message with the official user message from the server
-      // but do NOT remove it - the user already sees it, we just need to update it
-      queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
-        if (!old) {
-          console.log("No existing debate data to update");
-          return old;
-        }
-        
-        // Replace temp messages with confirmed messages from server
-        // but keep the message visible in the UI (don't remove and re-add)
-        const updatedMessages = old.messages.map((msg: Message) => {
-          // If it's a temporary message, replace it with the confirmed one
+      // Update local state directly - replace temp message with confirmed one
+      setLocalMessages(prev => {
+        const updatedMessages = prev.map((msg: Message) => {
+          // If it's a temporary message, replace it with the confirmed one from server
           if (msg.id.startsWith('temp-')) {
             return data.userMessage;
           }
           return msg;
         });
+        return updatedMessages;
+      });
+      
+      // Also update the React Query cache for consistency
+      queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
+        if (!old) return old;
         
-        console.log("Confirmed user message in place, waiting for AI response...");
+        const updatedMessages = old.messages.map((msg: Message) => {
+          if (msg.id.startsWith('temp-')) {
+            return data.userMessage;
+          }
+          return msg;
+        });
         
         return {
           ...old,
@@ -262,60 +262,55 @@ export default function DebatePage() {
         };
       });
       
-      // Start polling with an adaptive delay
-      // We'll start polling right away but do so intelligently
+      console.log("Confirmed user message in place, waiting for AI response...");
+      
+      // Start adaptive polling for AI response
       let pollCount = 0;
-      let currentDelay = 1200; // Start with 1.2s delay (after typing indicator appears)
+      let currentDelay = 1000; // Start with 1s polling delay
       let hasReceivedResponse = false;
       
       const pollInterval = setInterval(() => {
         pollCount++;
         
-        if (pollCount <= 30 && !hasReceivedResponse) { // Poll for 30 attempts max
+        if (pollCount <= 30 && !hasReceivedResponse) {
           console.log("Polling for AI response...");
           
-          // When we query for new data, check if the response has arrived
-          queryClient.fetchQuery({ 
-            queryKey: [`/api/debates/${id}`],
-            staleTime: 0 
-          }).then((fetchedData: any) => {
-            // Check if the messages array has grown compared to our known message count
-            // This means a new AI message has arrived
+          // Use direct fetch instead of React Query for more control
+          fetch(`/api/debates/${id}`, {
+            headers: { 'Cache-Control': 'no-cache' }
+          })
+          .then(response => response.json())
+          .then(fetchedData => {
+            // Count messages to see if new ones arrived
             const currentMessageCount = fetchedData?.messages?.length || 0;
-            const previousMessages = queryClient.getQueryData([`/api/debates/${id}`]) as any;
-            const previousMessageCount = previousMessages?.messages?.length || 0;
+            const currentLocalCount = localMessages.length;
             
-            // If we have more messages now than before, the AI response has arrived
-            if (currentMessageCount > previousMessageCount) {
-              console.log("AI response received, updating UI");
+            // If we have new messages, update UI
+            if (currentMessageCount > currentLocalCount) {
+              console.log("AI response received, updating UI directly");
               hasReceivedResponse = true;
               
-              // Update the UI with the new message, preserving typing indicators if present
-              queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
-                if (!old) return fetchedData;
-                
-                // Keep the typing indicator if it exists (don't remove it abruptly)
-                const hasTypingIndicator = old.messages.some((msg: Message) => msg.id.startsWith('typing-'));
-                
-                if (hasTypingIndicator) {
-                  // Replace the typing indicator with the actual AI response
-                  const messagesWithoutTyping = old.messages.filter((msg: Message) => !msg.id.startsWith('typing-'));
-                  // Add the latest AI message
-                  const latestAIMessage = fetchedData.messages[fetchedData.messages.length - 1];
-                  
-                  return {
-                    ...fetchedData,
-                    messages: [...messagesWithoutTyping, latestAIMessage]
-                  };
-                }
-                
-                return fetchedData;
+              // Get the latest AI message
+              const latestAIMessage = fetchedData.messages[fetchedData.messages.length - 1];
+              
+              // Update local state directly - replace typing indicator with AI response
+              setLocalMessages(prev => {
+                // Remove any typing indicators
+                const messagesWithoutTyping = prev.filter(msg => !msg.id.startsWith('typing-'));
+                // Add the new AI message
+                return [...messagesWithoutTyping, latestAIMessage];
               });
               
               // Clear polling since we got our response
               clearInterval(pollInterval);
               setMessageStatus(prev => ({ ...prev, polling: false }));
+              
+              // Also update React Query cache
+              queryClient.setQueryData([`/api/debates/${id}`], fetchedData);
             }
+          })
+          .catch(error => {
+            console.error("Error polling for response:", error);
           });
           
           // Gradually increase polling delay after the first few attempts
@@ -341,8 +336,20 @@ export default function DebatePage() {
         variant: "destructive",
       });
       
-      // Keep temporary messages in the UI to preserve the conversation flow
-      // but mark them as failed
+      // Mark failed messages directly in local state
+      setLocalMessages(prev => {
+        return prev.map(msg => {
+          if (msg.id.startsWith('temp-') && !msg.content.includes('(Failed to send)')) {
+            return {
+              ...msg,
+              content: `${msg.content} (Failed to send)`,
+            };
+          }
+          return msg;
+        });
+      });
+      
+      // Also update React Query cache for consistency
       queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
         if (!old) return old;
         
@@ -395,13 +402,14 @@ export default function DebatePage() {
     },
   });
   
+  // Custom solution for absolutely no delay in message display
   const handleSendMessage = (content: string) => {
     if (debate?.completed) return;
     
     // Generate a consistent ID for the temporary message
     const tempId = `temp-${Date.now()}`;
     
-    // Create temporary user message to add to the UI INSTANTLY
+    // STEP 1: Create temporary user message
     const tempUserMessage: Message = {
       id: tempId,
       role: "user",
@@ -409,30 +417,35 @@ export default function DebatePage() {
       timestamp: Date.now()
     };
     
-    console.log("Adding temporary message to UI:", tempUserMessage);
+    console.log("ULTRA-FAST: Adding message to UI:", tempUserMessage);
     
-    // STEP 1: Show user message IMMEDIATELY in local state first
-    // This bypasses React Query's cache delays and renders instantly
-    setLocalMessages(prevMessages => [...prevMessages, tempUserMessage]);
+    // DIRECT STATE UPDATE: Update local messages state synchronously
+    // No waiting for React Query at all - this forces an instant render
+    if (debate?.messages) {
+      setLocalMessages([...debate.messages, tempUserMessage]);
+    } else {
+      setLocalMessages([tempUserMessage]);
+    }
     
-    // Then also update the query cache (after local state is already updated)
+    // Also update React Query cache (but this is secondary, UI already updated)
     queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
-      if (!old) return old;
-      
-      const updatedMessages = [...old.messages, tempUserMessage];
-      console.log("Updated messages count:", updatedMessages.length);
+      if (!old) return { 
+        id: parseInt(id || "0"),
+        messages: [tempUserMessage],
+        userId: 1,
+        partyId: 1
+      };
       
       return {
         ...old,
-        messages: updatedMessages,
+        messages: [...old.messages, tempUserMessage],
       };
     });
     
-    // STEP 2: Immediately start sending the API request 
-    // This happens in parallel with the UI updates so no delay in server processing
+    // STEP 2: Start sending the API request in the background
     sendMessageMutation.mutate(content);
     
-    // STEP 3: Show typing indicator (after a natural thinking delay)
+    // STEP 3: Show typing indicator after a short delay
     setTimeout(() => {
       const typingIndicatorId = `typing-${Date.now()}`;
       const typingIndicatorMessage: Message = {
@@ -442,33 +455,11 @@ export default function DebatePage() {
         timestamp: Date.now()
       };
       
-      // Add typing indicator directly to local state first (instant UI update)
-      setLocalMessages(prevMessages => {
-        // Only add if it doesn't already exist
-        if (!prevMessages.some(msg => msg.id.startsWith('typing-'))) {
-          return [...prevMessages, typingIndicatorMessage];
-        }
-        return prevMessages;
-      });
+      // Add typing indicator DIRECTLY to local state 
+      // This ensures it appears instantly
+      setLocalMessages(prevMessages => [...prevMessages, typingIndicatorMessage]);
       
-      // Then also update the query cache
-      queryClient.setQueryData([`/api/debates/${id}`], (old: any) => {
-        if (!old) return old;
-        
-        // Make sure we're working with the latest state
-        const currentMessages = [...old.messages];
-        
-        // Add typing indicator only if it doesn't already exist
-        if (!currentMessages.some(msg => msg.id.startsWith('typing-'))) {
-          return {
-            ...old,
-            messages: [...currentMessages, typingIndicatorMessage],
-          };
-        }
-        
-        return old;
-      });
-    }, 800); // Natural thinking delay before typing indicator appears (800ms)
+    }, 800); // Small thinking delay before typing indicator (800ms)
   };
   
   const handleEndDebate = () => {
