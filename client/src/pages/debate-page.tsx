@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
 import Sidebar from "@/components/sidebar";
 import { MobileHeader, MobileNavigation } from "@/components/mobile-nav";
 import ChatInterface from "@/components/chat/chat-interface";
@@ -286,12 +287,20 @@ export default function DebatePage() {
   const isSendingMessage = sendMessageMutation.isPending;
   const isEndingDebate = endDebateMutation.isPending;
   
-  // If there's no ongoing debate, redirect to home
+  // Get current user
+  const { user } = useAuth();
+  
+  // Redirect if debate doesn't exist or user doesn't own it
   useEffect(() => {
-    if (!isLoading && !debate) {
+    if (!isLoading && (!debate || (debate && user && debate.userId !== user.id))) {
+      toast({
+        title: "Access denied",
+        description: "You can only view your own debates.",
+        variant: "destructive",
+      });
       setLocation("/");
     }
-  }, [isLoading, debate, setLocation]);
+  }, [isLoading, debate, user, setLocation, toast]);
   
   if (isLoading) {
     return (

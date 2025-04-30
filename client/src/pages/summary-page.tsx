@@ -1,14 +1,20 @@
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 import Sidebar from "@/components/sidebar";
 import { MobileHeader, MobileNavigation } from "@/components/mobile-nav";
 import DebateSummary from "@/components/debate-summary";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock } from "lucide-react";
+import { ArrowLeft, Clock, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
 export default function SummaryPage() {
   const { id } = useParams();
+  const [_, setLocation] = useLocation();
+  const { toast } = useToast();
+  const { user } = useAuth();
   
   // Fetch debate data
   const { data: debate, isLoading: isLoadingDebate } = useQuery({
@@ -56,10 +62,22 @@ export default function SummaryPage() {
   
   const isLoading = isLoadingDebate || isLoadingParty || isLoadingAggregate;
   
+  // Redirect if debate doesn't exist or user doesn't own it
+  useEffect(() => {
+    if (!isLoading && (!debate || (debate && user && debate.userId !== user.id))) {
+      toast({
+        title: "Access denied",
+        description: "You can only view your own debate summaries.",
+        variant: "destructive",
+      });
+      setLocation("/");
+    }
+  }, [isLoading, debate, user, setLocation, toast]);
+  
   if (isLoading || !debate || !party) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -94,7 +112,7 @@ export default function SummaryPage() {
         
         <div className="p-6">
           <DebateSummary 
-            debateId={parseInt(id)}
+            debateId={parseInt(id || "0")}
             summary={debate.summary}
             partyName={party.name}
             partyShortName={party.shortName}
