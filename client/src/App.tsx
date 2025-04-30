@@ -17,8 +17,15 @@ function Router() {
     <Switch>
       {/* Regular routes accessible to all users */}
       <Route path="/" component={HomePage} />
-      <Route path="/debate/:id" component={DebatePage} />
-      <Route path="/summary/:id" component={SummaryPage} />
+      
+      {/* Legacy numeric ID routes for backward compatibility */}
+      <Route path="/debate/:id([0-9]+)" component={DebatePage} />
+      <Route path="/summary/:id([0-9]+)" component={SummaryPage} />
+      
+      {/* New secure ID routes (preferred) */}
+      <Route path="/debate/s/:secureId" component={DebatePage} />
+      <Route path="/summary/s/:secureId" component={SummaryPage} />
+      
       <Route path="/trending" component={TrendingPage} />
       
       {/* User routes - require authentication */}

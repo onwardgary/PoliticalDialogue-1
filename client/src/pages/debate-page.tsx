@@ -113,7 +113,11 @@ function SummaryGenerationLoader({ step }: { step: number }) {
 }
 
 export default function DebatePage() {
-  const { id } = useParams();
+  // Extract parameters from the URL - could be either regular ID or secure ID
+  const params = useParams();
+  const id = params.id;
+  const secureId = params.secureId;
+  
   const [_, setLocation] = useLocation();
   const { toast } = useToast();
   const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
@@ -135,12 +139,17 @@ export default function DebatePage() {
     polling: false
   });
   
+  // Determine which API endpoint to use based on which parameter is available
+  const apiEndpoint = secureId 
+    ? `/api/debates/s/${secureId}` 
+    : `/api/debates/${id}`;
+  
   // Fetch debate data with adaptive polling for improved responsiveness
   const { data: debate, isLoading: isLoadingDebate } = useQuery({
-    queryKey: [`/api/debates/${id}`],
+    queryKey: [apiEndpoint],
     queryFn: async () => {
-      console.log("Fetching debate data for ID:", id);
-      const response = await fetch(`/api/debates/${id}`, {
+      console.log("Fetching debate data from:", apiEndpoint);
+      const response = await fetch(apiEndpoint, {
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache'
@@ -196,7 +205,7 @@ export default function DebatePage() {
       // Otherwise, reduce polling frequency to save resources
       return 10000; // Poll every 10 seconds for inactive conversations
     },
-    enabled: !!id && !messageStatus.sending, // Don't poll while sending a message
+    enabled: !!(id || secureId) && !messageStatus.sending, // Don't poll while sending a message
   });
   
   // Fetch party data with optimized caching
@@ -228,13 +237,19 @@ export default function DebatePage() {
     gcTime: 24 * 60 * 60 * 1000,  // Keep in cache for 24 hours (renamed from cacheTime in v5)
   });
   
+  // Determine the message endpoint based on which parameter is available
+  const messageEndpoint = secureId
+    ? `/api/debates/s/${secureId}/messages`
+    : `/api/debates/${id}/messages`;
+    
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
       // Update message status to sending
       setMessageStatus(prev => ({ ...prev, sending: true }));
-      console.log("Sending message to debate", id, ":", content);
-      const res = await apiRequest("POST", `/api/debates/${id}/messages`, { content });
+      const targetId = secureId || id;
+      console.log("Sending message to debate", targetId, ":", content);
+      const res = await apiRequest("POST", messageEndpoint, { content });
       const data = await res.json();
       console.log("Response received:", data);
       return data;
@@ -289,7 +304,7 @@ export default function DebatePage() {
           console.log("Polling for AI response...");
           
           // Use direct fetch instead of React Query for more control
-          fetch(`/api/debates/${id}`, {
+          fetch(apiEndpoint, {
             headers: { 'Cache-Control': 'no-cache' }
           })
           .then(response => response.json())
