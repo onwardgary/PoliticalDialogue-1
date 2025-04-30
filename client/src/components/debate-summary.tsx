@@ -18,6 +18,17 @@ export default function DebateSummary({
   partyName,
   partyShortName
 }: DebateSummaryProps) {
+  // Safety check: ensure summary exists and has required properties
+  if (!summary || !summary.partyArguments || !summary.citizenArguments) {
+    return (
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          <h3 className="text-lg font-semibold mb-4">Your Debate Summary</h3>
+          <p className="text-neutral-600">The summary is still being generated or is unavailable. Please try again in a moment.</p>
+        </CardContent>
+      </Card>
+    );
+  }
   const { toast } = useToast();
   
   const voteMutation = useMutation({

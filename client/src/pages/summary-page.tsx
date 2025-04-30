@@ -82,6 +82,29 @@ export default function SummaryPage() {
     );
   }
   
+  // Check if summary exists, if not show a loading message
+  if (!debate.summary) {
+    return (
+      <div className="min-h-screen flex flex-col md:flex-row">
+        <Sidebar />
+        <main className="flex-1">
+          <MobileHeader />
+          <div className="p-6">
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Your Debate Summary</h3>
+                <div className="flex items-center space-x-2 text-neutral-600">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <p>The summary is still being generated. Please wait a moment...</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+      </div>
+    );
+  }
+  
   const formattedDate = debate?.createdAt 
     ? format(new Date(debate.createdAt), "MMMM d, yyyy") 
     : "Unknown date";
