@@ -28,6 +28,7 @@ export type Message = {
   role: "user" | "assistant" | "system";
   content: string;
   timestamp: number;
+  searchEnabled?: boolean; // Indicates if search was used to generate this message
 };
 
 export const parties = pgTable("parties", {
