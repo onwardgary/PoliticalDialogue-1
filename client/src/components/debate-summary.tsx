@@ -4,9 +4,10 @@ import { DebateSummary as DebateSummaryType } from "@shared/schema";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 type DebateSummaryProps = {
-  debateId: number;
+  debateId: string;
   summary: DebateSummaryType;
   partyName: string;
   partyShortName: string;
@@ -18,18 +19,92 @@ export default function DebateSummary({
   partyName,
   partyShortName
 }: DebateSummaryProps) {
+  const { toast } = useToast();
+  
+  // Handle regenerating a summary if it failed
+  const regenerateMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/debates/s/${debateId}/regenerate-summary`);
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Summary regenerated",
+        description: "A new summary has been generated for your debate.",
+      });
+      // Force page refresh to show new summary
+      window.location.reload();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Could not regenerate summary: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+  
   // Safety check: ensure summary exists and has required properties
   if (!summary || !summary.partyArguments || !summary.citizenArguments) {
+    const isFallbackSummary = summary && Object.keys(summary).length > 0;
+    
     return (
       <Card className="mb-6">
         <CardContent className="p-6">
           <h3 className="text-lg font-semibold mb-4">Your Debate Summary</h3>
-          <p className="text-neutral-600">The summary is still being generated or is unavailable. Please try again in a moment.</p>
+          
+          {isFallbackSummary ? (
+            <div>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                <div className="flex items-start">
+                  <div className="mr-3 mt-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm text-yellow-800 font-medium">Summary Generation Issue</p>
+                    <p className="text-sm text-yellow-700 mt-1">
+                      We couldn't generate a complete summary for your debate. The AI service might be experiencing high demand or other issues.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <Button
+                onClick={() => regenerateMutation.mutate()}
+                className="w-full mb-2"
+                disabled={regenerateMutation.isPending}
+              >
+                {regenerateMutation.isPending ? (
+                  <span className="flex items-center">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Regenerating Summary...
+                  </span>
+                ) : (
+                  <span className="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 2v6h-6"></path>
+                      <path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path>
+                      <path d="M3 22v-6h6"></path>
+                      <path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path>
+                    </svg>
+                    Regenerate Summary
+                  </span>
+                )}
+              </Button>
+              
+              <p className="text-xs text-neutral-500 text-center">
+                Try regenerating the summary to get a complete analysis of your debate.
+              </p>
+            </div>
+          ) : (
+            <p className="text-neutral-600">The summary is still being generated or is unavailable. Please try again in a moment.</p>
+          )}
         </CardContent>
       </Card>
     );
   }
-  const { toast } = useToast();
   
   const voteMutation = useMutation({
     mutationFn: async (vote: { votedFor: "party" | "citizen" }) => {

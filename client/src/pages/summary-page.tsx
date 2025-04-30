@@ -184,7 +184,7 @@ export default function SummaryPage() {
         
         <div className="p-6">
           <DebateSummary 
-            debateId={parseInt(id || "0")}
+            debateId={secureId || String(debate.id)}
             summary={debate.summary}
             partyName={party.name}
             partyShortName={party.shortName}
