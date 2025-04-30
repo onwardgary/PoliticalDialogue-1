@@ -121,8 +121,11 @@ export default function DebatePage() {
   const [isUserTyping, setIsUserTyping] = useState(false);
   const [summaryGenerationStep, setSummaryGenerationStep] = useState<number | null>(null);
   
-  // Declare mutation placeholders to fix reference order
-  const [isPendingMessage, setIsPendingMessage] = useState(false);
+  // Track message sending state and other UI states
+  const [messageStatus, setMessageStatus] = useState({
+    sending: false,
+    polling: false
+  });
   
   // Fetch debate data with adaptive polling for improved responsiveness
   const { data: debate, isLoading: isLoadingDebate } = useQuery({
@@ -170,7 +173,7 @@ export default function DebatePage() {
       // Otherwise, reduce polling frequency to save resources
       return 10000; // Poll every 10 seconds for inactive conversations
     },
-    enabled: !!id && !isPendingMessage, // Don't poll while sending a message
+    enabled: !!id && !messageStatus.sending, // Don't poll while sending a message
   });
   
   // Fetch party data with optimized caching
@@ -199,7 +202,7 @@ export default function DebatePage() {
     enabled: !!debate,
     refetchOnWindowFocus: false,
     staleTime: 24 * 60 * 60 * 1000, // Party data is static, cache for 24 hours
-    cacheTime: 24 * 60 * 60 * 1000,  // Keep in cache for 24 hours
+    gcTime: 24 * 60 * 60 * 1000,  // Keep in cache for 24 hours (renamed from cacheTime in v5)
   });
   
   // Send message mutation
@@ -361,7 +364,11 @@ export default function DebatePage() {
   };
   
   const isLoading = isLoadingDebate || isLoadingParty;
-  const isSendingMessage = sendMessageMutation.isPending;
+  // Update the message sending state based on mutation status
+  useEffect(() => {
+    setMessageStatus(prev => ({ ...prev, sending: sendMessageMutation.isPending }));
+  }, [sendMessageMutation.isPending]);
+  
   const isEndingDebate = endDebateMutation.isPending;
   
   // Get current user
