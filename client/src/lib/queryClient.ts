@@ -19,23 +19,38 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  console.log(`API request: ${method} ${url}`, data ? 'with data' : 'without data');
+  // Optimize for fast performance - only log in development
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`API request: ${method} ${url}`, data ? 'with data' : 'without data');
+  }
   
   const options: RequestInit = {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers: data ? { 
+      "Content-Type": "application/json",
+      // Add cache control header to prevent browser caching
+      "Cache-Control": "no-cache"
+    } : {
+      "Cache-Control": "no-cache"
+    },
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
-  };
+    // Add priority hints for faster processing
+    priority: "high"
+  } as RequestInit; // Type cast needed because priority is not in standard type
   
   try {
     const res = await fetch(url, options);
-    console.log(`API response: ${method} ${url} status: ${res.status}`);
     
-    // Inspect cookies that were set
-    const setCookieHeader = res.headers.get('set-cookie');
-    if (setCookieHeader) {
-      console.log('Set-Cookie header received:', setCookieHeader);
+    // Optimize for fast performance - only log in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`API response: ${method} ${url} status: ${res.status}`);
+      
+      // Inspect cookies that were set
+      const setCookieHeader = res.headers.get('set-cookie');
+      if (setCookieHeader) {
+        console.log('Set-Cookie header received:', setCookieHeader);
+      }
     }
     
     await throwIfResNotOk(res);

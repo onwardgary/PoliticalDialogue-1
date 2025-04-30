@@ -288,11 +288,8 @@ export default function DebatePage() {
       };
     });
     
-    // Force a rerender by triggering a cache invalidation
-    setTimeout(() => {
-      console.log("Forcing refresh of message list");
-      queryClient.invalidateQueries({ queryKey: [`/api/debates/${id}`] });
-    }, 10);
+    // Immediate UI update, no delay needed
+    // The React Query cache is already updated and should reflect in the UI
     
     // Then send to the API
     sendMessageMutation.mutate(content);

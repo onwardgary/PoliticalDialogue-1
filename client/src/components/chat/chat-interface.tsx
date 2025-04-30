@@ -24,29 +24,33 @@ export default function ChatInterface({ messages, isLoading, onSendMessage, part
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
-  // Auto-scroll to bottom when messages change or typing indicators appear
+  // Auto-scroll to bottom when messages change or typing indicators appear - optimized for responsiveness
   useEffect(() => {
     const container = chatContainerRef.current;
-    if (container) {
-      // Always auto-scroll when the user sends a new message
-      const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
-      const isLastMessageFromUser = lastMessage && lastMessage.role === "user";
-      
-      // Auto-scroll immediately if:
-      // 1. User is already near the bottom
-      // 2. User just sent a message (their message should always be visible)
-      // 3. User is typing (typing indicator should be visible)
-      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200;
-      
-      if (isNearBottom || isLastMessageFromUser || userTyping) {
-        // Use requestAnimationFrame for smoother scrolling and to ensure DOM is updated first
-        requestAnimationFrame(() => {
-          container.scrollTop = container.scrollHeight;
-        });
-      } else if (messages.length > 0 && messages[messages.length - 1].role === "assistant") {
-        // Show scroll button if we received a new message and didn't scroll
-        setShowScrollButton(true);
-      }
+    if (!container) return;
+    
+    // Always auto-scroll when the user sends a new message
+    const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+    const isLastMessageFromUser = lastMessage && lastMessage.role === "user";
+    
+    // Auto-scroll immediately if:
+    // 1. User is already near the bottom
+    // 2. User just sent a message (their message should always be visible)
+    // 3. User is typing (typing indicator should be visible)
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200;
+    
+    // Immediate scroll for user messages - no animation delay for better responsiveness
+    if (isLastMessageFromUser) {
+      container.scrollTop = container.scrollHeight;
+      return;
+    }
+    
+    if (isNearBottom || userTyping) {
+      // Use sync scrolling for user typing and when near bottom
+      container.scrollTop = container.scrollHeight;
+    } else if (messages.length > 0 && messages[messages.length - 1].role === "assistant") {
+      // Show scroll button if we received a new message and didn't scroll
+      setShowScrollButton(true);
     }
   }, [messages, isLoading, userTyping]);
 

@@ -162,3 +162,19 @@
   animation: bounce-slow 2s ease-in-out infinite;
 }
 
+/* Instant message appear effect */
+@keyframes appear {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-appear {
+  animation: appear 0.15s ease-out forwards;
+}
+

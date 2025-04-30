@@ -28,10 +28,15 @@ export default function ChatInput({ onSendMessage, isLoading, onTypingStateChang
       // Capture the message to send
       const messageToSend = message;
       
-      // Clear input field immediately (for instant UI feedback)
+      // Clear input field immediately before any processing (for instant UI feedback)
       setMessage("");
       
-      // Stop typing indicator when sending a message
+      // Reset textarea height immediately
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
+      
+      // Stop typing indicator immediately
       if (onTypingStateChange) {
         onTypingStateChange(false);
       }
@@ -42,13 +47,11 @@ export default function ChatInput({ onSendMessage, isLoading, onTypingStateChang
         typingTimeoutRef.current = null;
       }
       
-      // Send the message (after clearing input for better UX)
-      onSendMessage(messageToSend);
+      // Immediately focus back on textarea for better UX (no delay)
+      textareaRef.current?.focus();
       
-      // Focus back on textarea after sending
-      setTimeout(() => {
-        textareaRef.current?.focus();
-      }, 0);
+      // Finally send the message (after UI is updated)
+      onSendMessage(messageToSend);
     }
   };
   
@@ -130,11 +133,11 @@ export default function ChatInput({ onSendMessage, isLoading, onTypingStateChang
         </div>
         <Button 
           type="submit" 
-          className="ml-2 min-h-[60px] px-4" 
+          className="ml-2 min-h-[45px] md:min-h-[60px] px-4 transition-all duration-100" 
           disabled={!message.trim() || isLoading || isOverLimit}
         >
           {isLoading ? (
-            <span className="animate-pulse">Sending...</span>
+            <span className="animate-pulse text-primary-foreground/80">Sent</span>
           ) : (
             <>
               <SendIcon className="h-4 w-4 mr-2" />

@@ -153,8 +153,8 @@ export default function MessageBubble({ message, partyShortName = "BOT", isGroup
 
   return (
     <div className={cn(
-      "flex mb-2 animate-slideUp",
-      isUser ? "flex-row-reverse" : "",
+      "flex mb-2",
+      isUser ? "flex-row-reverse animate-appear" : "animate-slideUp",
       isGrouped ? "mt-1" : "mt-4" // Add more spacing between different senders
     )}>
       {/* Only show avatar for the first message in a group */}
