@@ -133,7 +133,7 @@ export default function DebateSummary({
           </div>
         )}
         
-        {/* AI Deliberation with 4-Pillar Framework */}
+        {/* AI Deliberation with 5-Pillar Framework */}
         {summary.conclusion && (
           <div className="mt-6 border-t border-neutral-200 pt-4">
             <h4 className="text-md font-semibold mb-2">AI Deliberation</h4>
@@ -152,7 +152,7 @@ export default function DebateSummary({
                 </span>
               </div>
               
-              {/* 4-Pillar Evaluation */}
+              {/* 5-Pillar Evaluation */}
               {summary.conclusion.evaluation && (
                 <div className="space-y-4 mt-4 mb-4">
                   <h5 className="text-sm font-semibold text-neutral-800">Evaluation Criteria</h5>
@@ -195,6 +195,16 @@ export default function DebateSummary({
                       </div>
                       <div className="p-3">
                         <p className="text-sm text-neutral-700">{summary.conclusion.evaluation.toneAndClarity}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Pragmatism */}
+                    <div className="border border-neutral-200 rounded-lg overflow-hidden">
+                      <div className="bg-teal-50 p-2 border-b border-neutral-200">
+                        <h6 className="text-sm font-medium text-teal-800">Pragmatism</h6>
+                      </div>
+                      <div className="p-3">
+                        <p className="text-sm text-neutral-700">{summary.conclusion.evaluation.pragmatism}</p>
                       </div>
                     </div>
                   </div>
