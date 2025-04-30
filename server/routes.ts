@@ -84,10 +84,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timestamp: Date.now(),
       };
       
-      // Create debate
+      // Create debate with a secure ID
+      const secureId = nanoid(12); // Generate a secure, URL-friendly ID
       const debate = await storage.createDebate({
         userId,
         partyId,
+        secureId,
         topic: topic || null,
         messages: [systemMessage, welcomeMessage],
         completed: false,
@@ -95,6 +97,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(201).json({
         id: debate.id,
+        secureId: debate.secureId,
         partyId: debate.partyId,
         topic: debate.topic,
         messages: [welcomeMessage], // Only send the welcome message, not the system message
@@ -207,6 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Don't include messages in the list view
       const debatesList = debates.map(debate => ({
         id: debate.id,
+        secureId: debate.secureId,
         partyId: debate.partyId,
         topic: debate.topic,
         completed: debate.completed,
@@ -574,6 +578,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const vote = await storage.createVote({
         userId: req.user.id,
         debateId,
+        votedFor,
+      });
+      
+      res.status(201).json({ message: "Vote recorded successfully" });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid vote data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to record vote" });
+    }
+  });
+  
+  // Vote on a debate - secure ID version
+  app.post("/api/debates/s/:secureId/vote", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    const bodySchema = z.object({
+      votedFor: z.enum(["party", "citizen"]),
+    });
+    
+    try {
+      const { votedFor } = bodySchema.parse(req.body);
+      const secureId = req.params.secureId;
+      const debate = await storage.getDebateBySecureId(secureId);
+      
+      if (!debate) {
+        return res.status(404).json({ message: "Debate not found" });
+      }
+      
+      if (!debate.completed) {
+        return res.status(400).json({ message: "Cannot vote on an incomplete debate" });
+      }
+      
+      // Create vote
+      const vote = await storage.createVote({
+        userId: req.user.id,
+        debateId: debate.id,
         votedFor,
       });
       
