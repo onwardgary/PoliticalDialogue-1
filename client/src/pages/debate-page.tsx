@@ -142,6 +142,9 @@ export default function DebatePage() {
   // Track round extension status
   const [isExtendingRounds, setIsExtendingRounds] = useState(false);
   
+  // Add state for inline extension options
+  const [showInlineExtensionOptions, setShowInlineExtensionOptions] = useState(false);
+  
   // Determine which API endpoint to use based on which parameter is available
   const apiEndpoint = secureId 
     ? `/api/debates/s/${secureId}` 
@@ -655,6 +658,42 @@ export default function DebatePage() {
       setViewState('chat');
     }
   }, [isLoadingDebate, debate?.completed, summaryGenerationStep, setLocation, id, secureId]);
+  
+  // Effect to manage inline extension options
+  useEffect(() => {
+    if (!debate) return;
+    
+    // Calculate current round based on user messages
+    const userMessages = debate.messages.filter((msg: Message) => msg.role === 'user');
+    const currentRound = userMessages.length;
+    const maxRounds = debate.maxRounds || 6;
+    
+    // Check if last message is from user
+    const lastMessage = debate.messages.length > 0 ? debate.messages[debate.messages.length - 1] : null;
+    const isLastMessageFromUser = lastMessage && lastMessage.role === 'user';
+    
+    // Only show extension options when user has sent their last message AND bot has responded
+    if (
+      currentRound === maxRounds && 
+      maxRounds < 8 && 
+      !isExtendingRounds && 
+      !isLastMessageFromUser && // Only show after bot has responded to last user message
+      !messageStatus.sending // Make sure bot isn't still generating a response
+    ) {
+      console.log(`Showing inline extension options: currentRound=${currentRound}, maxRounds=${maxRounds}`);
+      setShowInlineExtensionOptions(true);
+    } else if (
+      // Hide extension options when:
+      // - Extension is in progress
+      // - or we're at max rounds already (8)
+      // - or a new message was added after showing options
+      (isExtendingRounds || maxRounds >= 8 || (debate.messages.length > 0 && showInlineExtensionOptions && lastMessage?.role === 'user')) && 
+      showInlineExtensionOptions
+    ) {
+      console.log(`Hiding inline extension options: isExtendingRounds=${isExtendingRounds}, maxRounds=${maxRounds}`);
+      setShowInlineExtensionOptions(false);
+    }
+  }, [debate, isExtendingRounds, messageStatus.sending, showInlineExtensionOptions]);
   
   if (isLoading) {
     return (
