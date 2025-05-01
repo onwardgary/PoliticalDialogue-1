@@ -197,14 +197,11 @@ export async function generateDebateSummary(messages: Message[], mode: string = 
       content: msg.content
     }));
     
-    // Change prompt based on mode
-    console.log(`Generating summary for ${mode} mode`);
+    // Always use debate format as requested by user
+    console.log("Generating summary in debate format (always using debate mode)");
     
-    let promptContent = '';
-    
-    if (mode === 'debate') {
-      // Original debate prompt with debate-specific instructions
-      promptContent = `Analyze this debate and provide a comprehensive structured summary with the following components:
+    // Always use debate format regardless of the mode parameter
+    let promptContent = `Analyze this debate and provide a comprehensive structured summary with the following components:
 
       1. "partyArguments": The top 5 key arguments made by the political party (the assistant) - concise but specific
       2. "citizenArguments": The top 5 key arguments made by the citizen (the user) - concise but specific
