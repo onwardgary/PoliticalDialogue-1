@@ -427,6 +427,10 @@ export default function DebatePage() {
     onSuccess: (data) => {
       console.log("Debate rounds extended successfully:", data);
       
+      // IMMEDIATELY reset extending state to hide dialog
+      setIsExtendingRounds(false);
+      setShowInlineExtensionOptions(false);
+      
       // Update React Query cache with the new maxRounds value
       queryClient.setQueryData([apiEndpoint], (old: any) => {
         if (!old) return old;
@@ -437,9 +441,8 @@ export default function DebatePage() {
         };
       });
       
-      // Explicitly hide inline extension options when rounds are extended
+      // Log that we're forcing dialog close
       console.log("🛑 FORCING HIDE of inline extension options after extension");
-      setShowInlineExtensionOptions(false);
       
       // Show success toast
       toast({
