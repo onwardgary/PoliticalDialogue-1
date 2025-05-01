@@ -260,12 +260,15 @@ export default function ChatInterface({
                 size="lg"
                 className="w-full justify-start gap-3"
                 onClick={() => {
-                  // First close the dialog immediately, then process the extension
+                  // First close the dialog immediately
                   setShowRoundExtensionDialog(false); 
-                  // Add a small delay to ensure dialog is fully closed before API call
-                  setTimeout(() => {
-                    if (onExtendRounds) onExtendRounds(6);
-                  }, 100);
+                  // Only proceed if we're not already at or above this round count
+                  if (maxRounds < 6) {
+                    // Add a small delay to ensure dialog is fully closed before API call
+                    setTimeout(() => {
+                      if (onExtendRounds) onExtendRounds(6);
+                    }, 100);
+                  }
                 }}
                 disabled={isExtendingRounds || maxRounds >= 6}
               >
