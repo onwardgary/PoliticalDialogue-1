@@ -438,6 +438,7 @@ export default function DebatePage() {
       });
       
       // Explicitly hide inline extension options when rounds are extended
+      console.log("🛑 FORCING HIDE of inline extension options after extension");
       setShowInlineExtensionOptions(false);
       
       // Show success toast
@@ -674,6 +675,18 @@ export default function DebatePage() {
     // Check if last message is from user
     const lastMessage = debate.messages.length > 0 ? debate.messages[debate.messages.length - 1] : null;
     const isLastMessageFromUser = lastMessage && lastMessage.role === 'user';
+    
+    // Detailed debug logging of all conditions
+    console.log(`
+      🔍 Extension conditions check:
+      - currentRound: ${currentRound}
+      - maxRounds: ${maxRounds} 
+      - isExtendingRounds: ${isExtendingRounds}
+      - isLastMessageFromUser: ${isLastMessageFromUser}
+      - messageStatus.sending: ${messageStatus.sending}
+      - userMessages.length: ${userMessages.length}
+      - showInlineExtensionOptions: ${showInlineExtensionOptions}
+    `);
     
     // Only show extension options when user has sent their last message AND bot has responded
     if (

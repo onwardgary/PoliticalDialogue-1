@@ -47,46 +47,15 @@ export default function ChatInterface({
   // Each round is one user message (assistant responses don't count toward the round number)
   const currentRound = Math.min(userMessages.length, maxRounds);
   
-  // State for showing inline extension options
-  const [showInlineExtensionOptions, setShowInlineExtensionOptions] = useState(false);
+  // We now rely on the parent component to decide when to show/hide extension options
+  // This resolves state synchronization issues between debate-page.tsx and chat-interface.tsx
   
-  // Detect if we've reached the max rounds and need to show extension options
-  useEffect(() => {
-    // Only show extension options if:
-    // 1. We've reached the max rounds (currentRound === maxRounds)
-    // 2. The max rounds is not already at the maximum (8)
-    // 3. We have the extension handler available
-    // 4. Bot has finished responding (last message is not from user)
-    // 5. Not currently extending rounds (prevents showing during API call)
-    
-    // Check if last message is from user (important UX improvement)
-    const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
-    const isLastMessageFromUser = lastMessage && lastMessage.role === "user";
-    
-    // Only show extension options when user has sent their last message AND bot has responded
-    if (
-      currentRound === maxRounds && 
-      maxRounds < 8 && 
-      onExtendRounds && 
-      !isExtendingRounds && 
-      !isLastMessageFromUser && // Only show after bot has responded to last user message
-      !isLoading && // Make sure bot isn't still generating a response
-      !showInlineExtensionOptions // Only set state to true once
-    ) {
-      console.log(`Showing inline extension options: currentRound=${currentRound}, maxRounds=${maxRounds}`);
-      setShowInlineExtensionOptions(true);
-    } else if (
-      // Hide extension options when:
-      // - Extension is in progress
-      // - or we're at max rounds already (8)
-      // - or a new message was added after showing options
-      (isExtendingRounds || maxRounds >= 8 || messages.length > 0 && showInlineExtensionOptions && messages[messages.length - 1].role === "user") && 
-      showInlineExtensionOptions
-    ) {
-      console.log(`Hiding inline extension options: isExtendingRounds=${isExtendingRounds}, maxRounds=${maxRounds}`);
-      setShowInlineExtensionOptions(false);
-    }
-  }, [currentRound, maxRounds, onExtendRounds, isExtendingRounds, messages, isLoading, showInlineExtensionOptions]);
+  // Compute whether to show inline extension options based on parent props
+  const showInlineExtensionOptions = 
+    currentRound === maxRounds && 
+    maxRounds < 8 && 
+    !isExtendingRounds && 
+    !isLoading;
 
   // Auto-scroll to bottom when messages change or typing indicators appear - optimized for responsiveness
   useEffect(() => {
@@ -262,8 +231,6 @@ export default function ChatInterface({
                     size="sm"
                     className="justify-start gap-2"
                     onClick={() => {
-                      setShowInlineExtensionOptions(false);
-                      
                       // Only proceed if we're not already at or above this round count
                       if (maxRounds < 6) {
                         setTimeout(() => {
@@ -288,8 +255,6 @@ export default function ChatInterface({
                     size="sm"
                     className="justify-start gap-2"
                     onClick={() => {
-                      setShowInlineExtensionOptions(false);
-                      
                       // Only proceed if we're not already at or above this round count
                       if (maxRounds < 8) {
                         setTimeout(() => {
@@ -313,8 +278,6 @@ export default function ChatInterface({
                   size="sm"
                   className="justify-start gap-2"
                   onClick={() => {
-                    setShowInlineExtensionOptions(false);
-                    
                     setTimeout(() => {
                       if (onEndDebate) {
                         console.log("Ending debate and generating summary");
