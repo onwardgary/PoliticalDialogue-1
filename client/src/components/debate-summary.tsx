@@ -163,7 +163,7 @@ export default function DebateSummary({
           </div>
           
           <div>
-            <h4 className="text-md font-medium text-secondary mb-3 flex items-center">
+            <h4 className="text-md font-medium text-neutral-800 mb-3 flex items-center">
               <div className="w-6 h-6 bg-secondary rounded-full flex items-center justify-center mr-2">
                 <span className="text-white font-bold text-xs">C</span>
               </div>
@@ -205,7 +205,7 @@ export default function DebateSummary({
                         <div className="w-5 h-5 bg-secondary rounded-full flex items-center justify-center mr-2">
                           <span className="text-white font-bold text-xs">C</span>
                         </div>
-                        <span className="text-sm font-medium text-secondary">Your Position</span>
+                        <span className="text-sm font-medium text-neutral-800">Your Position</span>
                       </div>
                       <p className="text-sm text-neutral-700">{point.citizenPosition}</p>
                     </div>
