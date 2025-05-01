@@ -2,13 +2,13 @@ import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "@/components/sidebar";
 import { MobileHeader, MobileNavigation } from "@/components/mobile-nav";
 import DebateSummary from "@/components/debate-summary";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Clock, Loader2, RefreshCw } from "lucide-react";
+import { ArrowLeft, Check, Copy, Loader2, RefreshCw, Share2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 
@@ -21,6 +21,9 @@ export default function SummaryPage() {
   const [_, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  // State for tracking the share button state
+  const [isCopied, setIsCopied] = useState(false);
   
   // Handle regenerating a summary if it failed
   const regenerateMutation = useMutation({
@@ -119,6 +122,33 @@ export default function SummaryPage() {
   
   const isLoading = isLoadingDebate || isLoadingParty;
   
+  // Function to copy the debate URL to clipboard
+  const handleShare = () => {
+    const url = window.location.href;
+    
+    navigator.clipboard.writeText(url)
+      .then(() => {
+        setIsCopied(true);
+        toast({
+          title: "Link copied!",
+          description: "Share this link with others to show them your debate summary.",
+        });
+        
+        // Reset the copied state after 2 seconds
+        setTimeout(() => {
+          setIsCopied(false);
+        }, 2000);
+      })
+      .catch((error) => {
+        console.error("Failed to copy URL:", error);
+        toast({
+          title: "Copy failed",
+          description: "Could not copy the link. Please try again.",
+          variant: "destructive",
+        });
+      });
+  };
+
   // Only redirect if debate doesn't exist
   useEffect(() => {
     if (!isLoading && !debate) {
@@ -208,25 +238,48 @@ export default function SummaryPage() {
               <h2 className="text-xl font-semibold">Debate Summary</h2>
             </div>
             
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-sm hover:bg-neutral-100"
-              onClick={() => regenerateMutation.mutate()}
-              disabled={regenerateMutation.isPending}
-            >
-              {regenerateMutation.isPending ? (
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-sm hover:bg-neutral-100"
+                onClick={handleShare}
+              >
                 <span className="flex items-center">
-                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                  Regenerating...
+                  {isCopied ? (
+                    <>
+                      <Check className="h-3 w-3 mr-1" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Share2 className="h-3 w-3 mr-1" />
+                      Share
+                    </>
+                  )}
                 </span>
-              ) : (
-                <span className="flex items-center">
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  Regenerate Summary
-                </span>
-              )}
-            </Button>
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-sm hover:bg-neutral-100"
+                onClick={() => regenerateMutation.mutate()}
+                disabled={regenerateMutation.isPending}
+              >
+                {regenerateMutation.isPending ? (
+                  <span className="flex items-center">
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                    Regenerating...
+                  </span>
+                ) : (
+                  <span className="flex items-center">
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Regenerate
+                  </span>
+                )}
+              </Button>
+            </div>
           </div>
           <div className="flex items-center mt-2">
             <div className={`w-8 h-8 bg-primary rounded-full flex items-center justify-center mr-2`}>
