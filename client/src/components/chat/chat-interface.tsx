@@ -138,111 +138,113 @@ export default function ChatInterface({
   const showSuggestions = filteredMessages.length <= 1 && !isLoading;
 
   return (
-    <div 
-      ref={chatContainerRef}
-      className="chat-container bg-neutral-50 overflow-y-auto p-4 md:p-6 flex flex-col space-y-4"
-      style={{ height: "calc(100vh - 180px - env(safe-area-inset-bottom, 0px))" }}
-    >
-      {/* System welcome message */}
-      <div className="flex justify-center mb-4">
-        <div className="bg-neutral-100 rounded-2xl px-4 py-3 text-sm text-neutral-700 max-w-md text-center shadow-sm">
-          <p>Start a conversation with the {partyShortName} bot. You can discuss any policy position or political topic relevant to Singapore.</p>
+    <>
+      <div 
+        ref={chatContainerRef}
+        className="chat-container bg-neutral-50 overflow-y-auto p-4 md:p-6 flex flex-col space-y-4"
+        style={{ height: "calc(100vh - 180px - env(safe-area-inset-bottom, 0px))" }}
+      >
+        {/* System welcome message */}
+        <div className="flex justify-center mb-4">
+          <div className="bg-neutral-100 rounded-2xl px-4 py-3 text-sm text-neutral-700 max-w-md text-center shadow-sm">
+            <p>Start a conversation with the {partyShortName} bot. You can discuss any policy position or political topic relevant to Singapore.</p>
+            
+            {/* Round indicator */}
+            <div className="mt-2 flex items-center justify-center space-x-1">
+              <span className="text-xs text-neutral-500">Round {currentRound} of {maxRounds}</span>
+              <div className="ml-2 bg-neutral-200 h-1.5 rounded-full w-24 overflow-hidden">
+                <div 
+                  className="bg-primary h-full rounded-full transition-all duration-300 ease-in-out" 
+                  style={{ width: `${(currentRound / maxRounds) * 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Suggested topics */}
+        {showSuggestions && onSendMessage && (
+          <div className="flex flex-col items-center mb-4 space-y-3">
+            <p className="text-xs text-neutral-500 font-medium">SUGGESTED TOPICS</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {SUGGESTED_TOPICS.map((item, index) => (
+                <Button
+                  key={index}
+                  variant="outline"
+                  size="sm"
+                  className="text-sm bg-white hover:bg-neutral-100 border-neutral-200 text-neutral-700"
+                  onClick={() => handleSuggestionClick(item.prompt)}
+                >
+                  {item.topic}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Chat messages */}
+        {filteredMessages.map((message, index) => {
+          // Check if this message should be grouped with the previous one (same sender)
+          const previousMessage = index > 0 ? filteredMessages[index - 1] : null;
+          const isGrouped = previousMessage && previousMessage.role === message.role ? true : false;
           
-          {/* Round indicator */}
-          <div className="mt-2 flex items-center justify-center space-x-1">
-            <span className="text-xs text-neutral-500">Round {currentRound} of {maxRounds}</span>
-            <div className="ml-2 bg-neutral-200 h-1.5 rounded-full w-24 overflow-hidden">
-              <div 
-                className="bg-primary h-full rounded-full transition-all duration-300 ease-in-out" 
-                style={{ width: `${(currentRound / maxRounds) * 100}%` }}
-              />
+          return (
+            <MessageBubble 
+              key={message.id} 
+              message={message}
+              partyShortName={partyShortName}
+              isGrouped={isGrouped}
+            />
+          );
+        })}
+
+        {/* Bot typing indicator */}
+        {isLoading && (
+          <div className="flex mb-4 animate-fadeIn">
+            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center mr-2 flex-shrink-0">
+              <span className="text-white font-bold text-xs">{partyShortName}</span>
+            </div>
+            <div className="bg-white p-3 rounded-lg rounded-tl-none shadow-sm flex items-center h-10">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-neutral-300 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-neutral-300 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                <div className="w-2 h-2 bg-neutral-300 rounded-full animate-bounce" style={{ animationDelay: "0.4s" }}></div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Suggested topics */}
-      {showSuggestions && onSendMessage && (
-        <div className="flex flex-col items-center mb-4 space-y-3">
-          <p className="text-xs text-neutral-500 font-medium">SUGGESTED TOPICS</p>
-          <div className="flex flex-wrap justify-center gap-2">
-            {SUGGESTED_TOPICS.map((item, index) => (
-              <Button
-                key={index}
-                variant="outline"
-                size="sm"
-                className="text-sm bg-white hover:bg-neutral-100 border-neutral-200 text-neutral-700"
-                onClick={() => handleSuggestionClick(item.prompt)}
-              >
-                {item.topic}
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Chat messages */}
-      {filteredMessages.map((message, index) => {
-        // Check if this message should be grouped with the previous one (same sender)
-        const previousMessage = index > 0 ? filteredMessages[index - 1] : null;
-        const isGrouped = previousMessage && previousMessage.role === message.role ? true : false;
+        )}
         
-        return (
-          <MessageBubble 
-            key={message.id} 
-            message={message}
-            partyShortName={partyShortName}
-            isGrouped={isGrouped}
-          />
-        );
-      })}
-
-      {/* Bot typing indicator */}
-      {isLoading && (
-        <div className="flex mb-4 animate-fadeIn">
-          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center mr-2 flex-shrink-0">
-            <span className="text-white font-bold text-xs">{partyShortName}</span>
-          </div>
-          <div className="bg-white p-3 rounded-lg rounded-tl-none shadow-sm flex items-center h-10">
-            <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-neutral-300 rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-neutral-300 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
-              <div className="w-2 h-2 bg-neutral-300 rounded-full animate-bounce" style={{ animationDelay: "0.4s" }}></div>
+        {/* User typing indicator */}
+        {userTyping && (
+          <div className="flex mb-4 animate-fadeIn justify-end">
+            <div className="bg-primary/10 p-3 rounded-lg rounded-tr-none shadow-sm flex items-center h-10">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "0.4s" }}></div>
+              </div>
+            </div>
+            <div className="w-8 h-8 bg-primary/90 rounded-full flex items-center justify-center ml-2 flex-shrink-0">
+              <span className="text-white font-bold text-xs">YOU</span>
             </div>
           </div>
-        </div>
-      )}
-      
-      {/* User typing indicator */}
-      {userTyping && (
-        <div className="flex mb-4 animate-fadeIn justify-end">
-          <div className="bg-primary/10 p-3 rounded-lg rounded-tr-none shadow-sm flex items-center h-10">
-            <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
-              <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "0.4s" }}></div>
-            </div>
+        )}
+        
+        {/* Scroll to bottom button */}
+        {showScrollButton && (
+          <div className="sticky bottom-4 w-full flex justify-center pointer-events-none">
+            <Button 
+              size="sm"
+              onClick={scrollToBottom}
+              className="bg-primary text-white rounded-full shadow-md pointer-events-auto animate-bounce-slow opacity-90 hover:opacity-100"
+            >
+              ↓ New message
+            </Button>
           </div>
-          <div className="w-8 h-8 bg-primary/90 rounded-full flex items-center justify-center ml-2 flex-shrink-0">
-            <span className="text-white font-bold text-xs">YOU</span>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
       
-      {/* Scroll to bottom button */}
-      {showScrollButton && (
-        <div className="sticky bottom-4 w-full flex justify-center pointer-events-none">
-          <Button 
-            size="sm"
-            onClick={scrollToBottom}
-            className="bg-primary text-white rounded-full shadow-md pointer-events-auto animate-bounce-slow opacity-90 hover:opacity-100"
-          >
-            ↓ New message
-          </Button>
-        </div>
-      )}
-      
-      {/* Round extension dialog */}
+      {/* Round extension dialog - moved outside main container */}
       <AlertDialog open={showRoundExtensionDialog} onOpenChange={setShowRoundExtensionDialog}>
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
@@ -258,8 +260,12 @@ export default function ChatInterface({
                 size="lg"
                 className="w-full justify-start gap-3"
                 onClick={() => {
-                  setShowRoundExtensionDialog(false);
-                  if (onExtendRounds) onExtendRounds(6);
+                  // First close the dialog immediately, then process the extension
+                  setShowRoundExtensionDialog(false); 
+                  // Add a small delay to ensure dialog is fully closed before API call
+                  setTimeout(() => {
+                    if (onExtendRounds) onExtendRounds(6);
+                  }, 100);
                 }}
                 disabled={isExtendingRounds || maxRounds >= 6}
               >
@@ -277,8 +283,12 @@ export default function ChatInterface({
                 size="lg"
                 className="w-full justify-start gap-3"
                 onClick={() => {
+                  // First close the dialog immediately, then process the extension
                   setShowRoundExtensionDialog(false);
-                  if (onExtendRounds) onExtendRounds(8);
+                  // Add a small delay to ensure dialog is fully closed before API call
+                  setTimeout(() => {
+                    if (onExtendRounds) onExtendRounds(8);
+                  }, 100);
                 }}
                 disabled={isExtendingRounds || maxRounds >= 8}
               >
@@ -294,8 +304,12 @@ export default function ChatInterface({
             <Button 
               variant="default"
               onClick={() => {
+                // First close the dialog immediately, then process ending debate
                 setShowRoundExtensionDialog(false);
-                if (onEndDebate) onEndDebate();
+                // Add a small delay to ensure dialog is fully closed before API call
+                setTimeout(() => {
+                  if (onEndDebate) onEndDebate();
+                }, 100);
               }}
               disabled={isExtendingRounds}
               className="w-full"
@@ -306,6 +320,6 @@ export default function ChatInterface({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 }
