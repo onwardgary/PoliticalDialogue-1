@@ -21,8 +21,8 @@ export default function PartyCard({ party }: { party: Party }) {
   const startConversationMutation = useMutation({
     mutationFn: async (data: { 
       partyId: number, 
-      topic?: string,
-      mode: "debate" | "discuss" 
+      topic?: string
+      // Removed mode parameter as we always use debate mode now
     }) => {
       const res = await apiRequest("POST", "/api/debates", data);
       return await res.json();
@@ -47,8 +47,8 @@ export default function PartyCard({ party }: { party: Party }) {
   const startDebate = () => {
     startConversationMutation.mutate({ 
       partyId: party.id, 
-      topic: "Policy debate with citizen",
-      mode: "debate"
+      topic: "Policy debate with citizen"
+      // Removed mode parameter as it's no longer needed
     });
   };
   

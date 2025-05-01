@@ -26,16 +26,8 @@ export default function DebateSummary({
   // Handle regenerating a summary if it failed
   const regenerateMutation = useMutation({
     mutationFn: async () => {
-      // Determine the mode based on the debate topic
-      let mode = "debate"; // Default mode
-      
-      if (topic) {
-        // If topic contains "discussion" or "recommendations", use "discuss" mode
-        if (topic.toLowerCase().includes("discussion") || 
-            topic.toLowerCase().includes("recommendations")) {
-          mode = "discuss";
-        }
-      }
+      // Always use debate mode regardless of topic name
+      const mode = "debate";
       
       console.log(`Regenerating summary with mode: ${mode}`);
       
