@@ -408,7 +408,21 @@ export default function DebatePage() {
   // End debate mutation
   const endDebateMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", endDebateEndpoint, {});
+      // Determine the mode based on the debate topic
+      let mode = "debate"; // Default mode
+      
+      if (debate?.topic) {
+        // If topic contains "discussion" or "recommendations", use "discuss" mode
+        if (debate.topic.toLowerCase().includes("discussion") || 
+            debate.topic.toLowerCase().includes("recommendations")) {
+          mode = "discuss";
+        }
+      }
+      
+      console.log(`Ending debate with mode: ${mode}`);
+      
+      // Pass the mode parameter to the end debate endpoint
+      const res = await apiRequest("POST", endDebateEndpoint, { mode });
       return res.json();
     },
     onSuccess: (data) => {

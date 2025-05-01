@@ -11,20 +11,36 @@ type DebateSummaryProps = {
   summary: DebateSummaryType;
   partyName: string;
   partyShortName: string;
+  topic?: string; // Optional topic to determine mode
 };
 
 export default function DebateSummary({ 
   debateId, 
   summary, 
   partyName,
-  partyShortName
+  partyShortName,
+  topic
 }: DebateSummaryProps) {
   const { toast } = useToast();
   
   // Handle regenerating a summary if it failed
   const regenerateMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/debates/s/${debateId}/regenerate-summary`);
+      // Determine the mode based on the debate topic
+      let mode = "debate"; // Default mode
+      
+      if (topic) {
+        // If topic contains "discussion" or "recommendations", use "discuss" mode
+        if (topic.toLowerCase().includes("discussion") || 
+            topic.toLowerCase().includes("recommendations")) {
+          mode = "discuss";
+        }
+      }
+      
+      console.log(`Regenerating summary with mode: ${mode}`);
+      
+      // Pass the mode parameter to the regenerate endpoint
+      const res = await apiRequest("POST", `/api/debates/s/${debateId}/regenerate-summary`, { mode });
       return await res.json();
     },
     onSuccess: (data) => {
