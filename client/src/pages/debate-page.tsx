@@ -437,6 +437,9 @@ export default function DebatePage() {
         };
       });
       
+      // Explicitly hide inline extension options when rounds are extended
+      setShowInlineExtensionOptions(false);
+      
       // Show success toast
       toast({
         title: "Debate extended",
@@ -678,7 +681,10 @@ export default function DebatePage() {
       maxRounds < 8 && 
       !isExtendingRounds && 
       !isLastMessageFromUser && // Only show after bot has responded to last user message
-      !messageStatus.sending // Make sure bot isn't still generating a response
+      !messageStatus.sending && // Make sure bot isn't still generating a response
+      // Prevent showing extension options immediately after extension
+      // by ensuring we have at least max rounds of user messages
+      userMessages.length >= maxRounds
     ) {
       console.log(`Showing inline extension options: currentRound=${currentRound}, maxRounds=${maxRounds}`);
       setShowInlineExtensionOptions(true);
