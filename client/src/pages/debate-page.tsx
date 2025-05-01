@@ -802,7 +802,7 @@ export default function DebatePage() {
                 // 2. AND there is no in-progress extension
                 // 3. AND the extension options are being shown
                 // This ensures input is only disabled when extension options are visible
-                debate?.messages?.filter(msg => msg.role === 'user').length >= (debate?.maxRounds || 6) && 
+                debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 6) && 
                 !isExtendingRounds &&
                 showInlineExtensionOptions
               }
