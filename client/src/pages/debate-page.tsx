@@ -139,6 +139,9 @@ export default function DebatePage() {
     polling: false
   });
   
+  // Track round extension status
+  const [isExtendingRounds, setIsExtendingRounds] = useState(false);
+  
   // Determine which API endpoint to use based on which parameter is available
   const apiEndpoint = secureId 
     ? `/api/debates/s/${secureId}` 
@@ -405,6 +408,54 @@ export default function DebatePage() {
     ? `/api/debates/s/${secureId}/end`
     : `/api/debates/${id}/end`;
     
+  // Debate round extension endpoint
+  const extendRoundsEndpoint = secureId
+    ? `/api/debates/s/${secureId}/extend`
+    : `/api/debates/${id}/extend`;
+    
+  // Extend debate rounds mutation
+  const extendRoundsMutation = useMutation({
+    mutationFn: async (maxRounds: number) => {
+      setIsExtendingRounds(true);
+      console.log(`Extending debate to ${maxRounds} rounds`);
+      const res = await apiRequest("PATCH", extendRoundsEndpoint, { maxRounds });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      console.log("Debate rounds extended successfully:", data);
+      
+      // Update React Query cache with the new maxRounds value
+      queryClient.setQueryData([apiEndpoint], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          maxRounds: data.maxRounds,
+          updatedAt: new Date().toISOString(),
+        };
+      });
+      
+      // Show success toast
+      toast({
+        title: "Debate extended",
+        description: `You now have ${data.maxRounds} rounds for this debate.`,
+      });
+      
+      setIsExtendingRounds(false);
+    },
+    onError: (error) => {
+      console.error("Error extending debate rounds:", error);
+      
+      // Show error toast
+      toast({
+        title: "Failed to extend debate",
+        description: "There was a problem extending the debate. Please try again.",
+        variant: "destructive",
+      });
+      
+      setIsExtendingRounds(false);
+    }
+  });
+  
   // End debate mutation
   const endDebateMutation = useMutation({
     mutationFn: async () => {
@@ -678,13 +729,16 @@ export default function DebatePage() {
               messages={localMessages.length > 0 ? localMessages : (debate?.messages || [])}
               isLoading={messageStatus.sending}
               onSendMessage={handleSendMessage}
+              onExtendRounds={(rounds) => extendRoundsMutation.mutate(rounds)}
+              onEndDebate={handleEndDebate}
               partyShortName={party?.shortName}
               userTyping={isUserTyping}
               maxRounds={debate?.maxRounds || 6}
+              isExtendingRounds={isExtendingRounds}
             />
             <ChatInput 
               onSendMessage={handleSendMessage}
-              isLoading={messageStatus.sending}
+              isLoading={messageStatus.sending || isExtendingRounds}
               onTypingStateChange={setIsUserTyping}
             />
           </>

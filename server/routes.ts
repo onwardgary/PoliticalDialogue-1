@@ -591,12 +591,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Only allow extending to a higher number of rounds
-      if (maxRounds <= debate.maxRounds) {
+      const currentMaxRounds = debate.maxRounds || 3; // Default to 3 if null
+      if (maxRounds <= currentMaxRounds) {
         return res.status(400).json({ message: "New maxRounds must be greater than the current value" });
       }
       
       // Update the maxRounds field
-      console.log(`Updating maxRounds for debate ${debate.id} (${secureId}) from ${debate.maxRounds} to ${maxRounds}`);
+      console.log(`Updating maxRounds for debate ${debate.id} (${secureId}) from ${currentMaxRounds} to ${maxRounds}`);
       const updatedDebate = await storage.updateDebateMaxRounds(debate.id, maxRounds);
       
       res.status(200).json({ 
