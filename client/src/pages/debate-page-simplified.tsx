@@ -500,14 +500,14 @@ export default function DebatePage() {
         )}
         
         {/* Summary Generation View */}
-        {viewState === 'generating' && (
+        {viewState === ('generating' as ViewState) && (
           <div className="flex-1 overflow-auto bg-neutral-50">
             <SummaryGenerationLoader step={summaryGenerationStep || 1} />
           </div>
         )}
         
         {/* Chat View */}
-        {viewState === 'chat' && (
+        {viewState === ('chat' as ViewState) && (
           <>
             <ChatInterface 
               messages={localMessages.length > 0 ? localMessages : (debate?.messages || [])}
@@ -537,7 +537,7 @@ export default function DebatePage() {
                 debate.messages[debate.messages.length - 1].role === 'user') ||
                 
                 // CASE 4: When generating a summary
-                viewState === 'generating'
+                viewState === ('generating' as ViewState)
               }
               disabledReason={
                 // Determine the reason for disabling:
