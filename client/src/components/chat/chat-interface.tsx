@@ -2,17 +2,7 @@ import { useRef, useEffect, useState } from "react";
 import MessageBubble from "./message-bubble";
 import { Message } from "@shared/schema";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Clock, Check, Calendar, CalendarPlus } from "lucide-react";
+import { Check, Calendar, CalendarPlus } from "lucide-react";
 
 type ChatInterfaceProps = {
   messages: Message[];
@@ -48,7 +38,6 @@ export default function ChatInterface({
 }: ChatInterfaceProps) {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const [showRoundExtensionDialog, setShowRoundExtensionDialog] = useState(false);
   
   // Filter out system messages
   const filteredMessages = messages.filter(msg => msg.role !== "system");
@@ -58,45 +47,46 @@ export default function ChatInterface({
   // Each round is one user message (assistant responses don't count toward the round number)
   const currentRound = Math.min(userMessages.length, maxRounds);
   
-  // Detect if we've reached the max rounds and need to show the extension dialog
+  // State for showing inline extension options
+  const [showInlineExtensionOptions, setShowInlineExtensionOptions] = useState(false);
+  
+  // Detect if we've reached the max rounds and need to show extension options
   useEffect(() => {
-    // Only show extension dialog if:
+    // Only show extension options if:
     // 1. We've reached the max rounds (currentRound === maxRounds)
     // 2. The max rounds is not already at the maximum (8)
     // 3. We have the extension handler available
-    // 4. The dialog is not already open
-    // 5. Not currently extending rounds (prevents reopening during API call)
-    // 6. Bot has finished responding (last message is from user)
+    // 4. Bot has finished responding (last message is not from user)
+    // 5. Not currently extending rounds (prevents showing during API call)
     
     // Check if last message is from user (important UX improvement)
     const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
     const isLastMessageFromUser = lastMessage && lastMessage.role === "user";
     
-    // Only show dialog when user has sent their last message AND bot has responded
-    // This prevents showing the dialog before the bot responds
+    // Only show extension options when user has sent their last message AND bot has responded
     if (
       currentRound === maxRounds && 
       maxRounds < 8 && 
       onExtendRounds && 
-      !showRoundExtensionDialog && 
       !isExtendingRounds && 
-      !isLastMessageFromUser && // Only show dialog after bot has responded to last user message
-      !isLoading // Make sure bot isn't still generating a response
+      !isLastMessageFromUser && // Only show after bot has responded to last user message
+      !isLoading && // Make sure bot isn't still generating a response
+      !showInlineExtensionOptions // Only set state to true once
     ) {
-      console.log(`Showing round extension dialog: currentRound=${currentRound}, maxRounds=${maxRounds}`);
-      setShowRoundExtensionDialog(true);
+      console.log(`Showing inline extension options: currentRound=${currentRound}, maxRounds=${maxRounds}`);
+      setShowInlineExtensionOptions(true);
     } else if (
-      // Force close the dialog when: 
+      // Hide extension options when:
       // - Extension is in progress
       // - or we're at max rounds already (8)
-      // - or any mutation is active
-      (isExtendingRounds || maxRounds >= 8 || isLoading) && 
-      showRoundExtensionDialog
+      // - or a new message was added after showing options
+      (isExtendingRounds || maxRounds >= 8 || messages.length > 0 && showInlineExtensionOptions && messages[messages.length - 1].role === "user") && 
+      showInlineExtensionOptions
     ) {
-      console.log(`Force closing dialog: isExtendingRounds=${isExtendingRounds}, maxRounds=${maxRounds}, isLoading=${isLoading}`);
-      setShowRoundExtensionDialog(false);
+      console.log(`Hiding inline extension options: isExtendingRounds=${isExtendingRounds}, maxRounds=${maxRounds}`);
+      setShowInlineExtensionOptions(false);
     }
-  }, [currentRound, maxRounds, onExtendRounds, showRoundExtensionDialog, isExtendingRounds, messages, isLoading]);
+  }, [currentRound, maxRounds, onExtendRounds, isExtendingRounds, messages, isLoading, showInlineExtensionOptions]);
 
   // Auto-scroll to bottom when messages change or typing indicators appear - optimized for responsiveness
   useEffect(() => {
@@ -254,6 +244,94 @@ export default function ChatInterface({
           </div>
         )}
         
+        {/* In-chat round extension options */}
+        {showInlineExtensionOptions && !isExtendingRounds && (
+          <div className="flex w-full mb-4 animate-fadeIn">
+            <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
+              <span className="text-white font-bold text-xs">SYS</span>
+            </div>
+            <div className="bg-white p-4 rounded-lg rounded-tl-none shadow-sm max-w-[85%]">
+              <p className="text-sm font-medium mb-2">You've reached round {maxRounds} of your debate.</p>
+              <p className="text-sm text-gray-600 mb-3">Would you like to continue the debate or generate a summary?</p>
+              
+              <div className="flex flex-col space-y-2">
+                {/* Medium debate option */}
+                {maxRounds < 6 && (
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    className="justify-start gap-2"
+                    onClick={() => {
+                      setShowInlineExtensionOptions(false);
+                      
+                      // Only proceed if we're not already at or above this round count
+                      if (maxRounds < 6) {
+                        setTimeout(() => {
+                          if (onExtendRounds) {
+                            console.log("Extending to 6 rounds");
+                            onExtendRounds(6);
+                          }
+                        }, 100);
+                      }
+                    }}
+                    disabled={isExtendingRounds || maxRounds >= 6}
+                  >
+                    <Calendar className="h-4 w-4 text-amber-500" />
+                    <span>Extend to 6 rounds</span>
+                  </Button>
+                )}
+                
+                {/* Extended debate option */}
+                {maxRounds < 8 && (
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    className="justify-start gap-2"
+                    onClick={() => {
+                      setShowInlineExtensionOptions(false);
+                      
+                      // Only proceed if we're not already at or above this round count
+                      if (maxRounds < 8) {
+                        setTimeout(() => {
+                          if (onExtendRounds) {
+                            console.log("Extending to 8 rounds");
+                            onExtendRounds(8);
+                          }
+                        }, 100);
+                      }
+                    }}
+                    disabled={isExtendingRounds || maxRounds >= 8}
+                  >
+                    <CalendarPlus className="h-4 w-4 text-emerald-500" />
+                    <span>Extend to 8 rounds (maximum)</span>
+                  </Button>
+                )}
+                
+                {/* End debate option */}
+                <Button 
+                  variant="default"
+                  size="sm"
+                  className="justify-start gap-2"
+                  onClick={() => {
+                    setShowInlineExtensionOptions(false);
+                    
+                    setTimeout(() => {
+                      if (onEndDebate) {
+                        console.log("Ending debate and generating summary");
+                        onEndDebate();
+                      }
+                    }, 100);
+                  }}
+                  disabled={isExtendingRounds}
+                >
+                  <Check className="h-4 w-4" />
+                  <span>End debate and generate summary</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* Scroll to bottom button */}
         {showScrollButton && (
           <div className="sticky bottom-4 w-full flex justify-center pointer-events-none">
@@ -267,108 +345,6 @@ export default function ChatInterface({
           </div>
         )}
       </div>
-      
-      {/* Round extension dialog - moved outside main container */}
-      <AlertDialog 
-        open={showRoundExtensionDialog && maxRounds < 8}
-        onOpenChange={(open) => {
-          // Only allow setting to true if maxRounds < 8
-          if (!open || maxRounds < 8) {
-            setShowRoundExtensionDialog(open);
-          }
-        }}>
-        <AlertDialogContent className="max-w-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle>You've reached round {maxRounds}</AlertDialogTitle>
-            <AlertDialogDescription>
-              You've reached the maximum number of rounds for this debate. Would you like to extend the debate or generate a summary now?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="flex flex-col space-y-3 p-3 my-3 bg-neutral-50 rounded-lg border border-neutral-100">
-            <div className="flex items-center gap-3">
-              <Button 
-                variant="outline"
-                size="lg"
-                className="w-full justify-start gap-3"
-                onClick={() => {
-                  // First close the dialog immediately to ensure UI feedback
-                  setShowRoundExtensionDialog(false); 
-                  
-                  // Only proceed if we're not already at or above this round count
-                  if (maxRounds < 6) {
-                    // Add a small delay to ensure dialog is fully closed before API call
-                    setTimeout(() => {
-                      if (onExtendRounds) {
-                        console.log("Extending to 6 rounds");
-                        onExtendRounds(6);
-                      }
-                    }, 150);
-                  }
-                }}
-                disabled={isExtendingRounds || maxRounds >= 6}
-              >
-                <Calendar className="h-5 w-5 text-amber-500" />
-                <div className="flex flex-col items-start">
-                  <span className="font-medium">Medium Debate</span>
-                  <span className="text-xs text-neutral-500">6 rounds</span>
-                </div>
-              </Button>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <Button 
-                variant="outline" 
-                size="lg"
-                className="w-full justify-start gap-3"
-                onClick={() => {
-                  // First close the dialog immediately to ensure UI feedback
-                  setShowRoundExtensionDialog(false);
-                  
-                  // Only proceed if we're not already at or above this round count
-                  if (maxRounds < 8) {
-                    // Add a small delay to ensure dialog is fully closed before API call
-                    setTimeout(() => {
-                      if (onExtendRounds) {
-                        console.log("Extending to 8 rounds");
-                        onExtendRounds(8);
-                      }
-                    }, 150);
-                  }
-                }}
-                disabled={isExtendingRounds || maxRounds >= 8}
-              >
-                <CalendarPlus className="h-5 w-5 text-emerald-500" />
-                <div className="flex flex-col items-start">
-                  <span className="font-medium">Extended Debate</span>
-                  <span className="text-xs text-neutral-500">8 rounds (maximum)</span>
-                </div>
-              </Button>
-            </div>
-          </div>
-          <AlertDialogFooter>
-            <Button 
-              variant="default"
-              onClick={() => {
-                // First close the dialog immediately to ensure UI feedback
-                setShowRoundExtensionDialog(false);
-                
-                // Add a small delay to ensure dialog is fully closed before API call
-                setTimeout(() => {
-                  if (onEndDebate) {
-                    console.log("Ending debate and generating summary");
-                    onEndDebate();
-                  }
-                }, 150);
-              }}
-              disabled={isExtendingRounds}
-              className="w-full"
-            >
-              <Check className="h-4 w-4 mr-2" />
-              End debate and generate summary
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
