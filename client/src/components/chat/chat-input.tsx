@@ -138,15 +138,22 @@ export default function ChatInput({
             </div>
           )}
           <div className="absolute bottom-2 right-2 flex items-center gap-2">
-            <Button 
-              type="button" 
-              variant="ghost" 
-              size="icon" 
-              className="text-neutral-400 hover:text-neutral-600 h-7 w-7"
-              disabled={isLoading}
-            >
-              <SmileIcon className="h-4 w-4" />
-            </Button>
+            {disabled && disabledReason === 'waiting' ? (
+              <div className="text-xs text-amber-500 flex items-center">
+                <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse mr-1.5"></span>
+                Waiting for response...
+              </div>
+            ) : (
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="icon" 
+                className="text-neutral-400 hover:text-neutral-600 h-7 w-7"
+                disabled={isLoading}
+              >
+                <SmileIcon className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
         <Button 

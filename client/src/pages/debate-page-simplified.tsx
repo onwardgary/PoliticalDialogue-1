@@ -254,6 +254,17 @@ export default function DebatePage() {
         };
       });
       
+      // Add a temporary typing indicator message
+      const typingIndicatorMessage: Message = {
+        id: `typing-${Date.now()}`,
+        role: 'assistant',
+        content: '...',
+        timestamp: Date.now()
+      };
+      
+      // Add it to the local messages
+      setLocalMessages(prev => [...prev, typingIndicatorMessage]);
+      
       // Start polling for AI response
       let pollCount = 0;
       let currentDelay = 1000;
@@ -272,7 +283,7 @@ export default function DebatePage() {
             const currentMessageCount = fetchedData?.messages?.length || 0;
             const currentLocalCount = localMessages.length;
             
-            if (currentMessageCount > currentLocalCount) {
+            if (currentMessageCount > currentLocalCount - 1) { // -1 to account for typing indicator
               hasReceivedResponse = true;
               
               const latestAIMessage = fetchedData.messages[fetchedData.messages.length - 1];
@@ -298,6 +309,11 @@ export default function DebatePage() {
         } else {
           clearInterval(pollInterval);
           setMessageStatus(prev => ({ ...prev, polling: false }));
+          
+          // Remove typing indicator if it's still there
+          setLocalMessages(prev => {
+            return prev.filter(msg => !msg.id.startsWith('typing-'));
+          });
         }
       }, currentDelay);
     },

@@ -184,11 +184,17 @@ export default function ChatInterface({
             <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center mr-2 flex-shrink-0">
               <span className="text-white font-bold text-xs">{partyShortName}</span>
             </div>
-            <div className="bg-white p-3 rounded-lg rounded-tl-none shadow-sm flex items-center h-10">
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-neutral-300 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-neutral-300 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
-                <div className="w-2 h-2 bg-neutral-300 rounded-full animate-bounce" style={{ animationDelay: "0.4s" }}></div>
+            <div className="bg-white px-4 py-3 rounded-lg rounded-tl-none shadow-sm flex items-center min-h-[3rem]">
+              <div className="flex flex-col space-y-1">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-primary rounded-full animate-pulse"></div>
+                  <span className="text-sm font-medium text-primary">Thinking...</span>
+                </div>
+                <div className="flex space-x-2">
+                  <div className="w-2 h-2 bg-neutral-300 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-neutral-300 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                  <div className="w-2 h-2 bg-neutral-300 rounded-full animate-bounce" style={{ animationDelay: "0.4s" }}></div>
+                </div>
               </div>
             </div>
           </div>
