@@ -2,9 +2,6 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { 
   Home, 
-  MessageSquare, 
-  TrendingUp,
-  UserCircle,
   Menu,
   Database,
   LogIn,
@@ -25,7 +22,7 @@ export function MobileHeader() {
     <header className="md:hidden bg-white border-b border-neutral-200 p-4 flex items-center justify-between">
       <Link href="/">
         <div className="text-xl font-bold text-primary flex items-center">
-          <MessageSquare className="mr-2 h-5 w-5" /> Suara.sg
+          <span className="mr-2 text-primary">🇸🇬</span> Suara.sg
         </div>
       </Link>
       <Sheet>
@@ -66,7 +63,7 @@ function MobileSidebar() {
     <div className="flex flex-col h-full py-4">
       <div className="mb-6">
         <h2 className="text-xl font-bold text-primary flex items-center">
-          <MessageSquare className="mr-2 h-5 w-5" /> Suara.sg
+          <span className="mr-2 text-primary">🇸🇬</span> Suara.sg
         </h2>
         {user ? (
           <div className="flex items-center mt-4">
@@ -95,33 +92,9 @@ function MobileSidebar() {
               </div>
             </Link>
           </li>
-          {/* Trending page temporarily hidden 
-          <li>
-            <Link href="/trending">
-              <div className={`flex items-center p-3 rounded-lg font-medium ${location.startsWith('/trending') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
-                <TrendingUp className="w-5 h-5 mr-3" />
-                <span>Trending</span>
-              </div>
-            </Link>
-          </li>
-          */}
+          {/* Trending page has been removed */}
           
-          {/* User specific menu items - temporarily hidden
-          {user && (
-            <>
-              <li>
-                <Link href="/profile">
-                  <div className={`flex items-center p-3 rounded-lg font-medium ${location.startsWith('/profile') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
-                    <UserCircle className="w-5 h-5 mr-3" />
-                    <span>My Profile</span>
-                  </div>
-                </Link>
-              </li>
-              
-              <Separator className="my-4" />
-            </>
-          )}
-          */}
+          {/* User profile features have been removed */}
           
           {/* Admin menu items */}
           {isAdmin && (
@@ -170,7 +143,6 @@ function MobileSidebar() {
 
 export function MobileNavigation() {
   const [location] = useLocation();
-  const { user } = useAuth();
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 flex justify-around p-2 z-10 pb-safe">
       <Link href="/">
@@ -179,26 +151,7 @@ export function MobileNavigation() {
           <span className="text-xs mt-1">Home</span>
         </div>
       </Link>
-      <Link href="/debate">
-        <div className={`flex flex-col items-center p-2 ${location.startsWith('/debate') ? 'text-primary' : 'text-neutral-500'}`}>
-          <MessageSquare className="h-5 w-5" />
-          <span className="text-xs mt-1">Debates</span>
-        </div>
-      </Link>
-      {/* Trending and profile pages temporarily hidden 
-      <Link href="/trending">
-        <div className={`flex flex-col items-center p-2 ${location.startsWith('/trending') ? 'text-primary' : 'text-neutral-500'}`}>
-          <TrendingUp className="h-5 w-5" />
-          <span className="text-xs mt-1">Trending</span>
-        </div>
-      </Link>
-      <Link href={user ? "/profile" : "/auth"}>
-        <div className={`flex flex-col items-center p-2 ${location.startsWith('/profile') || location.startsWith('/auth') ? 'text-primary' : 'text-neutral-500'}`}>
-          <UserCircle className="h-5 w-5" />
-          <span className="text-xs mt-1">{user ? "Profile" : "Login"}</span>
-        </div>
-      </Link>
-      */}
+      {/* Mobile navigation has been simplified to just the Home button */}
     </nav>
   );
 }
