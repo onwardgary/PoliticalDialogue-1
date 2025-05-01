@@ -561,6 +561,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Extend debate rounds - allows changing the max rounds of a debate
+  app.patch("/api/debates/s/:secureId/extend", async (req, res) => {
+    // For demo purposes, we're allowing anyone to extend debates
+    const isGuest = !req.isAuthenticated();
+    
+    try {
+      const { maxRounds } = req.body;
+      const secureId = req.params.secureId;
+      console.log(`Extending debate ${secureId} to ${maxRounds} rounds`);
+      
+      if (!maxRounds || ![3, 6, 8].includes(maxRounds)) {
+        return res.status(400).json({ message: "Invalid maxRounds value. Must be 3, 6, or 8." });
+      }
+      
+      const debate = await storage.getDebateBySecureId(secureId);
+      
+      if (!debate) {
+        return res.status(404).json({ message: "Debate not found" });
+      }
+      
+      // Only check authorization if user is authenticated and not the owner
+      if (!isGuest && debate.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to access this debate" });
+      }
+      
+      if (debate.completed) {
+        return res.status(400).json({ message: "Cannot extend a completed debate" });
+      }
+      
+      // Only allow extending to a higher number of rounds
+      if (maxRounds <= debate.maxRounds) {
+        return res.status(400).json({ message: "New maxRounds must be greater than the current value" });
+      }
+      
+      // Update the maxRounds field
+      console.log(`Updating maxRounds for debate ${debate.id} (${secureId}) from ${debate.maxRounds} to ${maxRounds}`);
+      const updatedDebate = await storage.updateDebateMaxRounds(debate.id, maxRounds);
+      
+      res.status(200).json({ 
+        success: true, 
+        maxRounds: updatedDebate.maxRounds,
+        message: `Debate extended to ${maxRounds} rounds` 
+      });
+    } catch (error) {
+      console.error("Error extending debate:", error);
+      res.status(500).json({ message: "Failed to extend debate rounds" });
+    }
+  });
+  
   // Regenerate a debate summary with secure ID
   app.post("/api/debates/s/:secureId/regenerate-summary", async (req, res) => {
     // For demo purposes, we're allowing anyone to regenerate summaries
