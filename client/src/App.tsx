@@ -26,16 +26,20 @@ function Router() {
       <Route path="/debate/s/:secureId" component={DebatePage} />
       <Route path="/summary/s/:secureId" component={SummaryPage} />
       
+      {/* Trending page temporarily hidden 
       <Route path="/trending" component={TrendingPage} />
+      */}
       
-      {/* User routes - require authentication */}
+      {/* User routes - require authentication - temporarily hidden
       <ProtectedRoute path="/profile" component={ProfilePage} />
+      */}
       
-      {/* Admin routes are protected */}
-      <ProtectedRoute path="/admin/knowledge" component={AdminKnowledgePage} />
+      {/* Admin routes - temporarily not protected for simplicity */}
+      <Route path="/admin/knowledge" component={AdminKnowledgePage} />
       
-      {/* Auth page */}
+      {/* Auth page - temporarily hidden
       <Route path="/auth" component={AuthPage} />
+      */}
       <Route component={NotFound} />
     </Switch>
   );

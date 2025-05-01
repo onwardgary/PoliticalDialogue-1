@@ -95,6 +95,7 @@ function MobileSidebar() {
               </div>
             </Link>
           </li>
+          {/* Trending page temporarily hidden 
           <li>
             <Link href="/trending">
               <div className={`flex items-center p-3 rounded-lg font-medium ${location.startsWith('/trending') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
@@ -103,8 +104,9 @@ function MobileSidebar() {
               </div>
             </Link>
           </li>
+          */}
           
-          {/* User specific menu items */}
+          {/* User specific menu items - temporarily hidden
           {user && (
             <>
               <li>
@@ -119,6 +121,7 @@ function MobileSidebar() {
               <Separator className="my-4" />
             </>
           )}
+          */}
           
           {/* Admin menu items */}
           {isAdmin && (
@@ -135,6 +138,7 @@ function MobileSidebar() {
       </nav>
       
       <div className="mt-4 pt-4 border-t border-neutral-200">
+        {/* Login/logout buttons temporarily hidden
         {user ? (
           <Button 
             onClick={handleLogout} 
@@ -155,6 +159,10 @@ function MobileSidebar() {
             Login / Register
           </Button>
         )}
+        */}
+        <div className="flex items-center justify-center">
+          <p className="text-xs text-neutral-500">Powered by OpenAI's GPT-4o</p>
+        </div>
       </div>
     </div>
   );
@@ -177,6 +185,7 @@ export function MobileNavigation() {
           <span className="text-xs mt-1">Debates</span>
         </div>
       </Link>
+      {/* Trending and profile pages temporarily hidden 
       <Link href="/trending">
         <div className={`flex flex-col items-center p-2 ${location.startsWith('/trending') ? 'text-primary' : 'text-neutral-500'}`}>
           <TrendingUp className="h-5 w-5" />
@@ -189,6 +198,7 @@ export function MobileNavigation() {
           <span className="text-xs mt-1">{user ? "Profile" : "Login"}</span>
         </div>
       </Link>
+      */}
     </nav>
   );
 }

@@ -53,6 +53,7 @@ export default function Sidebar() {
               </div>
             </Link>
           </li>
+          {/* Trending page temporarily hidden
           <li>
             <Link href="/trending">
               <div className={`flex items-center p-2 rounded-lg font-medium ${location.startsWith('/trending') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
@@ -61,6 +62,8 @@ export default function Sidebar() {
               </div>
             </Link>
           </li>
+          */}
+          
           {/* Statistics menu item hidden per user request 
           <li>
             <Link href="/statistics">
@@ -72,7 +75,7 @@ export default function Sidebar() {
           </li>
           */}
           
-          {/* User specific menu items */}
+          {/* User specific menu items - temporarily hidden 
           {user && (
             <>
               <li>
@@ -87,6 +90,7 @@ export default function Sidebar() {
               <Separator className="my-4" />
             </>
           )}
+          */}
           
           {/* Admin menu items */}
           {isAdmin && (
@@ -103,6 +107,7 @@ export default function Sidebar() {
       </nav>
       
       <div className="p-4 border-t border-neutral-200">
+        {/* User info and login/register temporarily hidden
         {user ? (
           <div className="flex flex-col space-y-4">
             <div className="flex items-center p-2">
@@ -139,6 +144,7 @@ export default function Sidebar() {
             Login / Register
           </Button>
         )}
+        */}
         
         <div className="flex items-center justify-center mt-4">
           <p className="text-xs text-neutral-500">Powered by OpenAI's GPT-4o</p>
