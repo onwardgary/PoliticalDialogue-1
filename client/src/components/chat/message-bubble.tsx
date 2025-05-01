@@ -4,7 +4,7 @@ import { Message } from "@shared/schema";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { Typewriter } from "@/components/ui/typewriter";
-import { Globe } from "lucide-react";
+import { Globe, AlertCircle } from "lucide-react";
 
 type MessageBubbleProps = {
   message: Message;
@@ -19,6 +19,12 @@ export default function MessageBubble({ message, partyShortName = "BOT", isGroup
   
   // For tracking if the typewriter effect is complete
   const [typewriterComplete, setTypewriterComplete] = useState(false);
+  
+  // Check if the message may contain statistics (without using search)
+  const hasStatisticsWithoutSearch = 
+    !isUser && 
+    !message.searchEnabled && 
+    /(\d+%|\d+\.\d+%|\$\d+|\d+ (million|billion)|S\$\d+|\d+ years|\d+,\d+)/.test(message.content);
 
   // Format the content to handle paragraphs, lists, and formatting
   const formatContent = (content: string) => {
@@ -228,6 +234,13 @@ export default function MessageBubble({ message, partyShortName = "BOT", isGroup
             <div className="flex items-center text-blue-500" title="Web search was used to generate this response">
               <Globe className="w-3 h-3 mr-1" />
               <span className="text-xs">Search-enhanced</span>
+            </div>
+          )}
+          
+          {/* Show statistics disclaimer for non-search messages with stats */}
+          {hasStatisticsWithoutSearch && (
+            <div className="flex items-center text-amber-500" title="Statistics in this message may not reflect the most current data">
+              <span className="text-xs italic">Stats may be outdated</span>
             </div>
           )}
           
