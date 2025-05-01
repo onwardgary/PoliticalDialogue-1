@@ -48,6 +48,7 @@ export const debates = pgTable("debates", {
   messages: json("messages").$type<Message[]>().notNull(),
   summary: json("summary").$type<DebateSummary>(),
   completed: boolean("completed").default(false),
+  maxRounds: integer("max_rounds").default(6), // Default to 6 rounds if not specified
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
