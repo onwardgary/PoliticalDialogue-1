@@ -811,7 +811,7 @@ export default function DebatePage() {
             />
             <ChatInput 
               onSendMessage={handleSendMessage}
-              isLoading={messageStatus.sending || isExtendingRounds}
+              isLoading={messageStatus.sending || viewState === 'generating'}
               onTypingStateChange={setIsUserTyping}
               disabled={
                 // Disable input in these scenarios:
@@ -819,33 +819,35 @@ export default function DebatePage() {
                 // CASE 1: While waiting for AI response (disable immediately after sending)
                 messageStatus.sending || messageStatus.polling ||
                 
-                // CASE 2: When at max rounds (8) - permanent disabling
-                (debate?.maxRounds === 8 && debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= 8) ||
+                // CASE 2: When at max rounds (any number) - permanent disabling
+                (debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 6)) ||
                 
-                // CASE 3: When at configured max rounds with extension options showing
-                (debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 6) && 
-                !isExtendingRounds && showInlineExtensionOptions) ||
-                
-                // CASE 4: Always disable when the last message is from the user (waiting for bot)
+                // CASE 3: Always disable when the last message is from the user (waiting for bot)
                 (debate?.messages && debate.messages.length > 0 && 
-                debate.messages[debate.messages.length - 1].role === 'user')
+                debate.messages[debate.messages.length - 1].role === 'user') ||
+                
+                // CASE 4: When generating a summary
+                viewState === 'generating'
               }
               disabledReason={
                 // Determine the reason for disabling:
                 
-                // PRIORITY 1: When waiting for the bot to respond
-                // This must take precedence over other checks
-                (messageStatus.sending || messageStatus.polling ||
-                 (debate?.messages && debate.messages.length > 0 && 
-                  debate.messages[debate.messages.length - 1].role === 'user'))
-                  ? 'waiting'
+                // PRIORITY 1: When generating a summary
+                viewState === 'generating'
+                  ? 'generating'
                 
-                // PRIORITY 2: When at maximum allowed rounds of 8
-                : (debate?.maxRounds === 8 && debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= 8)
-                  ? 'finalRound'
+                // PRIORITY 2: When waiting for the bot to respond
+                : (messageStatus.sending || messageStatus.polling ||
+                   (debate?.messages && debate.messages.length > 0 && 
+                    debate.messages[debate.messages.length - 1].role === 'user'))
+                    ? 'waiting'
                 
-                // PRIORITY 3: Default - at round limit but can extend
-                : 'maxRounds'
+                // PRIORITY 3: When at maximum allowed rounds
+                : (debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 6))
+                    ? 'finalRound'
+                
+                // PRIORITY 4: Default state
+                : ''
               }
             />
           </>
