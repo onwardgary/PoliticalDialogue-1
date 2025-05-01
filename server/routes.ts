@@ -449,8 +449,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Generating summary for debate ${debateId}...`);
       
       try {
-        // Generate summary
-        const summary = await generateDebateSummary(debate.messages);
+        // Extract mode from request body or query params (default to 'debate' if not provided)
+        const mode = req.body.mode || req.query.mode || 'debate';
+        console.log(`Generating summary for debate ${debateId} in ${mode} mode`);
+        
+        // Generate summary with mode parameter
+        const summary = await generateDebateSummary(debate.messages, mode);
         
         console.log(`Got summary, completing debate ${debateId}`);
         // Update debate with summary and mark as completed
@@ -514,8 +518,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Generating summary for debate ${debate.id} (${secureId})...`);
       
       try {
-        // Generate summary
-        const summary = await generateDebateSummary(debate.messages);
+        // Extract mode from request body or query params (default to 'debate' if not provided)
+        const mode = req.body.mode || req.query.mode || 'debate';
+        console.log(`Generating summary for debate ${debate.id} (${secureId}) in ${mode} mode`);
+        
+        // Generate summary with mode parameter
+        const summary = await generateDebateSummary(debate.messages, mode);
         
         console.log(`Got summary, completing debate ${debate.id} (${secureId})`);
         // Update debate with summary and mark as completed
@@ -579,8 +587,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Generating new summary for debate ${debate.id} (${secureId})...`);
       
       try {
-        // Generate summary
-        const summary = await generateDebateSummary(debate.messages);
+        // Extract mode from request body or query params (default to 'debate' if not provided)
+        const mode = req.body.mode || req.query.mode || 'debate';
+        console.log(`Regenerating summary for debate ${debate.id} (${secureId}) in ${mode} mode`);
+        
+        // Generate summary with mode parameter
+        const summary = await generateDebateSummary(debate.messages, mode);
         
         console.log(`Got new summary, updating debate ${debate.id} (${secureId})`);
         // Update debate with new summary

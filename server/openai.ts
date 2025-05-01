@@ -185,7 +185,7 @@ export async function generatePartyResponse(messages: Message[]): Promise<{conte
 }
 
 // Generate a debate summary
-export async function generateDebateSummary(messages: Message[]): Promise<DebateSummary> {
+export async function generateDebateSummary(messages: Message[], mode: string = 'debate'): Promise<DebateSummary> {
   try {
     console.log("Generating debate summary with API key present:", !!API_KEY);
     console.log("Number of messages for summary:", messages.length);
@@ -197,9 +197,14 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
       content: msg.content
     }));
     
-    formattedMessages.push({
-      role: "user",
-      content: `Analyze this debate and provide a comprehensive structured summary with the following components:
+    // Change prompt based on mode
+    console.log(`Generating summary for ${mode} mode`);
+    
+    let promptContent = '';
+    
+    if (mode === 'debate') {
+      // Original debate prompt with debate-specific instructions
+      promptContent = `Analyze this debate and provide a comprehensive structured summary with the following components:
 
       1. "partyArguments": The top 5 key arguments made by the political party (the assistant) - concise but specific
       2. "citizenArguments": The top 5 key arguments made by the citizen (the user) - concise but specific
@@ -216,11 +221,40 @@ export async function generateDebateSummary(messages: Message[]): Promise<Debate
             * "toneAndClarity": Brief assessment (1-2 sentences) of the professionalism, seriousness, and clarity of communication
             * "pragmatism": Brief assessment (1-2 sentences) of how practical, implementable, and cost-effective each side's proposals are in the Singaporean context
          - "reasoning": A final justification explaining the overall outcome based on the five pillars
-         - "actionRecommendations": At least 2 specific, actionable recommendations for either the government or citizens to better address the debate topic
-      
-      IMPORTANT: Use your web search capabilities to verify facts and claims made by both the party and citizen when needed. This may include looking up official policy positions, economic statistics, or recent political developments in Singapore (2024-2025).
-      
-      Format your response as a JSON object with these properties. Focus on concrete examples mentioned in the debate rather than generalizations. Evaluate the logical strength of arguments, not just quantity or assertion.`
+         - "actionRecommendations": At least 2 specific, actionable recommendations for either the government or citizens to better address the debate topic`;
+    } else {
+      // Discussion mode focused on learning and recommendations
+      promptContent = `Analyze this discussion and provide a comprehensive structured summary with the following components:
+
+      1. "partyArguments": The top 5 key points made by the political party (the assistant) - concise but specific, focusing on policy explanations
+      2. "citizenArguments": The top 5 key questions or concerns raised by the citizen (the user) - concise but specific
+      3. "keyPoints": An array of the most important policy areas discussed, with each object containing:
+         - "point": The core policy area that was discussed
+         - "partyPosition": The party's stance on this policy area
+         - "citizenPosition": The citizen's understanding or questions about this policy area
+      4. "conclusion": A helpful assessment of the discussion with:
+         - "outcome": Must be "recommendations" as this is a learning discussion, not a debate
+         - "evaluation": A structured analysis of the policy discussion:
+            * "logicalSoundness": Brief assessment (1-2 sentences) of how fact-based and informative the explanations were
+            * "keyPointResolution": Brief assessment (1-2 sentences) of how well citizen questions were addressed
+            * "toneAndClarity": Brief assessment (1-2 sentences) of the clarity of explanations
+            * "pragmatism": Brief assessment (1-2 sentences) of how practical and relevant the policy information was to Singaporean citizens
+         - "reasoning": A summary of the most valuable insights from the discussion
+         - "actionRecommendations": At least 4 specific learning resources or next steps for the citizen to better understand the discussed policies, including:
+            * At least 2 official government or party resource links that would be helpful (these can be general websites if specific URLs aren't known)
+            * At least 2 practical ways citizens can engage with or benefit from these policies`;
+    }
+    
+    // Add common instructions that apply to both modes
+    promptContent += `
+    
+    IMPORTANT: Use your web search capabilities to verify facts and claims made during the discussion when needed. This may include looking up official policy positions, economic statistics, or recent political developments in Singapore (2024-2025).
+    
+    Format your response as a JSON object with these properties. Focus on concrete examples mentioned in the conversation rather than generalizations.`;
+    
+    formattedMessages.push({
+      role: "user",
+      content: promptContent
     });
     
     console.log("Sending summary request to OpenAI API...");
