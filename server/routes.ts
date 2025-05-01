@@ -54,10 +54,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const bodySchema = z.object({
       partyId: z.number(),
       topic: z.string().optional(),
+      mode: z.enum(["debate", "discuss"]).optional().default("debate"),
     });
     
     try {
-      const { partyId, topic } = bodySchema.parse(req.body);
+      const { partyId, topic, mode } = bodySchema.parse(req.body);
       
       const party = await storage.getParty(partyId);
       if (!party) {
@@ -67,13 +68,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create system message
       const systemMessage = createPartySystemMessage(party.shortName);
       
-      // Create welcome message
-      const welcomeMessage = {
+      // Create welcome message - adjust based on mode
+      let welcomeMessage = {
         id: nanoid(),
         role: "assistant" as const,
-        content: `Hello! I'm the ${party.name} Bot, representing the positions of the ${party.name}. What would you like to discuss today? We can talk about housing, education, healthcare, the economy, or any other policy area you're interested in.`,
+        content: "",
         timestamp: Date.now(),
       };
+      
+      if (mode === "debate") {
+        welcomeMessage.content = `Hello! I'm the ${party.name} Bot, representing the positions of the ${party.name}. Let's debate policy positions. Challenge me on any policy area, and we'll engage in a point-by-point debate with clear positions. What would you like to debate today?`;
+      } else { // discuss mode
+        welcomeMessage.content = `Hello! I'm the ${party.name} Bot, representing the positions of the ${party.name}. I'm here to help you learn about our policy positions and provide recommendations for further learning. What policy area would you like to understand better?`;
+      }
       
       // Create new debate with secure ID
       const debate = await storage.createDebate({
@@ -83,6 +90,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         messages: [systemMessage, welcomeMessage],
         secureId: nanoid(), // Generate a secure ID for the debate
         completed: false,
+        mode: mode, // Store the conversation mode
       });
       
       // Return debate with welcome message only (no system message)
@@ -91,6 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         secureId: debate.secureId,
         partyId: debate.partyId,
         topic: debate.topic,
+        mode: mode,
         messages: [welcomeMessage], // Only send the welcome message, not the system message
         createdAt: debate.createdAt,
       });

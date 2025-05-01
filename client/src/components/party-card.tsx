@@ -6,9 +6,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { MessageSquare, Info, ArrowRight } from "lucide-react";
+import { MessageSquare, HelpCircle, ArrowRight } from "lucide-react";
 
 export type Party = {
   id: number;
@@ -22,38 +20,48 @@ export default function PartyCard({ party }: { party: Party }) {
   const { toast } = useToast();
   const [_, setLocation] = useLocation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [topic, setTopic] = useState("");
   
-  const startDebateMutation = useMutation({
-    mutationFn: async (data: { partyId: number, topic?: string }) => {
+  const startConversationMutation = useMutation({
+    mutationFn: async (data: { 
+      partyId: number, 
+      topic?: string,
+      mode: "debate" | "discuss" 
+    }) => {
       const res = await apiRequest("POST", "/api/debates", data);
       return await res.json();
     },
     onSuccess: (data) => {
       toast({
-        title: "Debate started",
-        description: `You are now debating with ${party.name}.`,
+        title: "Conversation started",
+        description: `You are now talking with ${party.name}.`,
       });
       setIsDialogOpen(false);
-      setTopic("");
       // Use the secure ID for navigation if available
       setLocation(data.secureId ? `/debate/s/${data.secureId}` : `/debate/${data.id}`);
     },
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: `Could not start debate: ${error.message}`,
+        description: `Could not start conversation: ${error.message}`,
         variant: "destructive",
       });
     },
   });
   
   const startDebate = () => {
-    if (topic.trim()) {
-      startDebateMutation.mutate({ partyId: party.id, topic: topic.trim() });
-    } else {
-      startDebateMutation.mutate({ partyId: party.id });
-    }
+    startConversationMutation.mutate({ 
+      partyId: party.id, 
+      topic: "Policy debate with citizen",
+      mode: "debate"
+    });
+  };
+  
+  const startDiscussion = () => {
+    startConversationMutation.mutate({ 
+      partyId: party.id,
+      topic: "Policy discussion with recommendations",
+      mode: "discuss"
+    });
   };
   
   const handleCardClick = () => {
@@ -102,7 +110,7 @@ export default function PartyCard({ party }: { party: Party }) {
             variant="outline"
           >
             <MessageSquare className="h-4 w-4 group-hover:text-primary transition" />
-            <span>Debate</span>
+            <span>Talk to {party.shortName}</span>
             <ArrowRight className="h-4 w-4 ml-auto opacity-0 group-hover:opacity-100 transition" />
           </Button>
         </CardFooter>
@@ -115,47 +123,55 @@ export default function PartyCard({ party }: { party: Party }) {
               <div className={`w-8 h-8 ${getPartyColor()} rounded-full flex items-center justify-center`}>
                 <span className="font-bold text-sm">{party.shortName}</span>
               </div>
-              Start a debate with {party.name}
+              Choose your conversation with {party.name}
             </DialogTitle>
             <DialogDescription>
-              Enter a policy topic to discuss with the {party.shortName} bot or leave blank for a general conversation.
+              Select how you'd like to engage with the {party.shortName} representative.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid gap-4 py-2">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="topic" className="flex items-center gap-1">
-                <Info className="h-4 w-4 text-muted-foreground" />
-                Topic (optional)
-              </Label>
-              <Input
-                id="topic"
-                placeholder="e.g. Housing affordability, education policy, healthcare"
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                className="col-span-3"
-              />
-              <p className="text-sm text-muted-foreground">
-                Providing a specific topic helps the AI respond with relevant policies.
-              </p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+            <Button 
+              onClick={startDebate}
+              disabled={startConversationMutation.isPending}
+              className="h-auto py-6 flex flex-col items-center gap-3"
+              variant="outline"
+            >
+              <MessageSquare className="h-8 w-8 text-primary" />
+              <div className="text-center">
+                <div className="font-semibold mb-1">Debate</div>
+                <p className="text-sm text-muted-foreground">
+                  Challenge the party on policy positions and get a point-by-point evaluation.
+                </p>
+              </div>
+            </Button>
+            
+            <Button 
+              onClick={startDiscussion}
+              disabled={startConversationMutation.isPending}
+              className="h-auto py-6 flex flex-col items-center gap-3"
+              variant="outline"
+            >
+              <HelpCircle className="h-8 w-8 text-primary" />
+              <div className="text-center">
+                <div className="font-semibold mb-1">Discuss & Learn</div>
+                <p className="text-sm text-muted-foreground">
+                  Get policy explanations and personalized recommendations on what to learn more about.
+                </p>
+              </div>
+            </Button>
           </div>
           
-          <DialogFooter className="sm:justify-between gap-2">
+          <DialogFooter className="sm:justify-start gap-2">
             <Button 
-              variant="outline" 
+              variant="ghost" 
               onClick={() => setIsDialogOpen(false)}
             >
               Cancel
             </Button>
-            <Button 
-              onClick={startDebate}
-              disabled={startDebateMutation.isPending}
-              className="gap-2"
-            >
-              {startDebateMutation.isPending ? "Starting..." : "Start Debate"} 
-              <MessageSquare className="h-4 w-4" />
-            </Button>
+            {startConversationMutation.isPending && (
+              <p className="text-sm text-muted-foreground">Starting conversation...</p>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
