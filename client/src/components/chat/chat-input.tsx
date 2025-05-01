@@ -162,7 +162,9 @@ export default function ChatInput({
                 ? "Fanbot is typing..."
                 : disabledReason === 'finalRound'
                   ? "Debate Complete"
-                  : "Round Limit"
+                  : disabledReason === 'generating'
+                    ? "Generating Summary"
+                    : "Round Limit"
               }
             </span>
           ) : (

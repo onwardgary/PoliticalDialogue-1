@@ -465,7 +465,7 @@ export default function DebatePage() {
   // Combined loading state
   const isLoading = isLoadingDebate || isLoadingParty;
   
-  if (isLoading && viewState === 'loading') {
+  if (isLoading && viewState === 'loading' as ViewState) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -517,11 +517,11 @@ export default function DebatePage() {
               partyShortName={party?.shortName}
               userTyping={isUserTyping}
               maxRounds={debate?.maxRounds || 6}
-              isGeneratingSummary={viewState === 'generating'}
+              isGeneratingSummary={viewState === 'generating' as ViewState ? true : false}
             />
             <ChatInput 
               onSendMessage={handleSendMessage}
-              isLoading={messageStatus.sending || viewState === 'generating'}
+              isLoading={messageStatus.sending || viewState === 'generating' as ViewState}
               onTypingStateChange={setIsUserTyping}
               disabled={
                 // Disable input in these scenarios:
@@ -543,7 +543,7 @@ export default function DebatePage() {
                 // Determine the reason for disabling:
                 
                 // PRIORITY 1: When generating a summary
-                viewState === 'generating'
+                viewState === 'generating' as ViewState
                   ? 'generating'
                 
                 // PRIORITY 2: When waiting for the bot to respond
@@ -557,7 +557,7 @@ export default function DebatePage() {
                     ? 'finalRound'
                 
                 // PRIORITY 4: Default state
-                : ''
+                : 'maxRounds'
               }
             />
           </>
