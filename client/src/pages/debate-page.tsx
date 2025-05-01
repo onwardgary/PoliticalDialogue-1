@@ -816,16 +816,18 @@ export default function DebatePage() {
               disabledReason={
                 // Determine the reason for disabling:
                 
-                // When waiting for the bot to respond
-                (debate?.messages && debate.messages.length > 0 && 
-                debate.messages[debate.messages.length - 1].role === 'user')
+                // PRIORITY 1: When waiting for the bot to respond
+                // This must take precedence over other checks
+                (messageStatus.sending || messageStatus.polling ||
+                 (debate?.messages && debate.messages.length > 0 && 
+                  debate.messages[debate.messages.length - 1].role === 'user'))
                   ? 'waiting'
                 
-                // When at maximum allowed rounds of 8
+                // PRIORITY 2: When at maximum allowed rounds of 8
                 : (debate?.maxRounds === 8 && debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= 8)
                   ? 'finalRound'
                 
-                // Default - at round limit but can extend
+                // PRIORITY 3: Default - at round limit but can extend
                 : 'maxRounds'
               }
             />
