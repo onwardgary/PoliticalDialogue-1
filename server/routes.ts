@@ -54,11 +54,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const bodySchema = z.object({
       partyId: z.number(),
       topic: z.string().optional(),
+      // We still accept the mode parameter but always use debate mode as requested
       mode: z.enum(["debate", "discuss"]).optional().default("debate"),
     });
     
     try {
-      const { partyId, topic, mode } = bodySchema.parse(req.body);
+      const { partyId, topic } = bodySchema.parse(req.body);
+      // Always use debate mode regardless of input parameter
+      const mode = "debate";
       
       const party = await storage.getParty(partyId);
       if (!party) {
@@ -68,19 +71,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create system message
       const systemMessage = createPartySystemMessage(party.shortName);
       
-      // Create welcome message - adjust based on mode
+      // Create welcome message - always use debate mode
       let welcomeMessage = {
         id: nanoid(),
         role: "assistant" as const,
-        content: "",
+        content: `Hello! I'm the ${party.name} Bot, representing the positions of the ${party.name}. Let's debate policy positions. Challenge me on any policy area, and we'll engage in a point-by-point debate with clear positions. What would you like to debate today?`,
         timestamp: Date.now(),
       };
-      
-      if (mode === "debate") {
-        welcomeMessage.content = `Hello! I'm the ${party.name} Bot, representing the positions of the ${party.name}. Let's debate policy positions. Challenge me on any policy area, and we'll engage in a point-by-point debate with clear positions. What would you like to debate today?`;
-      } else { // discuss mode
-        welcomeMessage.content = `Hello! I'm the ${party.name} Bot, representing the positions of the ${party.name}. I'm here to help you learn about our policy positions and provide recommendations for further learning. What policy area would you like to understand better?`;
-      }
       
       // Create new debate with secure ID
       const debate = await storage.createDebate({
@@ -518,11 +515,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Generating summary for debate ${debate.id} (${secureId})...`);
       
       try {
-        // Extract mode from request body or query params (default to 'debate' if not provided)
-        const mode = req.body.mode || req.query.mode || 'debate';
+        // Always use debate mode as per user request
+        const mode = 'debate';
         console.log(`Generating summary for debate ${debate.id} (${secureId}) in ${mode} mode`);
         
-        // Generate summary with mode parameter
+        // Generate summary with debate mode
         const summary = await generateDebateSummary(debate.messages, mode);
         
         console.log(`Got summary, completing debate ${debate.id} (${secureId})`);
@@ -587,11 +584,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Generating new summary for debate ${debate.id} (${secureId})...`);
       
       try {
-        // Extract mode from request body or query params (default to 'debate' if not provided)
-        const mode = req.body.mode || req.query.mode || 'debate';
+        // Always use debate mode as per user request
+        const mode = 'debate';
         console.log(`Regenerating summary for debate ${debate.id} (${secureId}) in ${mode} mode`);
         
-        // Generate summary with mode parameter
+        // Generate summary with debate mode
         const summary = await generateDebateSummary(debate.messages, mode);
         
         console.log(`Got new summary, updating debate ${debate.id} (${secureId})`);
