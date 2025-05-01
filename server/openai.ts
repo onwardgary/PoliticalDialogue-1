@@ -216,8 +216,8 @@ export async function generateDebateSummary(messages: Message[], mode: string = 
             * "emotionalReasoning": Brief assessment (1-2 sentences) of how effectively and appropriately emotional appeals were used
             * "keyPointResolution": Brief assessment (1-2 sentences) of how directly each side addressed the core challenges raised
             * "toneAndClarity": Brief assessment (1-2 sentences) of the professionalism, seriousness, and clarity of communication
-            * "pragmatism": Brief assessment (1-2 sentences) of how practical, implementable, and cost-effective each side's proposals are in the Singaporean context
-         - "reasoning": A final justification explaining the overall outcome based on the five pillars
+            * "pragmatism": Thorough assessment (3-4 sentences) evaluating which position would most effectively work in practice from Singapore's non-ideological perspective - considering implementation feasibility, economic impact, social outcomes, and alignment with Singapore's unique constraints as a small nation-state with limited resources but high global connectivity
+         - "reasoning": A final justification explaining the overall outcome with special emphasis on the pragmatism pillar (which should be weighted more heavily than other pillars due to Singapore's pragmatic governance approach), while still considering all five pillars
          - "actionRecommendations": At least 2 specific, actionable recommendations for either the government or citizens to better address the debate topic`;
     
     // Add common instructions
@@ -273,9 +273,9 @@ export async function generateDebateSummary(messages: Message[], mode: string = 
             emotionalReasoning: "Not enough information to assess emotional appeals",
             keyPointResolution: "Not enough information to assess resolution of key points",
             toneAndClarity: "Not enough information to assess tone and clarity",
-            pragmatism: "Not enough information to assess pragmatism and implementability"
+            pragmatism: "Not enough information to assess pragmatism and real-world implementability in Singapore's unique context, which is particularly important for determining policy effectiveness"
           },
-          reasoning: "Analysis could not determine a clear winner due to insufficient content",
+          reasoning: "Analysis could not determine a clear winner due to insufficient content to properly evaluate the pragmatic aspects of the proposals, which are especially important in Singapore's context.",
           actionRecommendations: [
             "Provide more detailed policy information to enable better evaluation",
             "Conduct additional research on economic impacts of proposed policies"
@@ -300,7 +300,7 @@ export async function generateDebateSummary(messages: Message[], mode: string = 
             emotionalReasoning: "Could not be evaluated due to technical issues",
             keyPointResolution: "Could not be evaluated due to technical issues",
             toneAndClarity: "Could not be evaluated due to technical issues",
-            pragmatism: "Could not be evaluated due to technical issues"
+            pragmatism: "Could not be evaluated due to technical issues - pragmatic implementation in Singapore's context is a critical factor"
           },
           reasoning: "Technical issues prevented proper analysis of the debate",
           actionRecommendations: [
@@ -333,7 +333,7 @@ export async function generateDebateSummary(messages: Message[], mode: string = 
           emotionalReasoning: "Could not be evaluated due to technical issues",
           keyPointResolution: "Could not be evaluated due to technical issues",
           toneAndClarity: "Could not be evaluated due to technical issues",
-          pragmatism: "Could not be evaluated due to technical issues"
+          pragmatism: "Could not be evaluated due to technical issues - pragmatic implementation in Singapore's context is a critical factor"
         },
         reasoning: "Technical difficulties prevented analysis of the debate",
         actionRecommendations: [
