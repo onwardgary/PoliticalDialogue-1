@@ -95,7 +95,7 @@ export default function ChatInput({
             placeholder={
               disabled 
                 ? disabledReason === 'waiting'
-                  ? "Waiting for party response..." 
+                  ? "Waiting for Unofficial Fanbot response..." 
                   : disabledReason === 'finalRound'
                     ? "Maximum 8 rounds reached. Debate complete."
                     : "Maximum rounds reached. Extend debate to continue."
