@@ -247,7 +247,7 @@ export default function MessageBubble({ message, partyShortName = "BOT", isGroup
           {/* Always show timestamp */}
           <p className={cn(
             "text-xs",
-            isUser ? "text-primary-100 ml-auto" : "text-neutral-400 ml-auto"
+            isUser ? "text-white ml-auto" : "text-neutral-400 ml-auto"
           )}>
             {formattedTime}
           </p>
