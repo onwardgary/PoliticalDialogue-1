@@ -104,7 +104,7 @@ export default function DebatePage() {
   const id = params.id;
   const secureId = params.secureId;
   
-  const [_, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isUserTyping, setIsUserTyping] = useState(false);
   const [summaryGenerationStep, setSummaryGenerationStep] = useState<number | null>(null);
@@ -368,9 +368,6 @@ export default function DebatePage() {
             setTimeout(() => {
               setSummaryGenerationStep(4);
               setTimeout(() => {
-                // Finally, set view to summary
-                setViewState('summary');
-                
                 // Update React Query cache with completed state
                 queryClient.setQueryData([apiEndpoint], data);
                 
@@ -379,6 +376,12 @@ export default function DebatePage() {
                   title: "Debate summary generated",
                   description: "Your debate has been analyzed and summarized.",
                 });
+                
+                // Redirect to the summary page
+                const summaryPath = secureId 
+                  ? `/summary/s/${secureId}` 
+                  : `/summary/${debate?.id}`;
+                setLocation(summaryPath);
               }, 1500);
             }, 1500);
           }, 1500);
@@ -451,16 +454,20 @@ export default function DebatePage() {
     endDebateMutation.mutate();
   };
   
-  // Monitor debate state to set appropriate view
+  // Monitor debate state to set appropriate view and redirect to summary page if completed
   useEffect(() => {
     if (!debate) return;
     
-    if (debate.completed) {
-      setViewState('summary');
+    if (debate.completed && debate.summary) {
+      // Redirect to the summary page
+      const summaryPath = secureId 
+        ? `/summary/s/${secureId}` 
+        : `/summary/${debate.id}`;
+      setLocation(summaryPath);
     } else {
       setViewState('chat');
     }
-  }, [debate]);
+  }, [debate, secureId, setLocation]);
   
   // Combined loading state
   const isLoading = isLoadingDebate || isLoadingParty;
@@ -487,17 +494,6 @@ export default function DebatePage() {
       
       <main className="flex-1 flex flex-col h-screen">
         <MobileHeader />
-        
-        {/* Summary View */}
-        {viewState === 'summary' && debate?.completed && debate?.summary && (
-          <DebateSummary 
-            debateId={debate.secureId || debate.id.toString()}
-            summary={debate.summary}
-            partyName={party?.name || "Party"}
-            partyShortName={party?.shortName || "P"}
-            topic={debate.topic}
-          />
-        )}
         
         {/* Summary Generation View */}
         {viewState === ('generating' as ViewState) && (
