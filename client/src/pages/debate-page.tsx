@@ -680,6 +680,7 @@ export default function DebatePage() {
               onSendMessage={handleSendMessage}
               partyShortName={party?.shortName}
               userTyping={isUserTyping}
+              maxRounds={debate?.maxRounds || 6}
             />
             <ChatInput 
               onSendMessage={handleSendMessage}

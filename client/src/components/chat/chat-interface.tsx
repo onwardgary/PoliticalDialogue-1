@@ -21,9 +21,16 @@ const SUGGESTED_TOPICS = [
   { topic: "Public transport", prompt: "What are your plans to improve public transportation?" },
 ];
 
-export default function ChatInterface({ messages, isLoading, onSendMessage, partyShortName = "BOT", userTyping = false }: ChatInterfaceProps) {
+export default function ChatInterface({ messages, isLoading, onSendMessage, partyShortName = "BOT", userTyping = false, maxRounds = 6 }: ChatInterfaceProps) {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  
+  // Filter out system messages
+  const filteredMessages = messages.filter(msg => msg.role !== "system");
+  
+  // Calculate the current round based on message count (excluding welcome message)
+  const userMessages = filteredMessages.filter(msg => msg.role === "user");
+  const currentRound = Math.min(Math.ceil(userMessages.length / 2), maxRounds); // Each round is one user message and one assistant response
 
   // Auto-scroll to bottom when messages change or typing indicators appear - optimized for responsiveness
   useEffect(() => {
@@ -78,9 +85,6 @@ export default function ChatInterface({ messages, isLoading, onSendMessage, part
     }
   };
 
-  // Filter out system messages
-  const filteredMessages = messages.filter(msg => msg.role !== "system");
-  
   // Handle suggestion click
   const handleSuggestionClick = (prompt: string) => {
     if (onSendMessage) {
@@ -101,6 +105,17 @@ export default function ChatInterface({ messages, isLoading, onSendMessage, part
       <div className="flex justify-center mb-4">
         <div className="bg-neutral-100 rounded-2xl px-4 py-3 text-sm text-neutral-700 max-w-md text-center shadow-sm">
           <p>Start a conversation with the {partyShortName} bot. You can discuss any policy position or political topic relevant to Singapore.</p>
+          
+          {/* Round indicator */}
+          <div className="mt-2 flex items-center justify-center space-x-1">
+            <span className="text-xs text-neutral-500">Round {currentRound} of {maxRounds}</span>
+            <div className="ml-2 bg-neutral-200 h-1.5 rounded-full w-24 overflow-hidden">
+              <div 
+                className="bg-primary h-full rounded-full transition-all duration-300 ease-in-out" 
+                style={{ width: `${(currentRound / maxRounds) * 100}%` }}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
