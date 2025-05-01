@@ -251,8 +251,8 @@ export default function ChatInterface({
               <span className="text-white font-bold text-xs">SYS</span>
             </div>
             <div className="bg-white p-4 rounded-lg rounded-tl-none shadow-sm max-w-[85%]">
-              <p className="text-sm font-medium mb-2">You've reached round {maxRounds} of your debate.</p>
-              <p className="text-sm text-gray-600 mb-3">Would you like to continue the debate or generate a summary?</p>
+              <p className="text-sm font-medium mb-2">You've completed {maxRounds} rounds of your debate.</p>
+              <p className="text-sm text-gray-600 mb-3">Would you like to extend your debate with more rounds or generate a summary now?</p>
               
               <div className="flex flex-col space-y-2">
                 {/* Medium debate option */}
@@ -277,7 +277,7 @@ export default function ChatInterface({
                     disabled={isExtendingRounds || maxRounds >= 6}
                   >
                     <Calendar className="h-4 w-4 text-amber-500" />
-                    <span>Extend to 6 rounds</span>
+                    <span>Add {6 - maxRounds} more rounds (total: 6)</span>
                   </Button>
                 )}
                 
@@ -303,7 +303,7 @@ export default function ChatInterface({
                     disabled={isExtendingRounds || maxRounds >= 8}
                   >
                     <CalendarPlus className="h-4 w-4 text-emerald-500" />
-                    <span>Extend to 8 rounds (maximum)</span>
+                    <span>Add {8 - maxRounds} more rounds (maximum: 8)</span>
                   </Button>
                 )}
                 
