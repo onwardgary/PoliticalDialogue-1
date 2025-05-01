@@ -89,8 +89,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         topic: topic || null,
         messages: [systemMessage, welcomeMessage],
         secureId: nanoid(), // Generate a secure ID for the debate
-        completed: false,
-        mode: mode, // Store the conversation mode
+        completed: false
       });
       
       // Return debate with welcome message only (no system message)
