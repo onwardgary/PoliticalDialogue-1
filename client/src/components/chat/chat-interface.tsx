@@ -66,20 +66,37 @@ export default function ChatInterface({
     // 3. We have the extension handler available
     // 4. The dialog is not already open
     // 5. Not currently extending rounds (prevents reopening during API call)
-    if (currentRound === maxRounds && maxRounds < 8 && onExtendRounds && !showRoundExtensionDialog && !isExtendingRounds) {
+    // 6. Bot has finished responding (last message is from user)
+    
+    // Check if last message is from user (important UX improvement)
+    const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+    const isLastMessageFromUser = lastMessage && lastMessage.role === "user";
+    
+    // Only show dialog when user has sent their last message AND bot has responded
+    // This prevents showing the dialog before the bot responds
+    if (
+      currentRound === maxRounds && 
+      maxRounds < 8 && 
+      onExtendRounds && 
+      !showRoundExtensionDialog && 
+      !isExtendingRounds && 
+      !isLastMessageFromUser && // Only show dialog after bot has responded to last user message
+      !isLoading // Make sure bot isn't still generating a response
+    ) {
       console.log(`Showing round extension dialog: currentRound=${currentRound}, maxRounds=${maxRounds}`);
       setShowRoundExtensionDialog(true);
     } else if (
       // Force close the dialog when: 
       // - Extension is in progress
       // - or we're at max rounds already (8)
-      (isExtendingRounds || maxRounds >= 8) && 
+      // - or any mutation is active
+      (isExtendingRounds || maxRounds >= 8 || isLoading) && 
       showRoundExtensionDialog
     ) {
-      console.log(`Force closing dialog: isExtendingRounds=${isExtendingRounds}, maxRounds=${maxRounds}`);
+      console.log(`Force closing dialog: isExtendingRounds=${isExtendingRounds}, maxRounds=${maxRounds}, isLoading=${isLoading}`);
       setShowRoundExtensionDialog(false);
     }
-  }, [currentRound, maxRounds, onExtendRounds, showRoundExtensionDialog, isExtendingRounds]);
+  }, [currentRound, maxRounds, onExtendRounds, showRoundExtensionDialog, isExtendingRounds, messages, isLoading]);
 
   // Auto-scroll to bottom when messages change or typing indicators appear - optimized for responsiveness
   useEffect(() => {
@@ -274,14 +291,18 @@ export default function ChatInterface({
                 size="lg"
                 className="w-full justify-start gap-3"
                 onClick={() => {
-                  // First close the dialog immediately
+                  // First close the dialog immediately to ensure UI feedback
                   setShowRoundExtensionDialog(false); 
+                  
                   // Only proceed if we're not already at or above this round count
                   if (maxRounds < 6) {
                     // Add a small delay to ensure dialog is fully closed before API call
                     setTimeout(() => {
-                      if (onExtendRounds) onExtendRounds(6);
-                    }, 100);
+                      if (onExtendRounds) {
+                        console.log("Extending to 6 rounds");
+                        onExtendRounds(6);
+                      }
+                    }, 150);
                   }
                 }}
                 disabled={isExtendingRounds || maxRounds >= 6}
@@ -300,14 +321,18 @@ export default function ChatInterface({
                 size="lg"
                 className="w-full justify-start gap-3"
                 onClick={() => {
-                  // First close the dialog immediately
+                  // First close the dialog immediately to ensure UI feedback
                   setShowRoundExtensionDialog(false);
+                  
                   // Only proceed if we're not already at or above this round count
                   if (maxRounds < 8) {
                     // Add a small delay to ensure dialog is fully closed before API call
                     setTimeout(() => {
-                      if (onExtendRounds) onExtendRounds(8);
-                    }, 100);
+                      if (onExtendRounds) {
+                        console.log("Extending to 8 rounds");
+                        onExtendRounds(8);
+                      }
+                    }, 150);
                   }
                 }}
                 disabled={isExtendingRounds || maxRounds >= 8}
@@ -324,12 +349,16 @@ export default function ChatInterface({
             <Button 
               variant="default"
               onClick={() => {
-                // First close the dialog immediately, then process ending debate
+                // First close the dialog immediately to ensure UI feedback
                 setShowRoundExtensionDialog(false);
+                
                 // Add a small delay to ensure dialog is fully closed before API call
                 setTimeout(() => {
-                  if (onEndDebate) onEndDebate();
-                }, 100);
+                  if (onEndDebate) {
+                    console.log("Ending debate and generating summary");
+                    onEndDebate();
+                  }
+                }, 150);
               }}
               disabled={isExtendingRounds}
               className="w-full"
