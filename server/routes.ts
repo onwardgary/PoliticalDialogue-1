@@ -77,7 +77,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let welcomeMessage = {
         id: nanoid(),
         role: "assistant" as const,
-        content: `Hello! I'm the ${party.name} Bot, representing the positions of the ${party.name}. Let's debate policy positions. Challenge me on any policy area, and we'll engage in a point-by-point debate with clear positions. What would you like to debate today?`,
+        content: `Hello! I'm the ${party.name} Unofficial Fanbot. I'm NOT officially endorsed by ${party.name}, but I present perspectives aligned with their positions. Let's debate policy positions. Challenge me on any policy area, and we'll engage in a point-by-point debate with clear positions. What would you like to debate today?`,
         timestamp: Date.now(),
       };
       
