@@ -2,14 +2,28 @@ import { useRef, useEffect, useState } from "react";
 import MessageBubble from "./message-bubble";
 import { Message } from "@shared/schema";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Clock, Check, Calendar, CalendarPlus } from "lucide-react";
 
 type ChatInterfaceProps = {
   messages: Message[];
   isLoading: boolean;
   onSendMessage?: (message: string) => void;
+  onExtendRounds?: (rounds: number) => void;
+  onEndDebate?: () => void;
   partyShortName?: string;
   userTyping?: boolean;
   maxRounds?: number;
+  isExtendingRounds?: boolean;
 };
 
 // Suggested topics to help start the conversation
@@ -21,9 +35,20 @@ const SUGGESTED_TOPICS = [
   { topic: "Public transport", prompt: "What are your plans to improve public transportation?" },
 ];
 
-export default function ChatInterface({ messages, isLoading, onSendMessage, partyShortName = "BOT", userTyping = false, maxRounds = 6 }: ChatInterfaceProps) {
+export default function ChatInterface({ 
+  messages, 
+  isLoading, 
+  onSendMessage, 
+  onExtendRounds, 
+  onEndDebate, 
+  partyShortName = "BOT", 
+  userTyping = false, 
+  maxRounds = 6,
+  isExtendingRounds = false
+}: ChatInterfaceProps) {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [showRoundExtensionDialog, setShowRoundExtensionDialog] = useState(false);
   
   // Filter out system messages
   const filteredMessages = messages.filter(msg => msg.role !== "system");
@@ -32,6 +57,18 @@ export default function ChatInterface({ messages, isLoading, onSendMessage, part
   const userMessages = filteredMessages.filter(msg => msg.role === "user");
   // Each round is one user message (assistant responses don't count toward the round number)
   const currentRound = Math.min(userMessages.length, maxRounds);
+  
+  // Detect if we've reached the max rounds and need to show the extension dialog
+  useEffect(() => {
+    // Only show extension dialog if:
+    // 1. We've reached the max rounds (currentRound === maxRounds)
+    // 2. The max rounds is not already at the maximum (8)
+    // 3. We have the extension handler available
+    // 4. The dialog is not already open
+    if (currentRound === maxRounds && maxRounds < 8 && onExtendRounds && !showRoundExtensionDialog) {
+      setShowRoundExtensionDialog(true);
+    }
+  }, [currentRound, maxRounds, onExtendRounds, showRoundExtensionDialog]);
 
   // Auto-scroll to bottom when messages change or typing indicators appear - optimized for responsiveness
   useEffect(() => {
@@ -200,6 +237,71 @@ export default function ChatInterface({ messages, isLoading, onSendMessage, part
           </Button>
         </div>
       )}
+      
+      {/* Round extension dialog */}
+      <AlertDialog open={showRoundExtensionDialog} onOpenChange={setShowRoundExtensionDialog}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>You've reached round {maxRounds}</AlertDialogTitle>
+            <AlertDialogDescription>
+              You've reached the maximum number of rounds for this debate. Would you like to extend the debate or generate a summary now?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex flex-col space-y-3 p-3 my-3 bg-neutral-50 rounded-lg border border-neutral-100">
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline"
+                size="lg"
+                className="w-full justify-start gap-3"
+                onClick={() => {
+                  setShowRoundExtensionDialog(false);
+                  if (onExtendRounds) onExtendRounds(6);
+                }}
+                disabled={isExtendingRounds || maxRounds >= 6}
+              >
+                <Calendar className="h-5 w-5 text-amber-500" />
+                <div className="flex flex-col items-start">
+                  <span className="font-medium">Medium Debate</span>
+                  <span className="text-xs text-neutral-500">6 rounds</span>
+                </div>
+              </Button>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline" 
+                size="lg"
+                className="w-full justify-start gap-3"
+                onClick={() => {
+                  setShowRoundExtensionDialog(false);
+                  if (onExtendRounds) onExtendRounds(8);
+                }}
+                disabled={isExtendingRounds || maxRounds >= 8}
+              >
+                <CalendarPlus className="h-5 w-5 text-emerald-500" />
+                <div className="flex flex-col items-start">
+                  <span className="font-medium">Extended Debate</span>
+                  <span className="text-xs text-neutral-500">8 rounds (maximum)</span>
+                </div>
+              </Button>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <Button 
+              variant="default"
+              onClick={() => {
+                setShowRoundExtensionDialog(false);
+                if (onEndDebate) onEndDebate();
+              }}
+              disabled={isExtendingRounds}
+              className="w-full"
+            >
+              <Check className="h-4 w-4 mr-2" />
+              End debate and generate summary
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

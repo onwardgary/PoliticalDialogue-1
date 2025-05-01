@@ -188,6 +188,28 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async updateDebateMaxRounds(id: number, maxRounds: number): Promise<Debate> {
+    try {
+      const [updatedDebate] = await db
+        .update(debates)
+        .set({ 
+          maxRounds, 
+          updatedAt: new Date() 
+        })
+        .where(eq(debates.id, id))
+        .returning();
+      
+      if (!updatedDebate) {
+        throw new Error("Debate not found");
+      }
+      
+      return updatedDebate;
+    } catch (error) {
+      console.error("Error in updateDebateMaxRounds:", error);
+      throw error;
+    }
+  }
+
   async completeDebate(id: number, summary: DebateSummary): Promise<Debate> {
     try {
       const [updatedDebate] = await db
