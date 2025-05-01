@@ -157,7 +157,7 @@ export default function ChatInput({
           ) : disabled ? (
             <span className="text-primary-foreground/60">
               {disabledReason === 'waiting'
-                ? "Party is typing..."
+                ? "Fanbot is typing..."
                 : disabledReason === 'finalRound'
                   ? "Debate Complete"
                   : "Round Limit"
