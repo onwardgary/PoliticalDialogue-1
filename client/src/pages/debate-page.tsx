@@ -139,6 +139,9 @@ export default function DebatePage() {
     polling: false
   });
   
+  // NOTE: We've removed round extension functionality
+  // No more isExtendingRounds or showInlineExtensionOptions state variables
+  
   // We've removed the ability to extend rounds after initial selection
   
   // Determine which API endpoint to use based on which parameter is available

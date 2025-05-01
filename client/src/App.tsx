@@ -5,7 +5,7 @@ import { AuthProvider } from "./hooks/use-auth";
 import NotFound from "./pages/not-found";
 import HomePage from "./pages/home-page";
 import AuthPage from "./pages/auth-page";
-import DebatePage from "./pages/debate-page";
+import DebatePage from "./pages/debate-page-simplified";
 import SummaryPage from "./pages/summary-page";
 import ProfilePage from "./pages/profile-page";
 import AdminKnowledgePage from "./pages/admin-knowledge-page";
