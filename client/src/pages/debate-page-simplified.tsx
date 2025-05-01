@@ -299,14 +299,34 @@ export default function DebatePage() {
                 return prev.filter(msg => !msg.id.startsWith('typing-'));
               });
               
-              // Wait a moment before adding the real message to avoid React key conflicts
+              // Wait longer before adding the real message to ensure React has processed all updates
               setTimeout(() => {
+                // Add the real message
                 setLocalMessages(prev => [...prev, latestAIMessage]);
+                
+                // Update the cache
                 queryClient.setQueryData([apiEndpoint], fetchedData);
-              }, 50);
+                
+                // Check if this was the final round and set the flag only after adding the message
+                const userMessagesCount = fetchedData.messages.filter((msg: Message) => msg.role === 'user').length;
+                const maxRoundsNumber = debate?.maxRounds || 6;
+                
+                if (userMessagesCount >= maxRoundsNumber) {
+                  // Set the final round flag AFTER the message has been displayed
+                  setTimeout(() => {
+                    setMessageStatus(prev => ({ 
+                      ...prev, 
+                      finalRoundReached: true,
+                      polling: false 
+                    }));
+                  }, 150); // Delay the final round state change to ensure smooth UI transition
+                } else {
+                  // For non-final rounds, just update polling state
+                  setMessageStatus(prev => ({ ...prev, polling: false }));
+                }
+              }, 200); // Increased timeout for smoother transitions
               
               clearInterval(pollInterval);
-              setMessageStatus(prev => ({ ...prev, polling: false }));
             }
           })
           .catch(error => {
@@ -318,12 +338,16 @@ export default function DebatePage() {
           }
         } else {
           clearInterval(pollInterval);
-          setMessageStatus(prev => ({ ...prev, polling: false }));
           
           // Remove typing indicator if it's still there
           setLocalMessages(prev => {
             return prev.filter(msg => !msg.id.startsWith('typing-'));
           });
+          
+          // Only update polling state after the typing indicator is removed
+          setTimeout(() => {
+            setMessageStatus(prev => ({ ...prev, polling: false }));
+          }, 150);
         }
       }, currentDelay);
     },
@@ -471,15 +495,18 @@ export default function DebatePage() {
     // Add temp message to local state
     setLocalMessages(prev => [...prev, tempUserMessage]);
     
-    // Check if this is going to be the final round and set state immediately
+    // Store if this is the final round, but don't update state yet
+    // We'll use this flag in the onSuccess callback
     const userMessagesCount = localMessages.filter(msg => msg.role === 'user').length + 1; // +1 for the new message
     const maxRoundsNumber = debate?.maxRounds || 6;
+    const isFinalRound = userMessagesCount >= maxRoundsNumber;
     
-    if (userMessagesCount >= maxRoundsNumber) {
-      // Immediately update message status to prevent input before server sync
+    // Only update UI immediately to disable input, but don't affect other state yet
+    if (isFinalRound) {
+      // Set polling status to true to disable input immediately
       setMessageStatus(prev => ({ 
         ...prev, 
-        finalRoundReached: true 
+        polling: true 
       }));
     }
     
