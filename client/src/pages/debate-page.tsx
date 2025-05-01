@@ -803,12 +803,11 @@ export default function DebatePage() {
               messages={localMessages.length > 0 ? localMessages : (debate?.messages || [])}
               isLoading={messageStatus.sending}
               onSendMessage={handleSendMessage}
-              onExtendRounds={(rounds) => extendRoundsMutation.mutate(rounds)}
               onEndDebate={handleEndDebate}
               partyShortName={party?.shortName}
               userTyping={isUserTyping}
               maxRounds={debate?.maxRounds || 6}
-              isExtendingRounds={isExtendingRounds}
+              isGeneratingSummary={viewState === 'generating'}
             />
             <ChatInput 
               onSendMessage={handleSendMessage}

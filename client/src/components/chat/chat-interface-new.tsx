@@ -54,7 +54,7 @@ export default function ChatInterface({
     filteredMessages.length > 0 && 
     filteredMessages[filteredMessages.length - 1].role === 'assistant';
 
-  // Auto-scroll to bottom when messages change or typing indicators appear - optimized for responsiveness
+  // Auto-scroll to bottom when messages change or typing indicators appear
   useEffect(() => {
     const container = chatContainerRef.current;
     if (!container) return;
