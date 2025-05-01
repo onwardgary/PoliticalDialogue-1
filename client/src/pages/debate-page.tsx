@@ -440,6 +440,9 @@ export default function DebatePage() {
         description: `You now have ${data.maxRounds} rounds for this debate.`,
       });
       
+      // Force refetch debate data to ensure UI is updated correctly
+      queryClient.invalidateQueries({queryKey: [apiEndpoint]});
+      
       setIsExtendingRounds(false);
     },
     onError: (error) => {

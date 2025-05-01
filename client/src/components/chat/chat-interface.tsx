@@ -65,10 +65,14 @@ export default function ChatInterface({
     // 2. The max rounds is not already at the maximum (8)
     // 3. We have the extension handler available
     // 4. The dialog is not already open
-    if (currentRound === maxRounds && maxRounds < 8 && onExtendRounds && !showRoundExtensionDialog) {
+    // 5. Not currently extending rounds (prevents reopening during API call)
+    if (currentRound === maxRounds && maxRounds < 8 && onExtendRounds && !showRoundExtensionDialog && !isExtendingRounds) {
       setShowRoundExtensionDialog(true);
+    } else if (isExtendingRounds && showRoundExtensionDialog) {
+      // Force close the dialog when extension is in progress
+      setShowRoundExtensionDialog(false);
     }
-  }, [currentRound, maxRounds, onExtendRounds, showRoundExtensionDialog]);
+  }, [currentRound, maxRounds, onExtendRounds, showRoundExtensionDialog, isExtendingRounds]);
 
   // Auto-scroll to bottom when messages change or typing indicators appear - optimized for responsiveness
   useEffect(() => {
