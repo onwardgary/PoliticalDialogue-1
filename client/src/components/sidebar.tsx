@@ -61,6 +61,7 @@ export default function Sidebar() {
               </div>
             </Link>
           </li>
+          {/* Statistics menu item hidden per user request 
           <li>
             <Link href="/statistics">
               <div className={`flex items-center p-2 rounded-lg font-medium ${location.startsWith('/statistics') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
@@ -69,6 +70,7 @@ export default function Sidebar() {
               </div>
             </Link>
           </li>
+          */}
           
           {/* User specific menu items */}
           {user && (
