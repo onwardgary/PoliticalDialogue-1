@@ -711,40 +711,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get trending topics/debates for all parties
-  app.get("/api/trending/:period", async (req, res) => {
-    try {
-      const period = req.params.period || "weekly";
-      const limit = parseInt(req.query.limit as string || "20");
-      
-      const trending = await storage.getTrendingTopics(period, limit);
-      
-      res.json(trending);
-    } catch (error) {
-      console.error("Error fetching trending topics:", error);
-      res.status(500).json({ message: "Failed to fetch trending topics" });
-    }
-  });
-  
-  // Get trending topics/debates for a specific party
-  app.get("/api/trending/:period/:partyId", async (req, res) => {
-    try {
-      const period = req.params.period || "weekly";
-      const partyId = parseInt(req.params.partyId);
-      
-      const party = await storage.getParty(partyId);
-      if (!party) {
-        return res.status(404).json({ message: "Party not found" });
-      }
-      
-      const trending = await storage.getAggregateSummariesByParty(partyId, period);
-      
-      res.json(trending);
-    } catch (error) {
-      console.error("Error fetching party trending topics:", error);
-      res.status(500).json({ message: "Failed to fetch trending topics for this party" });
-    }
-  });
+  // Trending API endpoints have been removed to simplify the application
   
   // Admin endpoints for knowledge base management
   

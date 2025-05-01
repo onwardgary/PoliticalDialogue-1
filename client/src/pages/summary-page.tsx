@@ -115,22 +115,9 @@ export default function SummaryPage() {
     refetchOnWindowFocus: false,
   });
   
-  // Fetch public aggregate summary
-  const { data: aggregateSummary, isLoading: isLoadingAggregate } = useQuery({
-    queryKey: ["/api/trending/weekly", debate?.topic],
-    queryFn: async () => {
-      const response = await fetch("/api/trending/weekly");
-      if (!response.ok) {
-        throw new Error("Failed to fetch trending topics");
-      }
-      const summaries = await response.json();
-      return summaries.find((s: any) => s.topic === debate?.topic && s.partyId === debate?.partyId);
-    },
-    enabled: !!debate && !!debate.topic,
-    refetchOnWindowFocus: false,
-  });
+  // Trending API has been removed to simplify the application
   
-  const isLoading = isLoadingDebate || isLoadingParty || isLoadingAggregate;
+  const isLoading = isLoadingDebate || isLoadingParty;
   
   // Only redirect if debate doesn't exist
   useEffect(() => {
