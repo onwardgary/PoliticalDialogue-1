@@ -49,7 +49,7 @@ export default function PartyCard({ party }: { party: Party }) {
     onSuccess: (data) => {
       toast({
         title: "Debate started",
-        description: `You are now debating with ${party.name}.`,
+        description: `You are now debating with the ${party.name} Unofficial Fanbot.`,
       });
       // Use the secure ID for navigation if available
       setLocation(data.secureId ? `/debate/s/${data.secureId}` : `/debate/${data.id}`);
@@ -100,7 +100,10 @@ export default function PartyCard({ party }: { party: Party }) {
             <div className={`w-12 h-12 ${getPartyColor()} rounded-full flex items-center justify-center mr-3 border shadow-sm`}>
               <span className="font-bold">{party.shortName}</span>
             </div>
-            <h3 className="text-lg font-semibold">{party.name}</h3>
+            <div>
+              <h3 className="text-lg font-semibold">{party.name}</h3>
+              <div className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded inline-block mt-1">Unofficial Fanbot</div>
+            </div>
           </div>
           <p className="text-neutral-600 text-sm mb-2">{party.description}</p>
         </CardContent>
@@ -110,7 +113,7 @@ export default function PartyCard({ party }: { party: Party }) {
             variant="outline"
           >
             <MessageSquare className="h-4 w-4 group-hover:text-primary transition" />
-            <span>Debate with {party.shortName}</span>
+            <span>Debate with {party.shortName} Fanbot</span>
             <ArrowRight className="h-4 w-4 ml-auto opacity-0 group-hover:opacity-100 transition" />
           </Button>
         </CardFooter>
@@ -121,7 +124,7 @@ export default function PartyCard({ party }: { party: Party }) {
           <DialogHeader>
             <DialogTitle>Select Debate Length</DialogTitle>
             <DialogDescription>
-              Choose how many rounds you'd like to debate with {party.name}.
+              Choose how many rounds you'd like to debate with the {party.name} <strong>Unofficial Fanbot</strong>.
             </DialogDescription>
           </DialogHeader>
           

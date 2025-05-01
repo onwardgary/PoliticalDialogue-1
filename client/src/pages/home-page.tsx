@@ -23,16 +23,16 @@ export default function HomePage() {
         <header className="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-neutral-200 px-6 py-10 md:py-16">
           <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-700 to-blue-500 text-transparent bg-clip-text mb-2">Welcome to Suara.sg</h1>
           <p className="text-neutral-600 text-lg md:w-3/4 lg:w-2/3">
-            Engage in meaningful debates with AI-powered political party representatives, 
-            understand different policy positions, and contribute to Singapore's democratic discourse.
+            Engage in meaningful debates with <strong>unofficial AI-powered fanbots</strong> that represent 
+            different policy perspectives. These bots are not endorsed by or affiliated with any political parties.
           </p>
         </header>
         
         {/* Party Selection Section */}
         <section className="p-6 md:p-8">
           <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-2">Select a Political Party to Debate With</h2>
-            <p className="text-neutral-500">Choose a party to discuss policies, understand positions, and engage in democratic dialogue</p>
+            <h2 className="text-xl font-semibold mb-2">Select an Unofficial Fanbot to Debate With</h2>
+            <p className="text-neutral-500">These are <span className="font-bold">unofficial fanbots</span> (not endorsed by actual parties) that present perspectives aligned with different political positions</p>
           </div>
           
           {isLoadingParties ? (
