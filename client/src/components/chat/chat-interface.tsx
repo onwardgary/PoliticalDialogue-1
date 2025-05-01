@@ -28,9 +28,10 @@ export default function ChatInterface({ messages, isLoading, onSendMessage, part
   // Filter out system messages
   const filteredMessages = messages.filter(msg => msg.role !== "system");
   
-  // Calculate the current round based on message count (excluding welcome message)
+  // Calculate the current round based on user messages
   const userMessages = filteredMessages.filter(msg => msg.role === "user");
-  const currentRound = Math.min(Math.ceil(userMessages.length / 2), maxRounds); // Each round is one user message and one assistant response
+  // Each round is one user message (assistant responses don't count toward the round number)
+  const currentRound = Math.min(userMessages.length, maxRounds);
 
   // Auto-scroll to bottom when messages change or typing indicators appear - optimized for responsiveness
   useEffect(() => {
