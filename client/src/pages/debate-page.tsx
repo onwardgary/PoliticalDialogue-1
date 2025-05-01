@@ -797,14 +797,36 @@ export default function DebatePage() {
               isLoading={messageStatus.sending || isExtendingRounds}
               onTypingStateChange={setIsUserTyping}
               disabled={
-                // Disable input when:
-                // 1. We've reached the max rounds (calculate here to be sure)
-                // 2. AND there is no in-progress extension
-                // 3. AND the extension options are being shown
-                // This ensures input is only disabled when extension options are visible
-                debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 6) && 
-                !isExtendingRounds &&
-                showInlineExtensionOptions
+                // Disable input in these scenarios:
+                
+                // CASE 1: While waiting for AI response (disable immediately after sending)
+                messageStatus.sending || messageStatus.polling ||
+                
+                // CASE 2: When at max rounds (8) - permanent disabling
+                (debate?.maxRounds === 8 && debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= 8) ||
+                
+                // CASE 3: When at configured max rounds with extension options showing
+                (debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 6) && 
+                !isExtendingRounds && showInlineExtensionOptions) ||
+                
+                // CASE 4: Always disable when the last message is from the user (waiting for bot)
+                (debate?.messages && debate.messages.length > 0 && 
+                debate.messages[debate.messages.length - 1].role === 'user')
+              }
+              disabledReason={
+                // Determine the reason for disabling:
+                
+                // When waiting for the bot to respond
+                (debate?.messages && debate.messages.length > 0 && 
+                debate.messages[debate.messages.length - 1].role === 'user')
+                  ? 'waiting'
+                
+                // When at maximum allowed rounds of 8
+                : (debate?.maxRounds === 8 && debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= 8)
+                  ? 'finalRound'
+                
+                // Default - at round limit but can extend
+                : 'maxRounds'
               }
             />
           </>

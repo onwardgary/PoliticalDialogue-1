@@ -14,9 +14,16 @@ type ChatInputProps = {
   isLoading: boolean;
   onTypingStateChange?: (isTyping: boolean) => void;
   disabled?: boolean;
+  disabledReason?: 'waiting' | 'maxRounds' | 'finalRound';
 };
 
-export default function ChatInput({ onSendMessage, isLoading, onTypingStateChange, disabled = false }: ChatInputProps) {
+export default function ChatInput({ 
+  onSendMessage, 
+  isLoading, 
+  onTypingStateChange, 
+  disabled = false,
+  disabledReason = 'maxRounds'
+}: ChatInputProps) {
   const [message, setMessage] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -85,7 +92,15 @@ export default function ChatInput({ onSendMessage, isLoading, onTypingStateChang
         <div className="flex-1 relative">
           <Textarea
             ref={textareaRef}
-            placeholder={disabled ? "Maximum rounds reached. Extend debate to continue." : "Type your message... (Ctrl+Enter to send)"}
+            placeholder={
+              disabled 
+                ? disabledReason === 'waiting'
+                  ? "Waiting for response..." 
+                  : disabledReason === 'finalRound'
+                    ? "Maximum 8 rounds reached. Debate complete."
+                    : "Maximum rounds reached. Extend debate to continue."
+                : "Type your message... (Ctrl+Enter to send)"
+            }
             className={`w-full resize-none pr-10 min-h-[45px] md:min-h-[60px] focus:outline-none focus:ring-1 focus:ring-primary ${disabled ? 'bg-neutral-100 text-neutral-500' : ''}`}
             value={message}
             onChange={(e) => {
@@ -140,7 +155,14 @@ export default function ChatInput({ onSendMessage, isLoading, onTypingStateChang
           {isLoading ? (
             <span className="animate-pulse text-primary-foreground/80">Sent</span>
           ) : disabled ? (
-            <span className="text-primary-foreground/60">Debate Ended</span>
+            <span className="text-primary-foreground/60">
+              {disabledReason === 'waiting'
+                ? "Waiting..."
+                : disabledReason === 'finalRound'
+                  ? "Debate Complete"
+                  : "Round Limit"
+              }
+            </span>
           ) : (
             <>
               <SendIcon className="h-4 w-4 mr-2" />
