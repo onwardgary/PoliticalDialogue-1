@@ -114,7 +114,9 @@ export default function DebatePage() {
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
   
   // Use a clear view state to control what's rendered
-  const [viewState, setViewState] = useState<'loading' | 'chat' | 'generating' | 'summary'>('loading');
+  // Using a string literal type to represent the different view states
+  type ViewState = 'loading' | 'chat' | 'generating' | 'summary';
+  const [viewState, setViewState] = useState<ViewState>('loading');
   
   // Track message sending state for UI feedback
   const [messageStatus, setMessageStatus] = useState({
