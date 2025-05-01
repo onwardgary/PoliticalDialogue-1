@@ -7,7 +7,6 @@ import HomePage from "./pages/home-page";
 import AuthPage from "./pages/auth-page";
 import DebatePage from "./pages/debate-page";
 import SummaryPage from "./pages/summary-page";
-import TrendingPage from "./pages/trending-page";
 import ProfilePage from "./pages/profile-page";
 import AdminKnowledgePage from "./pages/admin-knowledge-page";
 import { ProtectedRoute } from "./lib/protected-route";
@@ -25,10 +24,6 @@ function Router() {
       {/* New secure ID routes (preferred) */}
       <Route path="/debate/s/:secureId" component={DebatePage} />
       <Route path="/summary/s/:secureId" component={SummaryPage} />
-      
-      {/* Trending page temporarily hidden 
-      <Route path="/trending" component={TrendingPage} />
-      */}
       
       {/* User routes - require authentication - temporarily hidden
       <ProtectedRoute path="/profile" component={ProfilePage} />
