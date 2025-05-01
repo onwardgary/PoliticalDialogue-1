@@ -164,7 +164,7 @@ export default function DebateSummary({
           
           <div>
             <h4 className="text-md font-medium text-neutral-800 mb-3 flex items-center">
-              <div className="w-6 h-6 bg-secondary rounded-full flex items-center justify-center mr-2">
+              <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center mr-2">
                 <span className="text-white font-bold text-xs">C</span>
               </div>
               Your Arguments
@@ -202,7 +202,7 @@ export default function DebateSummary({
                     </div>
                     <div className="p-3">
                       <div className="flex items-center mb-2">
-                        <div className="w-5 h-5 bg-secondary rounded-full flex items-center justify-center mr-2">
+                        <div className="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center mr-2">
                           <span className="text-white font-bold text-xs">C</span>
                         </div>
                         <span className="text-sm font-medium text-neutral-800">Your Position</span>
@@ -342,7 +342,7 @@ export default function DebateSummary({
               disabled={voteMutation.isPending}
             >
               <div className="flex items-center">
-                <div className="w-6 h-6 bg-secondary rounded-full flex items-center justify-center mr-2">
+                <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center mr-2">
                   <span className="text-white font-bold text-xs">C</span>
                 </div>
                 <span className="font-medium">Citizen (You)</span>
