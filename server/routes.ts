@@ -600,13 +600,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Return summary
         res.json({ summary });
-      } catch (openAiError) {
+      } catch (error: unknown) {
+        const openAiError = error as Error;
         console.error(`OpenAI API error for regenerating debate summary ${debate.id} (${secureId}):`, openAiError);
         
         // Return error so the user can try again
         res.status(500).json({ 
           message: "Failed to regenerate summary. Please try again.",
-          error: openAiError.message
+          error: openAiError?.message || "Unknown OpenAI API error"
         });
       }
     } catch (error) {

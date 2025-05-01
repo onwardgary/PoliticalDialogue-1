@@ -26,10 +26,26 @@ export default function SummaryPage() {
   const regenerateMutation = useMutation({
     mutationFn: async () => {
       if (!secureId && !id) throw new Error("No debate ID available");
+      
       const endpoint = secureId 
         ? `/api/debates/s/${secureId}/regenerate-summary`
         : `/api/debates/${id}/regenerate-summary`;
-      const res = await apiRequest("POST", endpoint);
+        
+      // Determine mode based on topic if debate data is available
+      let mode = "debate"; // Default mode
+      
+      if (debate?.topic) {
+        // If topic contains "discussion" or "recommendations", use "discuss" mode
+        if (debate.topic.toLowerCase().includes("discussion") || 
+            debate.topic.toLowerCase().includes("recommendations")) {
+          mode = "discuss";
+        }
+      }
+      
+      console.log(`Regenerating summary with mode: ${mode}`);
+      
+      // Pass the mode parameter to the regenerate endpoint
+      const res = await apiRequest("POST", endpoint, { mode });
       return await res.json();
     },
     onSuccess: (data) => {
@@ -75,9 +91,10 @@ export default function SummaryPage() {
       return response.json();
     },
     refetchOnWindowFocus: false,
-    refetchInterval: (data) => {
-      // If we have a summary, stop polling
-      if (data?.summary) return false;
+    refetchInterval: (data: any) => {
+      // If we have a completed debate with a summary, stop polling
+      // We're using an explicit 'any' type to handle the debate data structure
+      if (data && data.summary) return false;
       // Otherwise, poll every 2 seconds
       return 2000;
     }
@@ -238,6 +255,7 @@ export default function SummaryPage() {
             summary={debate.summary}
             partyName={party.name}
             partyShortName={party.shortName}
+            topic={debate.topic}
           />
           
           {aggregateSummary && (
