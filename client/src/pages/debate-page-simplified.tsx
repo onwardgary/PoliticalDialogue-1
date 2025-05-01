@@ -254,9 +254,11 @@ export default function DebatePage() {
         };
       });
       
-      // Add a temporary typing indicator message
+      // Add a temporary typing indicator message with a unique ID
+      // Use a truly unique ID based on both timestamp and a random string
+      const uniqueTypingId = `typing-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
       const typingIndicatorMessage: Message = {
-        id: `typing-${Date.now()}`,
+        id: uniqueTypingId,
         role: 'assistant',
         content: '...',
         timestamp: Date.now()
@@ -283,20 +285,27 @@ export default function DebatePage() {
             const currentMessageCount = fetchedData?.messages?.length || 0;
             const currentLocalCount = localMessages.length;
             
-            if (currentMessageCount > currentLocalCount - 1) { // -1 to account for typing indicator
+            // Only compare with real messages
+            const realLocalMessages = localMessages.filter(msg => !msg.id.startsWith('typing-')).length;
+            
+            if (currentMessageCount > realLocalMessages) {
               hasReceivedResponse = true;
               
               const latestAIMessage = fetchedData.messages[fetchedData.messages.length - 1];
               
+              // First, remove typing indicator
               setLocalMessages(prev => {
-                const messagesWithoutTyping = prev.filter(msg => !msg.id.startsWith('typing-'));
-                return [...messagesWithoutTyping, latestAIMessage];
+                return prev.filter(msg => !msg.id.startsWith('typing-'));
               });
+              
+              // Wait a moment before adding the real message to avoid React key conflicts
+              setTimeout(() => {
+                setLocalMessages(prev => [...prev, latestAIMessage]);
+                queryClient.setQueryData([apiEndpoint], fetchedData);
+              }, 50);
               
               clearInterval(pollInterval);
               setMessageStatus(prev => ({ ...prev, polling: false }));
-              
-              queryClient.setQueryData([apiEndpoint], fetchedData);
             }
           })
           .catch(error => {

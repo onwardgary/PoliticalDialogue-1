@@ -220,6 +220,7 @@ export default function MessageBubble({ message, partyShortName = "BOT", isGroup
             </div>
           ) : (
             <Typewriter 
+              key={message.id} // Add key to force re-render with new messages
               text={message.content} 
               speed={7} 
               onComplete={() => setTypewriterComplete(true)}
