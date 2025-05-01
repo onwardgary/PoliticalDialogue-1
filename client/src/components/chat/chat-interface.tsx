@@ -67,9 +67,16 @@ export default function ChatInterface({
     // 4. The dialog is not already open
     // 5. Not currently extending rounds (prevents reopening during API call)
     if (currentRound === maxRounds && maxRounds < 8 && onExtendRounds && !showRoundExtensionDialog && !isExtendingRounds) {
+      console.log(`Showing round extension dialog: currentRound=${currentRound}, maxRounds=${maxRounds}`);
       setShowRoundExtensionDialog(true);
-    } else if (isExtendingRounds && showRoundExtensionDialog) {
-      // Force close the dialog when extension is in progress
+    } else if (
+      // Force close the dialog when: 
+      // - Extension is in progress
+      // - or we're at max rounds already (8)
+      (isExtendingRounds || maxRounds >= 8) && 
+      showRoundExtensionDialog
+    ) {
+      console.log(`Force closing dialog: isExtendingRounds=${isExtendingRounds}, maxRounds=${maxRounds}`);
       setShowRoundExtensionDialog(false);
     }
   }, [currentRound, maxRounds, onExtendRounds, showRoundExtensionDialog, isExtendingRounds]);
@@ -245,7 +252,14 @@ export default function ChatInterface({
       </div>
       
       {/* Round extension dialog - moved outside main container */}
-      <AlertDialog open={showRoundExtensionDialog} onOpenChange={setShowRoundExtensionDialog}>
+      <AlertDialog 
+        open={showRoundExtensionDialog && maxRounds < 8}
+        onOpenChange={(open) => {
+          // Only allow setting to true if maxRounds < 8
+          if (!open || maxRounds < 8) {
+            setShowRoundExtensionDialog(open);
+          }
+        }}>
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>You've reached round {maxRounds}</AlertDialogTitle>
@@ -286,12 +300,15 @@ export default function ChatInterface({
                 size="lg"
                 className="w-full justify-start gap-3"
                 onClick={() => {
-                  // First close the dialog immediately, then process the extension
+                  // First close the dialog immediately
                   setShowRoundExtensionDialog(false);
-                  // Add a small delay to ensure dialog is fully closed before API call
-                  setTimeout(() => {
-                    if (onExtendRounds) onExtendRounds(8);
-                  }, 100);
+                  // Only proceed if we're not already at or above this round count
+                  if (maxRounds < 8) {
+                    // Add a small delay to ensure dialog is fully closed before API call
+                    setTimeout(() => {
+                      if (onExtendRounds) onExtendRounds(8);
+                    }, 100);
+                  }
                 }}
                 disabled={isExtendingRounds || maxRounds >= 8}
               >

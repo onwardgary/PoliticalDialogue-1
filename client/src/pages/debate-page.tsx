@@ -443,18 +443,32 @@ export default function DebatePage() {
       // Force refetch debate data to ensure UI is updated correctly
       queryClient.invalidateQueries({queryKey: [apiEndpoint]});
       
+      // Clear extension state
       setIsExtendingRounds(false);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Error extending debate rounds:", error);
       
-      // Show error toast
+      // Get API error message if available
+      let errorMessage = "There was a problem extending the debate.";
+      try {
+        if (error.response && error.response.data && error.response.data.message) {
+          errorMessage = error.response.data.message;
+        } else if (typeof error.message === 'string') {
+          errorMessage = error.message;
+        }
+      } catch (e) {
+        console.error("Error processing API error:", e);
+      }
+      
+      // Show detailed error toast
       toast({
         title: "Failed to extend debate",
-        description: "There was a problem extending the debate. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
       
+      // Clear extension state
       setIsExtendingRounds(false);
     }
   });
