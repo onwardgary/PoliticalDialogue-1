@@ -56,10 +56,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       topic: z.string().optional(),
       // We still accept the mode parameter but always use debate mode as requested
       mode: z.enum(["debate", "discuss"]).optional().default("debate"),
+      // Add maxRounds parameter for debate length
+      maxRounds: z.number().int().min(1).max(20).optional().default(6),
     });
     
     try {
-      const { partyId, topic } = bodySchema.parse(req.body);
+      const { partyId, topic, maxRounds } = bodySchema.parse(req.body);
       // Always use debate mode regardless of input parameter
       const mode = "debate";
       
@@ -86,7 +88,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         topic: topic || null,
         messages: [systemMessage, welcomeMessage],
         secureId: nanoid(), // Generate a secure ID for the debate
-        completed: false
+        completed: false,
+        maxRounds
       });
       
       // Return debate with welcome message only (no system message)
@@ -96,6 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         partyId: debate.partyId,
         topic: debate.topic,
         mode: mode,
+        maxRounds: debate.maxRounds,
         messages: [welcomeMessage], // Only send the welcome message, not the system message
         createdAt: debate.createdAt,
       });
