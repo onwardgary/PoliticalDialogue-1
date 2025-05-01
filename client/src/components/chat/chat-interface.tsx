@@ -9,6 +9,7 @@ type ChatInterfaceProps = {
   onSendMessage?: (message: string) => void;
   partyShortName?: string;
   userTyping?: boolean;
+  maxRounds?: number;
 };
 
 // Suggested topics to help start the conversation
