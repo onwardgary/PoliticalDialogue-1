@@ -13,9 +13,10 @@ type ChatInputProps = {
   onSendMessage: (message: string) => void;
   isLoading: boolean;
   onTypingStateChange?: (isTyping: boolean) => void;
+  disabled?: boolean;
 };
 
-export default function ChatInput({ onSendMessage, isLoading, onTypingStateChange }: ChatInputProps) {
+export default function ChatInput({ onSendMessage, isLoading, onTypingStateChange, disabled = false }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -84,14 +85,14 @@ export default function ChatInput({ onSendMessage, isLoading, onTypingStateChang
         <div className="flex-1 relative">
           <Textarea
             ref={textareaRef}
-            placeholder="Type your message... (Ctrl+Enter to send)"
-            className="w-full resize-none pr-10 min-h-[45px] md:min-h-[60px] focus:outline-none focus:ring-1 focus:ring-primary"
+            placeholder={disabled ? "Maximum rounds reached. Extend debate to continue." : "Type your message... (Ctrl+Enter to send)"}
+            className={`w-full resize-none pr-10 min-h-[45px] md:min-h-[60px] focus:outline-none focus:ring-1 focus:ring-primary ${disabled ? 'bg-neutral-100 text-neutral-500' : ''}`}
             value={message}
             onChange={(e) => {
               setMessage(e.target.value);
               
               // Handle typing indicator
-              if (onTypingStateChange) {
+              if (onTypingStateChange && !disabled) {
                 // User is typing
                 onTypingStateChange(true);
                 
@@ -108,8 +109,8 @@ export default function ChatInput({ onSendMessage, isLoading, onTypingStateChang
               }
             }}
             onKeyDown={handleKeyDown}
-            disabled={isLoading}
-            autoFocus
+            disabled={isLoading || disabled}
+            autoFocus={!disabled}
           />
           {/* Character counter on mobile */}
           {message.length > 0 && (
@@ -134,10 +135,12 @@ export default function ChatInput({ onSendMessage, isLoading, onTypingStateChang
         <Button 
           type="submit" 
           className="ml-2 min-h-[45px] md:min-h-[60px] px-4 transition-all duration-100" 
-          disabled={!message.trim() || isLoading || isOverLimit}
+          disabled={!message.trim() || isLoading || isOverLimit || disabled}
         >
           {isLoading ? (
             <span className="animate-pulse text-primary-foreground/80">Sent</span>
+          ) : disabled ? (
+            <span className="text-primary-foreground/60">Debate Ended</span>
           ) : (
             <>
               <SendIcon className="h-4 w-4 mr-2" />

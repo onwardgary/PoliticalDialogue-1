@@ -757,6 +757,16 @@ export default function DebatePage() {
               onSendMessage={handleSendMessage}
               isLoading={messageStatus.sending || isExtendingRounds}
               onTypingStateChange={setIsUserTyping}
+              disabled={
+                // Disable input when:
+                // 1. We've reached the max rounds (calculate here to be sure)
+                // 2. AND there is no in-progress extension
+                // 3. AND the extension options are being shown
+                // This ensures input is only disabled when extension options are visible
+                debate?.messages?.filter(msg => msg.role === 'user').length >= (debate?.maxRounds || 6) && 
+                !isExtendingRounds &&
+                showInlineExtensionOptions
+              }
             />
           </>
         )}
