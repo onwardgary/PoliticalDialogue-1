@@ -121,7 +121,8 @@ export default function DebatePage() {
   // Track message sending state for UI feedback
   const [messageStatus, setMessageStatus] = useState({
     sending: false,
-    polling: false
+    polling: false,
+    finalRoundReached: false
   });
   
   // Determine which API endpoint to use based on which parameter is available
@@ -470,6 +471,18 @@ export default function DebatePage() {
     // Add temp message to local state
     setLocalMessages(prev => [...prev, tempUserMessage]);
     
+    // Check if this is going to be the final round and set state immediately
+    const userMessagesCount = localMessages.filter(msg => msg.role === 'user').length + 1; // +1 for the new message
+    const maxRoundsNumber = debate?.maxRounds || 6;
+    
+    if (userMessagesCount >= maxRoundsNumber) {
+      // Immediately update message status to prevent input before server sync
+      setMessageStatus(prev => ({ 
+        ...prev, 
+        finalRoundReached: true 
+      }));
+    }
+    
     // Actually send the message
     sendMessageMutation.mutate(content);
   };
@@ -551,6 +564,7 @@ export default function DebatePage() {
                 messageStatus.sending || messageStatus.polling ||
                 
                 // CASE 2: When at max rounds (any number) - permanent disabling
+                messageStatus.finalRoundReached ||
                 (debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 6)) ||
                 
                 // CASE 3: Always disable when the last message is from the user (waiting for bot)
@@ -573,8 +587,9 @@ export default function DebatePage() {
                     debate.messages[debate.messages.length - 1].role === 'user'))
                     ? 'waiting'
                 
-                // PRIORITY 3: When at maximum allowed rounds
-                : (debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 6))
+                // PRIORITY 3: When at maximum allowed rounds (either by server data or immediate local state)
+                : (messageStatus.finalRoundReached || 
+                  debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 6))
                     ? 'finalRound'
                 
                 // PRIORITY 4: Default state
