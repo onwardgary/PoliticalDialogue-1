@@ -2,18 +2,17 @@ import { useRef, useEffect, useState } from "react";
 import MessageBubble from "./message-bubble";
 import { Message } from "@shared/schema";
 import { Button } from "@/components/ui/button";
-import { Check, Calendar, CalendarPlus } from "lucide-react";
+import { Check } from "lucide-react";
 
 type ChatInterfaceProps = {
   messages: Message[];
   isLoading: boolean;
   onSendMessage?: (message: string) => void;
-  onExtendRounds?: (rounds: number) => void;
   onEndDebate?: () => void;
   partyShortName?: string;
   userTyping?: boolean;
   maxRounds?: number;
-  isExtendingRounds?: boolean;
+  isGeneratingSummary?: boolean;
 };
 
 // Suggested topics to help start the conversation
@@ -29,12 +28,11 @@ export default function ChatInterface({
   messages, 
   isLoading, 
   onSendMessage, 
-  onExtendRounds, 
   onEndDebate, 
   partyShortName = "BOT", 
   userTyping = false, 
   maxRounds = 6,
-  isExtendingRounds = false
+  isGeneratingSummary = false
 }: ChatInterfaceProps) {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -220,58 +218,10 @@ export default function ChatInterface({
               <span className="text-white font-bold text-xs">SYS</span>
             </div>
             <div className="bg-white p-4 rounded-lg rounded-tl-none shadow-sm max-w-[85%]">
-              <p className="text-sm font-medium mb-2">You've completed {maxRounds} rounds of your debate.</p>
-              <p className="text-sm text-gray-600 mb-3">Would you like to extend your debate with more rounds or generate a summary now?</p>
+              <p className="text-sm font-medium mb-2">You've completed all {maxRounds} rounds of your debate.</p>
+              <p className="text-sm text-gray-600 mb-3">You can now generate a summary of your debate to see who made the stronger arguments.</p>
               
               <div className="flex flex-col space-y-2">
-                {/* Medium debate option */}
-                {maxRounds < 6 && (
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    className="justify-start gap-2"
-                    onClick={() => {
-                      // Only proceed if we're not already at or above this round count
-                      if (maxRounds < 6) {
-                        setTimeout(() => {
-                          if (onExtendRounds) {
-                            console.log("Extending to 6 rounds");
-                            onExtendRounds(6);
-                          }
-                        }, 100);
-                      }
-                    }}
-                    disabled={isExtendingRounds || maxRounds >= 6}
-                  >
-                    <Calendar className="h-4 w-4 text-amber-500" />
-                    <span>Add {6 - maxRounds} more rounds (total: 6)</span>
-                  </Button>
-                )}
-                
-                {/* Extended debate option */}
-                {maxRounds < 8 && (
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    className="justify-start gap-2"
-                    onClick={() => {
-                      // Only proceed if we're not already at or above this round count
-                      if (maxRounds < 8) {
-                        setTimeout(() => {
-                          if (onExtendRounds) {
-                            console.log("Extending to 8 rounds");
-                            onExtendRounds(8);
-                          }
-                        }, 100);
-                      }
-                    }}
-                    disabled={isExtendingRounds || maxRounds >= 8}
-                  >
-                    <CalendarPlus className="h-4 w-4 text-emerald-500" />
-                    <span>Add {8 - maxRounds} more rounds (maximum: 8)</span>
-                  </Button>
-                )}
-                
                 {/* End debate option */}
                 <Button 
                   variant="default"

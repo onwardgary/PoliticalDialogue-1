@@ -139,11 +139,7 @@ export default function DebatePage() {
     polling: false
   });
   
-  // Track round extension status
-  const [isExtendingRounds, setIsExtendingRounds] = useState(false);
-  
-  // Add state for inline extension options
-  const [showInlineExtensionOptions, setShowInlineExtensionOptions] = useState(false);
+  // We've removed the ability to extend rounds after initial selection
   
   // Determine which API endpoint to use based on which parameter is available
   const apiEndpoint = secureId 
