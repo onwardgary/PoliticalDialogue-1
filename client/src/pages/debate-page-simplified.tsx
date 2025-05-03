@@ -268,6 +268,9 @@ export default function DebatePage() {
       // Add it to the local messages
       setLocalMessages(prev => [...prev, typingIndicatorMessage]);
       
+      // Explicitly set polling state to true when we start polling
+      setMessageStatus(prev => ({ ...prev, polling: true }));
+      
       // Start polling for AI response
       let pollCount = 0;
       let currentDelay = 1000;
@@ -331,6 +334,25 @@ export default function DebatePage() {
           })
           .catch(error => {
             console.error("Error polling for response:", error);
+            
+            // If there's a polling error, make sure to update the state so the UI reflects that
+            if (pollCount >= 5) {
+              // After a few retries, let the user know something is wrong
+              setMessageStatus(prev => ({ ...prev, polling: false }));
+              
+              // Remove typing indicator if it's still there
+              setLocalMessages(prev => {
+                return prev.filter(msg => !msg.id.startsWith('typing-'));
+              });
+              
+              toast({
+                title: "Connection issue",
+                description: "Having trouble getting a response. Please wait or try again.",
+                variant: "destructive",
+              });
+              
+              clearInterval(pollInterval);
+            }
           });
           
           if (pollCount > 5) {
@@ -344,10 +366,9 @@ export default function DebatePage() {
             return prev.filter(msg => !msg.id.startsWith('typing-'));
           });
           
-          // Only update polling state after the typing indicator is removed
-          setTimeout(() => {
-            setMessageStatus(prev => ({ ...prev, polling: false }));
-          }, 150);
+          // Always set polling to false when we clear the interval after reaching the maximum poll count
+          // This ensures the visual indicator is removed if we fail to get a response
+          setMessageStatus(prev => ({ ...prev, polling: false }));
         }
       }, currentDelay);
     },
