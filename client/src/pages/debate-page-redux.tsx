@@ -89,12 +89,21 @@ export default function DebatePageRedux() {
   const getPartyShortName = () => {
     if (!debate) return "BOT";
     
-    switch (debate.partyId) {
-      case 1: return "PAP";
-      case 2: return "WP";
-      case 3: return "PSP";
-      default: return "BOT";
-    }
+    const partyName = (() => {
+      switch (debate.partyId) {
+        case 1: return "PAP";
+        case 2: return "WP";
+        case 3: return "PSP";
+        default: return "BOT";
+      }
+    })();
+    
+    console.log("Debug - Party info:", { 
+      partyId: debate.partyId, 
+      partyName: partyName 
+    });
+    
+    return partyName;
   };
   
   // Combined loading state

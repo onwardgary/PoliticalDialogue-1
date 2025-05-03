@@ -183,13 +183,22 @@ const debateSlice = createSlice({
           state.status = 'idle';
           state.messageBeingSent = null;
           
+          console.log('Bot message received, current state:', { 
+            status: state.status,
+            messages: state.localMessages.map(m => ({ id: m.id, role: m.role }))
+          });
+          
           // First remove any typing indicator
           state.localMessages = state.localMessages.filter(msg => !msg.id.startsWith('typing-'));
           
           // Then add the real bot message from server
           state.localMessages.push(action.payload.botMessage);
           
-          console.log('Added bot message to local state:', action.payload.botMessage);
+          console.log('Added bot message to local state:', {
+            botMessage: action.payload.botMessage,
+            newMessageCount: state.localMessages.length,
+            messageRoles: state.localMessages.map(m => m.role)
+          });
         } else {
           // No bot message yet, keep waiting state
           state.status = 'waitingForBot';
