@@ -106,8 +106,8 @@ export default function DebatePageRedux() {
     return partyName;
   };
   
-  // Combined loading state
-  const isLoading = status === 'loadingDebate';
+  // Combined loading state - show loading during initial load and while waiting for bot
+  const isLoading = status === 'loadingDebate' || status === 'waitingForBot';
   
   // Fetch debate data on mount
   useEffect(() => {
