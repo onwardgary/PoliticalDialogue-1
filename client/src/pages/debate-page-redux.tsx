@@ -23,7 +23,7 @@ import {
   selectMaxRoundsReached,
   selectError
 } from '@/store/debateSlice';
-import { AppDispatch } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/store/types';
 
 // Component to show loader during summary generation
 function SummaryGenerationLoader({ step }: { step: number }) {
