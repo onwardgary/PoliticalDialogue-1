@@ -177,6 +177,10 @@ const debateSlice = createSlice({
           }
         }
         
+        // First remove any typing indicators regardless of whether we have a bot message
+        const messagesWithoutTyping = state.localMessages.filter(msg => !msg.id.startsWith('typing-'));
+        state.localMessages = messagesWithoutTyping;
+
         // Handle bot response
         if (action.payload.botMessage) {
           // Set status back to idle since we have the bot message
@@ -188,10 +192,7 @@ const debateSlice = createSlice({
             messages: state.localMessages.map(m => ({ id: m.id, role: m.role }))
           });
           
-          // First remove any typing indicator
-          state.localMessages = state.localMessages.filter(msg => !msg.id.startsWith('typing-'));
-          
-          // Then add the real bot message from server
+          // Add the real bot message from server
           state.localMessages.push(action.payload.botMessage);
           
           console.log('Added bot message to local state:', {

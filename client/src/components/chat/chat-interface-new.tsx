@@ -168,6 +168,12 @@ export default function ChatInterface({
           const previousMessage = index > 0 ? filteredMessages[index - 1] : null;
           const isGrouped = previousMessage && previousMessage.role === message.role ? true : false;
           
+          // Skip rendering explicit typing indicators from the Redux store
+          // They'll be handled by our dedicated typing indicator UI below
+          if (message.id.startsWith('typing-')) {
+            return null;
+          }
+          
           return (
             <MessageBubble 
               key={message.id} 
@@ -178,8 +184,8 @@ export default function ChatInterface({
           );
         })}
 
-        {/* Bot typing indicator */}
-        {isLoading && (
+        {/* Bot typing indicator - only show this if we don't already have a typing indicator in messages */}
+        {isLoading && !filteredMessages.some(msg => msg.id.startsWith('typing-')) && (
           <div className="flex mb-4 animate-fadeIn">
             <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center mr-2 flex-shrink-0">
               <span className="text-white font-bold text-xs">{partyShortName}</span>
