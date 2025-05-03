@@ -82,6 +82,18 @@ export default function DebatePageRedux() {
   const maxRoundsReached = useAppSelector(selectMaxRoundsReached);
   const error = useAppSelector(selectError);
   
+  // Get the party short name from party ID
+  const getPartyShortName = () => {
+    if (!debate) return "BOT";
+    
+    switch (debate.partyId) {
+      case 1: return "PAP";
+      case 2: return "WP";
+      case 3: return "PSP";
+      default: return "BOT";
+    }
+  };
+  
   // Combined loading state
   const isLoading = status === 'loadingDebate';
   
@@ -182,7 +194,7 @@ export default function DebatePageRedux() {
               isLoading={status === 'sendingMessage' || status === 'waitingForBot'}
               onSendMessage={handleSendMessage}
               onEndDebate={handleEndDebate}
-              partyShortName={(debate as any)?.partyShortName}
+              partyShortName={debate?.partyShortName || "BOT"}
               userTyping={isUserTyping}
               maxRounds={debate?.maxRounds || 6}
               isGeneratingSummary={viewState === 'generating' ? true : false}

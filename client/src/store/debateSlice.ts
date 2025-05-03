@@ -152,27 +152,31 @@ const debateSlice = createSlice({
         state.localMessages.push(userMessage);
       })
       .addCase(sendMessage.fulfilled, (state, action) => {
-        state.status = 'waitingForBot';
-        state.messageBeingSent = null;
-        
-        // Add bot typing indicator while we wait for the response
-        if (state.typingIndicator) {
-          const typingIndicator: Message = {
-            id: `typing-${nanoid()}`,
-            role: 'assistant',
-            content: '...',
-            timestamp: Date.now(),
-          };
-          state.localMessages.push(typingIndicator);
-        }
-        
-        // Update messages from the server
+        // If we get a bot message immediately, update state to idle
         if (action.payload.botMessage) {
+          state.status = 'idle';
+          state.messageBeingSent = null;
+          
           // First remove any typing indicator
           state.localMessages = state.localMessages.filter(msg => !msg.id.startsWith('typing-'));
           
           // Then add the real message
           state.localMessages.push(action.payload.botMessage);
+        } else {
+          // Otherwise, we're waiting for the bot to respond
+          state.status = 'waitingForBot';
+          state.messageBeingSent = null;
+          
+          // Add bot typing indicator while we wait for the response
+          if (state.typingIndicator) {
+            const typingIndicator: Message = {
+              id: `typing-${nanoid()}`,
+              role: 'assistant',
+              content: '...',
+              timestamp: Date.now(),
+            };
+            state.localMessages.push(typingIndicator);
+          }
         }
         
         // Update debate if returned
