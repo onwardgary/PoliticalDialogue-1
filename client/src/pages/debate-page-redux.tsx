@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'wouter';
-import { useSelector, useDispatch } from 'react-redux';
 import { Loader2 } from 'lucide-react';
 
 import ChatInterface from '@/components/chat/chat-interface-new';
@@ -52,6 +51,11 @@ function SummaryGenerationLoader({ step }: { step: number }) {
 // Define the view states
 type ViewState = 'loading' | 'chat' | 'generating' | 'summary';
 
+// Type guard function to check if a string is a valid ViewState
+function isViewState(value: string): value is ViewState {
+  return ['loading', 'chat', 'generating', 'summary'].includes(value as ViewState);
+}
+
 export default function DebatePageRedux() {
   // Get route params
   const params = useParams();
@@ -69,14 +73,14 @@ export default function DebatePageRedux() {
   const [isUserTyping, setIsUserTyping] = useState(false);
   
   // Redux state and dispatch
-  const dispatch = useDispatch<AppDispatch>();
-  const debate = useSelector(selectDebate);
-  const localMessages = useSelector(selectLocalMessages);
-  const status = useSelector(selectDebateStatus);
-  const summaryGenerationStep = useSelector(selectSummaryGenerationStep);
-  const canSendMessages = useSelector(selectCanSendMessages);
-  const maxRoundsReached = useSelector(selectMaxRoundsReached);
-  const error = useSelector(selectError);
+  const dispatch = useAppDispatch();
+  const debate = useAppSelector(selectDebate);
+  const localMessages = useAppSelector(selectLocalMessages);
+  const status = useAppSelector(selectDebateStatus);
+  const summaryGenerationStep = useAppSelector(selectSummaryGenerationStep);
+  const canSendMessages = useAppSelector(selectCanSendMessages);
+  const maxRoundsReached = useAppSelector(selectMaxRoundsReached);
+  const error = useAppSelector(selectError);
   
   // Combined loading state
   const isLoading = status === 'loadingDebate';
@@ -181,11 +185,11 @@ export default function DebatePageRedux() {
               partyShortName={(debate as any)?.partyShortName}
               userTyping={isUserTyping}
               maxRounds={debate?.maxRounds || 6}
-              isGeneratingSummary={viewState === 'generating' ? true : false}
+              isGeneratingSummary={Boolean(viewState === 'generating')}
             />
             <ChatInput
               onSendMessage={handleSendMessage}
-              isLoading={status === 'sendingMessage' || status === 'waitingForBot' || viewState === 'generating' ? true : false}
+              isLoading={status === 'sendingMessage' || status === 'waitingForBot' || status === 'generatingSummary'}
               onTypingStateChange={setIsUserTyping}
               disabled={
                 // Disable input in various scenarios based on status
