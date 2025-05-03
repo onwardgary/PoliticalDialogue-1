@@ -14,8 +14,8 @@ import AdminKnowledgePage from "./pages/admin-knowledge-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
-  // For testing, you can enable Redux version by setting useReduxVersion = true
-  const useReduxVersion = false; // Set to true to use the Redux implementation
+  // Using the Redux implementation by default for improved state management
+  const useReduxVersion = true; // Using Redux implementation for better message handling
   const DebateComponent = useReduxVersion ? DebatePageRedux : DebatePage;
   
   return (

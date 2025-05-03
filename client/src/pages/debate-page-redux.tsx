@@ -185,7 +185,7 @@ export default function DebatePageRedux() {
               partyShortName={(debate as any)?.partyShortName}
               userTyping={isUserTyping}
               maxRounds={debate?.maxRounds || 6}
-              isGeneratingSummary={Boolean(viewState === 'generating')}
+              isGeneratingSummary={viewState === 'generating' ? true : false}
             />
             <ChatInput
               onSendMessage={handleSendMessage}

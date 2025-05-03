@@ -43,7 +43,8 @@ export const fetchDebate = createAsyncThunk(
       const response = await apiRequest('GET', endpoint);
       return await response.json();
     } catch (error) {
-      return rejectWithValue(error.message || 'Could not fetch debate');
+      const errorMessage = error instanceof Error ? error.message : 'Could not fetch debate';
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -64,7 +65,8 @@ export const sendMessage = createAsyncThunk(
       const response = await apiRequest('POST', endpoint, { content });
       return await response.json();
     } catch (error) {
-      return rejectWithValue(error.message || 'Could not send message');
+      const errorMessage = error instanceof Error ? error.message : 'Could not send message';
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -85,7 +87,8 @@ export const endDebate = createAsyncThunk(
       const response = await apiRequest('POST', endpoint);
       return await response.json();
     } catch (error) {
-      return rejectWithValue(error.message || 'Could not end debate');
+      const errorMessage = error instanceof Error ? error.message : 'Could not end debate';
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -179,7 +182,7 @@ const debateSlice = createSlice({
         
         // Check if this is the final round
         const userMessageCount = state.localMessages.filter(msg => msg.role === 'user').length;
-        if (state.debate && userMessageCount >= state.debate.maxRounds) {
+        if (state.debate && state.debate.maxRounds && userMessageCount >= state.debate.maxRounds) {
           state.status = 'finalRound';
         } else {
           state.status = 'idle';
@@ -249,7 +252,7 @@ export const selectCanSendMessages = (state: RootState) => {
 
 export const selectMaxRoundsReached = (state: RootState) => {
   const { localMessages, debate } = state.debate;
-  if (!debate) return false;
+  if (!debate || !debate.maxRounds) return false;
   
   const userMessageCount = localMessages.filter(msg => msg.role === 'user').length;
   return userMessageCount >= debate.maxRounds;
