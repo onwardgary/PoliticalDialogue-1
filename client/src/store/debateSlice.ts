@@ -66,12 +66,18 @@ export const sendMessage = createAsyncThunk(
       const response = await apiRequest('POST', endpoint, { content });
       const data = await response.json();
       
+      console.log('Response from server:', data);
+      
       // Extract data from response
-      return {
+      const result = {
         userMessage: data.userMessage,
         botMessage: data.botMessage,
         debate: data.debate
       };
+      
+      console.log('Returning from sendMessage thunk:', result);
+      
+      return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Could not send message';
       return rejectWithValue(errorMessage);
