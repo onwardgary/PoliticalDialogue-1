@@ -572,7 +572,7 @@ export default function DebatePage() {
           <>
             <ChatInterface 
               messages={localMessages.length > 0 ? localMessages : (debate?.messages || [])}
-              isLoading={messageStatus.sending}
+              isLoading={messageStatus.sending || messageStatus.polling}
               onSendMessage={handleSendMessage}
               onEndDebate={handleEndDebate}
               partyShortName={party?.shortName}
@@ -582,7 +582,7 @@ export default function DebatePage() {
             />
             <ChatInput 
               onSendMessage={handleSendMessage}
-              isLoading={messageStatus.sending || viewState === 'generating' as ViewState}
+              isLoading={messageStatus.sending || messageStatus.polling || viewState === 'generating' as ViewState}
               onTypingStateChange={setIsUserTyping}
               disabled={
                 // Disable input in these scenarios:
