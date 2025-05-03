@@ -255,14 +255,20 @@ export default function DebatePage() {
         };
       });
       
+      // First, remove any existing typing indicators to prevent duplicates
+      setLocalMessages(prev => prev.filter(msg => !msg.id.startsWith('typing-')));
+      
       // Add a temporary typing indicator message with a unique ID
-      // Use a truly unique ID based on both timestamp and a random string
-      const uniqueTypingId = `typing-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
+      // Use a UUID-like approach combining timestamp, random string, and counter for absolute uniqueness
+      const timestamp = Date.now();
+      const randomPart = Math.random().toString(36).substring(2, 10);
+      const uniqueTypingId = `typing-${timestamp}-${randomPart}-${Math.floor(Math.random() * 1000000)}`;
+      
       const typingIndicatorMessage: Message = {
         id: uniqueTypingId,
         role: 'assistant',
         content: '...',
-        timestamp: Date.now()
+        timestamp: timestamp
       };
       
       // Add it to the local messages
@@ -384,6 +390,7 @@ export default function DebatePage() {
       // Mark failed messages in local state
       setLocalMessages(prev => {
         return prev.map(msg => {
+          // Handle temp- messages with the new format (timestamp-randomstring-random number)
           if (msg.id.startsWith('temp-') && !msg.content.includes('(Failed to send)')) {
             return {
               ...msg,
@@ -399,6 +406,7 @@ export default function DebatePage() {
         if (!old) return old;
         
         const updatedMessages = old.messages.map((msg: Message) => {
+          // Check for any temp- prefixed message ID, regardless of the exact format
           if (msg.id.startsWith('temp-') && !msg.content.includes('(Failed to send)')) {
             return {
               ...msg,
@@ -505,12 +513,17 @@ export default function DebatePage() {
   const handleSendMessage = (content: string) => {
     if (!content.trim()) return;
     
-    // Create a temporary user message to show immediately
+    // Create a temporary user message to show immediately with guaranteed unique ID
+    // Same UUID-like approach as typing indicators for consistency and uniqueness
+    const timestamp = Date.now();
+    const randomPart = Math.random().toString(36).substring(2, 10);
+    const uniqueId = `temp-${timestamp}-${randomPart}-${Math.floor(Math.random() * 1000000)}`;
+    
     const tempUserMessage: Message = {
-      id: `temp-${Date.now()}`,
+      id: uniqueId,
       role: 'user',
       content,
-      timestamp: Date.now()
+      timestamp: timestamp
     };
     
     // Add temp message to local state
@@ -554,6 +567,22 @@ export default function DebatePage() {
       setViewState('chat');
     }
   }, [debate, secureId, setLocation]);
+  
+  // Global cleanup effect to ensure polling state is reset if component unmounts
+  // or if there's any other unexpected issue
+  useEffect(() => {
+    // Reset polling state on mount to ensure clean state
+    setMessageStatus(prev => ({ ...prev, polling: false }));
+    
+    // Clear any typing indicators that might be lingering from previous sessions
+    setLocalMessages(prev => prev.filter(msg => !msg.id.startsWith('typing-')));
+    
+    // Return cleanup function to ensure everything is reset when unmounting
+    return () => {
+      // Reset message status when component unmounts
+      setMessageStatus(prev => ({ ...prev, sending: false, polling: false }));
+    };
+  }, []);
   
   // Combined loading state
   const isLoading = isLoadingDebate || isLoadingParty;
