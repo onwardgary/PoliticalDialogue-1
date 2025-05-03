@@ -52,7 +52,9 @@ export default function ChatInterface({
     !isGeneratingSummary &&
     // Only show after bot has responded to last user message
     filteredMessages.length > 0 && 
-    filteredMessages[filteredMessages.length - 1].role === 'assistant';
+    // Make sure last message is from assistant AND it's not a temporary typing indicator
+    filteredMessages[filteredMessages.length - 1].role === 'assistant' &&
+    !filteredMessages[filteredMessages.length - 1].id.startsWith('typing-');
 
   // Auto-scroll to bottom when messages change or typing indicators appear - optimized for responsiveness
   useEffect(() => {
