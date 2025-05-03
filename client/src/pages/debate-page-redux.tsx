@@ -68,6 +68,9 @@ export default function DebatePageRedux() {
   // Set up toast for notifications
   const { toast } = useToast();
   
+  // Define the view state type
+  type ViewState = 'loading' | 'chat' | 'generating';
+  
   // Local component state
   const [viewState, setViewState] = useState<ViewState>('loading');
   const [isUserTyping, setIsUserTyping] = useState(false);
@@ -194,10 +197,10 @@ export default function DebatePageRedux() {
               isLoading={status === 'sendingMessage' || status === 'waitingForBot'}
               onSendMessage={handleSendMessage}
               onEndDebate={handleEndDebate}
-              partyShortName={debate?.partyShortName || "BOT"}
+              partyShortName={getPartyShortName()}
               userTyping={isUserTyping}
               maxRounds={debate?.maxRounds || 6}
-              isGeneratingSummary={viewState === 'generating' ? true : false}
+              isGeneratingSummary={Boolean(status === 'generatingSummary')}
             />
             <ChatInput
               onSendMessage={handleSendMessage}
