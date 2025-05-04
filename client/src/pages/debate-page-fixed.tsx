@@ -220,8 +220,10 @@ export default function DebatePageFixed() {
     if (!debate) return;
     
     // If debate is already complete, just show the summary UI
-    if (debate.complete && debate.summary) {
-      console.log("Debate already complete with summary, skipping end request");
+    // It could be complete with or without a summary
+    if (debate.complete) {
+      console.log("Debate already complete, showing summary UI", debate);
+      // Always set to summaryReady state
       setUiState("summaryReady");
       const summaryRoute = `/debate/${secureId}/summary`;
       setSummaryUrl(summaryRoute);
@@ -243,12 +245,24 @@ export default function DebatePageFixed() {
       
       // Check for various error responses
       if (!res.ok) {
-        // If it's a 400 error with "already complete" message, we can still proceed
+        // Try to parse the error response
         const errorData = await res.json().catch(() => null);
-        if (errorData?.message?.includes("already complete") || errorData?.message?.includes("already ended")) {
-          console.log("Debate was already completed, continuing to summary polling");
+        const errorMessage = errorData?.message || res.statusText;
+        
+        // Check if the debate is already completed
+        if (errorMessage.includes("already been completed") || 
+            errorMessage.includes("already completed") || 
+            errorMessage.includes("already ended")) {
+          
+          console.log("Debate was already completed, skipping to summary view");
+          // Go directly to summary page since it already exists
+          const summaryRoute = `/debate/${secureId}/summary`;
+          setSummaryUrl(summaryRoute);
+          setUiState("summaryReady");
+          return; // Exit the function early since we're redirecting
         } else {
-          throw new Error(`Failed to end debate: ${errorData?.message || res.statusText}`);
+          // For other errors, throw normally
+          throw new Error(`Failed to end debate: ${errorMessage}`);
         }
       }
       
