@@ -12,7 +12,7 @@ type MessageBubbleProps = {
   isGrouped?: boolean;
 };
 
-export default function MessageBubble({ message, partyShortName = "BOT", isGrouped = false }: MessageBubbleProps) {
+export default function MessageBubble({ message, partyShortName = "PAP", isGrouped = false }: MessageBubbleProps) {
   const isUser = message.role === "user";
   const isBot = message.role === "assistant";
   const formattedTime = format(new Date(message.timestamp), "h:mm a");
