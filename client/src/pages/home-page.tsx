@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import PartyCard from "@/components/party-card";
 import Sidebar from "@/components/sidebar";
-import { MobileHeader, MobileNavigation } from "@/components/mobile-nav";
+import { MobileHeader } from "@/components/mobile-nav";
 import { Button } from "@/components/ui/button";
 import { Loader2, MessageSquare } from "lucide-react";
 import { Party } from "@/components/party-card";
@@ -92,9 +92,10 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+          
+          {/* Add bottom padding on mobile now that we removed the mobile nav bar */}
+          <div className="pb-4 md:pb-0"></div>
         </section>
-        
-        <MobileNavigation />
       </main>
     </div>
   );

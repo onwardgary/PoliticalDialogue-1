@@ -82,22 +82,10 @@ function MobileSidebar() {
         )}
       </div>
       
-      <nav className="flex-1">
-        <ul className="space-y-2">
-          <li>
-            <Link href="/">
-              <div className={`flex items-center p-3 rounded-lg font-medium ${location === '/' ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
-                <Home className="w-5 h-5 mr-3" />
-                <span>Home</span>
-              </div>
-            </Link>
-          </li>
-          {/* Trending page has been removed */}
-          
-          {/* User profile features have been removed */}
-          
-          {/* Admin menu items */}
-          {isAdmin && (
+      {/* Admin menu - only visible to admins */}
+      {isAdmin && (
+        <nav className="flex-1">
+          <ul className="space-y-2">
             <li>
               <Link href="/admin/knowledge">
                 <div className={`flex items-center p-3 rounded-lg font-medium ${location.startsWith('/admin') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
@@ -106,9 +94,12 @@ function MobileSidebar() {
                 </div>
               </Link>
             </li>
-          )}
-        </ul>
-      </nav>
+          </ul>
+        </nav>
+      )}
+      
+      {/* Empty flex-1 div to push footer to bottom when no nav */}
+      {!isAdmin && <div className="flex-1"></div>}
       
       <div className="mt-4 pt-4 border-t border-neutral-200">
         {/* Login/logout buttons temporarily hidden
@@ -141,17 +132,8 @@ function MobileSidebar() {
   );
 }
 
+// MobileNavigation component has been removed as it contained only the Home button
+// Export an empty div as a placeholder to maintain compatibility with existing code
 export function MobileNavigation() {
-  const [location] = useLocation();
-  return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 flex justify-around p-2 z-10 pb-safe">
-      <Link href="/">
-        <div className={`flex flex-col items-center p-2 ${location === '/' ? 'text-primary' : 'text-neutral-500'}`}>
-          <Home className="h-5 w-5" />
-          <span className="text-xs mt-1">Home</span>
-        </div>
-      </Link>
-      {/* Mobile navigation has been simplified to just the Home button */}
-    </nav>
-  );
+  return null;
 }
