@@ -52,6 +52,32 @@ export default function HomePage() {
         
         {/* Trending Debates Section - temporarily hidden */}
         
+        {/* Future Features Teaser Section */}
+        <section className="bg-neutral-50 border-t border-neutral-200 p-6 md:p-8 mt-auto">
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="text-xl font-semibold mb-3">The Future of Civic Engagement</h2>
+            <p className="text-black mb-4">
+              This is just the beginning. We're building a true civic hub that will empower Singaporeans 
+              with tools to engage meaningfully in the democratic process. Our mission is to lead 
+              Singapore into a future where informed dialogue continues to make our nation exceptional.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+              <div className="bg-white p-4 rounded-md border border-neutral-200 shadow-sm">
+                <h3 className="font-medium mb-2">Community Forums</h3>
+                <p className="text-sm text-neutral-700">Connect with fellow citizens to discuss important national issues</p>
+              </div>
+              <div className="bg-white p-4 rounded-md border border-neutral-200 shadow-sm">
+                <h3 className="font-medium mb-2">Policy Insights</h3>
+                <p className="text-sm text-neutral-700">Deeper analysis of policy impacts across different stakeholder groups</p>
+              </div>
+              <div className="bg-white p-4 rounded-md border border-neutral-200 shadow-sm">
+                <h3 className="font-medium mb-2">Live Events</h3>
+                <p className="text-sm text-neutral-700">Virtual town halls and dialogue sessions with community leaders</p>
+              </div>
+            </div>
+          </div>
+        </section>
+        
         <MobileNavigation />
       </main>
     </div>
