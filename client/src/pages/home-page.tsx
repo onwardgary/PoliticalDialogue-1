@@ -62,15 +62,18 @@ export default function HomePage() {
               Singapore into a future where informed dialogue continues to make our nation exceptional.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-              <div className="bg-white p-4 rounded-md border border-neutral-200 shadow-sm">
+              <div className="bg-white p-4 rounded-md border border-neutral-200 shadow-sm relative">
+                <div className="absolute -top-2 -right-2 bg-amber-500 text-white text-xs px-2 py-1 rounded-full font-medium">Coming Soon</div>
                 <h3 className="font-medium mb-2">Community Forums</h3>
                 <p className="text-sm text-neutral-700">Connect with fellow citizens to discuss important national issues</p>
               </div>
-              <div className="bg-white p-4 rounded-md border border-neutral-200 shadow-sm">
+              <div className="bg-white p-4 rounded-md border border-neutral-200 shadow-sm relative">
+                <div className="absolute -top-2 -right-2 bg-amber-500 text-white text-xs px-2 py-1 rounded-full font-medium">Coming Soon</div>
                 <h3 className="font-medium mb-2">Policy Insights</h3>
                 <p className="text-sm text-neutral-700">Deeper analysis of policy impacts across different stakeholder groups</p>
               </div>
-              <div className="bg-white p-4 rounded-md border border-neutral-200 shadow-sm">
+              <div className="bg-white p-4 rounded-md border border-neutral-200 shadow-sm relative">
+                <div className="absolute -top-2 -right-2 bg-amber-500 text-white text-xs px-2 py-1 rounded-full font-medium">Coming Soon</div>
                 <h3 className="font-medium mb-2">Live Events</h3>
                 <p className="text-sm text-neutral-700">Virtual town halls and dialogue sessions with community leaders</p>
               </div>
