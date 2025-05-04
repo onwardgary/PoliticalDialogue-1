@@ -14,7 +14,7 @@ type ChatInputProps = {
   isLoading: boolean;
   onTypingStateChange?: (isTyping: boolean) => void;
   disabled?: boolean;
-  disabledReason?: 'waiting' | 'maxRounds' | 'finalRound' | 'generating';
+  disabledReason?: 'waiting' | 'maxRounds' | 'finalRound' | 'generating' | 'summaryReady';
 };
 
 export default function ChatInput({ 
@@ -100,7 +100,9 @@ export default function ChatInput({
                     ? "Maximum rounds reached. Debate complete."
                     : disabledReason === 'generating'
                       ? "Generating debate summary..."
-                      : "Maximum rounds reached. End debate to continue."
+                      : disabledReason === 'summaryReady'
+                        ? "Debate summary is ready to view!"
+                        : "Maximum rounds reached. End debate to continue."
                 : "Type your message... (Ctrl+Enter to send)"
             }
             className={`w-full resize-none pr-10 min-h-[45px] md:min-h-[60px] focus:outline-none focus:ring-1 focus:ring-primary ${disabled ? 'bg-neutral-100 text-neutral-500' : ''}`}
@@ -171,7 +173,9 @@ export default function ChatInput({
                   ? "Debate Complete"
                   : disabledReason === 'generating'
                     ? "Generating Summary"
-                    : "Round Limit"
+                    : disabledReason === 'summaryReady'
+                      ? "Summary Ready"
+                      : "Round Limit"
               }
             </span>
           ) : (

@@ -611,14 +611,17 @@ export default function DebatePage() {
         // Add a small final delay to ensure cache updates have propagated
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Final check to make sure we're still in generating state before redirecting
+        // Final check to make sure we're still in generating state before showing the notification
         if (viewState === 'generating') {
-          console.log("All animation steps completed, now redirecting to summary page");
+          console.log("All animation steps completed, showing summary ready notification");
           
-          // Redirect to the summary page
-          setLocation(summaryPath);
+          // Store the path for later navigation
+          setSummaryUrl(summaryPath);
+          
+          // Transition to summary-ready state
+          setViewStateWithLogging('summary-ready');
         } else {
-          console.log("Warning: View state changed during animation, not redirecting");
+          console.log("Warning: View state changed during animation, not transitioning to summary-ready");
         }
       };
       
@@ -834,7 +837,7 @@ export default function DebatePage() {
         )}
         
         {/* Chat View */}
-        {viewState === ('chat' as ViewState) && (
+        {(viewState === ('chat' as ViewState) || viewState === ('summary-ready' as ViewState)) && (
           <>
             <ChatInterface 
               messages={localMessages.length > 0 ? localMessages : (debate?.messages || [])}
@@ -864,24 +867,24 @@ export default function DebatePage() {
                 (debate?.messages && debate.messages.length > 0 && 
                 debate.messages[debate.messages.length - 1].role === 'user') ||
                 
-                // CASE 4: When generating a summary
-                viewState === ('generating' as ViewState)
+                // CASE 4: When generating a summary or summary is ready
+                viewState === ('generating' as ViewState) || viewState === ('summary-ready' as ViewState)
               }
               disabledReason={
                 // Determine the reason for disabling:
                 
-                // PRIORITY 1: When generating a summary
+                // PRIORITY 1: When generating a summary or summary is ready
                 viewState === 'generating' as ViewState
                   ? 'generating'
+                : viewState === 'summary-ready' as ViewState
+                  ? 'summaryReady'
                 
-                // PRIORITY 2: When at maximum allowed rounds (moved up in priority)
-                // This ensures "Maximum rounds reached" shows immediately when user hits the limit
+                // PRIORITY 2: When at maximum allowed rounds
                 : (messageStatus.finalRoundReached || 
                   debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 3))
                     ? 'finalRound'
                 
-                // PRIORITY 3: When waiting for the bot to respond (moved down in priority)
-                // Now this only shows if we're not at max rounds
+                // PRIORITY 3: When waiting for the bot to respond
                 : (messageStatus.sending || messageStatus.polling ||
                    (debate?.messages && debate.messages.length > 0 && 
                     debate.messages[debate.messages.length - 1].role === 'user'))
@@ -891,6 +894,11 @@ export default function DebatePage() {
                 : 'maxRounds'
               }
             />
+            
+            {/* Summary Ready Notification */}
+            {viewState === ('summary-ready' as ViewState) && (
+              <SummaryReadyNotification onViewSummary={handleViewSummary} />
+            )}
           </>
         )}
         
