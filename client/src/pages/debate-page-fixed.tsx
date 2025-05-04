@@ -54,6 +54,20 @@ export default function DebatePageFixed() {
     };
   }, [localMessages, messageStatus.sending, messageStatus.polling]);
   
+  // Monitor for assistant messages to reset polling state
+  useEffect(() => {
+    // If we have messages and the last one is from the assistant
+    if (localMessages.length > 0 && localMessages[localMessages.length - 1].role === 'assistant') {
+      console.log("RESETTING POLLING: Found assistant message, enabling input");
+      // Reset polling state since we received the assistant's response
+      setMessageStatus(prev => {
+        const newState = { ...prev, polling: false };
+        console.log("Message status updated:", newState);
+        return newState;
+      });
+    }
+  }, [localMessages]);
+  
   // Fetch debate data
   const { data: debate, isLoading: isLoadingDebate } = useQuery({
     queryKey: [apiEndpoint],
@@ -65,6 +79,15 @@ export default function DebatePageFixed() {
       // Save messages to local state
       if (data.messages) {
         setLocalMessages(data.messages);
+        
+        // If the last message is from assistant, reset polling state
+        if (data.messages.length > 0 && data.messages[data.messages.length - 1].role === 'assistant') {
+          console.log("FETCH RESET: Assistant response fetched, resetting polling state");
+          setMessageStatus(prev => ({
+            ...prev,
+            polling: false
+          }));
+        }
       }
       
       // Change UI state to chat
