@@ -550,11 +550,12 @@ export default function DebatePage() {
   
   // Navigate to the summary page
   const handleViewSummary = () => {
-    if (summaryUrl) {
-      console.log(`Navigating to summary page: ${summaryUrl}`);
-      setLocation(summaryUrl);
+    if (ui.status === 'summaryReady') {
+      // We already have the URL in the state
+      console.log(`Navigating to summary page: ${ui.url}`);
+      setLocation(ui.url);
     } else {
-      // Fallback in case summaryUrl is not set
+      // Fallback in case we need to construct the URL
       const summaryPath = secureId 
         ? `/summary/s/${secureId}` 
         : `/summary/${debate?.id}`;
@@ -634,7 +635,7 @@ export default function DebatePage() {
   // Combined loading state
   const isLoading = isLoadingDebate || isLoadingParty;
   
-  if (isLoading && viewState === 'loading') {
+  if (isLoading && ui.status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -666,11 +667,11 @@ export default function DebatePage() {
           partyShortName={party?.shortName}
           userTyping={isUserTyping}
           maxRounds={debate?.maxRounds || 3}
-          isGeneratingSummary={isAnimationOpen}
+          isGeneratingSummary={ui.status === 'animating'}
         />
         <ChatInput 
           onSendMessage={handleSendMessage}
-          isLoading={messageStatus.sending || messageStatus.polling || isAnimationOpen}
+          isLoading={messageStatus.sending || messageStatus.polling || ui.status === 'animating'}
           onTypingStateChange={setIsUserTyping}
           disabled={
             // Disable input in these scenarios:
@@ -687,15 +688,15 @@ export default function DebatePage() {
             debate.messages[debate.messages.length - 1].role === 'user') ||
             
             // CASE 4: When generating a summary or summary is ready
-            isAnimationOpen || isNotificationOpen
+            ui.status === 'animating' || ui.status === 'summaryReady'
           }
           disabledReason={
             // Determine the reason for disabling:
             
             // PRIORITY 1: When generating a summary or summary is ready
-            isAnimationOpen
+            ui.status === 'animating'
               ? 'generating'
-            : isNotificationOpen
+            : ui.status === 'summaryReady'
               ? 'summaryReady'
             
             // PRIORITY 2: When at maximum allowed rounds
@@ -715,7 +716,7 @@ export default function DebatePage() {
         />
         
         {/* Direct Animation Components (no portal) */}
-        {isAnimationOpen && (
+        {ui.status === 'animating' && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
             <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 max-w-md w-full">
               <div className="flex flex-col items-center">
@@ -755,7 +756,7 @@ export default function DebatePage() {
         )}
         
         {/* Summary Ready Notification (embedded directly) */}
-        {isNotificationOpen && (
+        {ui.status === 'summaryReady' && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
             <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 max-w-md w-full">
               <div className="flex flex-col items-center">
@@ -771,16 +772,11 @@ export default function DebatePage() {
                 <Button 
                   onClick={() => {
                     try {
-                      setIsNotificationOpen(false);
-                      if (summaryUrl) {
-                        setLocation(summaryUrl);
-                      } else {
-                        // Fallback in case summaryUrl is not set
-                        const summaryPath = secureId 
-                          ? `/summary/s/${secureId}` 
-                          : `/summary/${debate?.id}`;
-                        setLocation(summaryPath);
-                      }
+                      // Change state back to chat before navigating
+                      setUIWithLogging({ status: 'chat' });
+                      
+                      // Use the URL from the state
+                      setLocation(ui.url);
                     } catch (error) {
                       console.error("Error viewing summary:", error);
                       try {
