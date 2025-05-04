@@ -219,6 +219,15 @@ export default function DebatePageFixed() {
   const handleEndDebate = async () => {
     if (!debate) return;
     
+    // If debate is already complete, just show the summary UI
+    if (debate.complete && debate.summary) {
+      console.log("Debate already complete with summary, skipping end request");
+      setUiState("summaryReady");
+      const summaryRoute = `/debate/${secureId}/summary`;
+      setSummaryUrl(summaryRoute);
+      return;
+    }
+    
     try {
       // Update UI state to show animation
       setUiState("animating");
@@ -232,7 +241,16 @@ export default function DebatePageFixed() {
         method: 'POST',
       });
       
-      if (!res.ok) throw new Error("Failed to end debate");
+      // Check for various error responses
+      if (!res.ok) {
+        // If it's a 400 error with "already complete" message, we can still proceed
+        const errorData = await res.json().catch(() => null);
+        if (errorData?.message?.includes("already complete") || errorData?.message?.includes("already ended")) {
+          console.log("Debate was already completed, continuing to summary polling");
+        } else {
+          throw new Error(`Failed to end debate: ${errorData?.message || res.statusText}`);
+        }
+      }
       
       // Debate is ending and summary is being generated
       queryClient.invalidateQueries({ queryKey: [apiEndpoint] });
