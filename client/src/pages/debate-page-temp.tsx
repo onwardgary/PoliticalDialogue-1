@@ -82,7 +82,7 @@ export default function DebatePageSimplified() {
     localMessagesRef.current = localMessages;
   }, [localMessages]);
   
-  // Add a safety mechanism to prevent stuck input states
+  // Add a safety mechanism to prevent stuck input states - with better conditions
   useEffect(() => {
     // Find the last message to determine if status flags are out of sync
     const lastMessage = localMessages.length > 0 ? localMessages[localMessages.length - 1] : null;
@@ -95,15 +95,20 @@ export default function DebatePageSimplified() {
       setMessageStatus(prev => ({ ...prev, sending: false, polling: false }));
     }
     
-    // Additionally, set up a safety timer to reset state if it gets stuck for too long
-    const safetyTimer = setTimeout(() => {
-      if (messageStatus.sending || messageStatus.polling) {
+    // IMPORTANT: Only set up the safety timer if we're actually in a sending or polling state
+    // This prevents constant timeouts when the component is idle
+    let safetyTimer: number | undefined;
+    
+    if (messageStatus.sending || messageStatus.polling) {
+      safetyTimer = window.setTimeout(() => {
         console.log("SAFETY TIMER: Resetting potentially stuck message status after timeout");
         setMessageStatus(prev => ({ ...prev, sending: false, polling: false }));
-      }
-    }, 15000); // 15 second safety timeout
+      }, 20000); // 20 second safety timeout - increased to avoid premature timeouts
+    }
     
-    return () => clearTimeout(safetyTimer);
+    return () => {
+      if (safetyTimer) clearTimeout(safetyTimer);
+    };
   }, [localMessages, messageStatus.sending, messageStatus.polling]);
   
   // Fetch debate data
