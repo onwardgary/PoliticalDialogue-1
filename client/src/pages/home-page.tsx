@@ -20,9 +20,9 @@ export default function HomePage() {
       <main className="flex-1 flex flex-col h-screen">
         <MobileHeader />
         
-        <header className="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-neutral-200 px-6 py-10 md:py-16">
-          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-700 to-blue-500 text-transparent bg-clip-text mb-2">Welcome to Suara.sg</h1>
-          <p className="text-neutral-600 text-lg md:w-3/4 lg:w-2/3">
+        <header className="bg-white border-b border-black px-6 py-10 md:py-16">
+          <h1 className="text-3xl md:text-4xl font-bold text-black mb-2">Welcome to Suara.sg</h1>
+          <p className="text-black text-lg md:w-3/4 lg:w-2/3">
             Engage in meaningful debates with <strong>unofficial AI-powered fanbots</strong> that represent 
             different policy perspectives. These bots are not endorsed by or affiliated with any political parties.
           </p>
@@ -32,7 +32,7 @@ export default function HomePage() {
         <section className="p-6 md:p-8">
           <div className="mb-8">
             <h2 className="text-xl font-semibold mb-2">Select an Unofficial Fanbot to Debate With</h2>
-            <p className="text-neutral-500">These are <span className="font-bold">unofficial fanbots</span> (not endorsed by actual parties) that present perspectives aligned with different political positions</p>
+            <p className="text-black">These are <span className="font-bold">unofficial fanbots</span> (not endorsed by actual parties) that present perspectives aligned with different political positions</p>
           </div>
           
           {isLoadingParties ? (
