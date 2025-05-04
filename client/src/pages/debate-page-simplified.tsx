@@ -364,7 +364,10 @@ export default function DebatePage() {
               
               const latestAIMessage = fetchedData.messages[fetchedData.messages.length - 1];
               
-              // First, check if we already have this message to prevent duplicates
+              // IMPORTANT: First, immediately stop the polling state to prevent duplicate typing indicators
+              setMessageStatus(prev => ({ ...prev, polling: false }));
+              
+              // Then check if we already have this message to prevent duplicates
               // We'll use a combined approach: remove typing indicator and carefully add the new message in a single update
               setLocalMessages(prev => {
                 // Get all messages except typing indicators
@@ -392,17 +395,13 @@ export default function DebatePage() {
               const maxRoundsNumber = debate?.maxRounds || 3;
               
               if (userMessagesCount >= maxRoundsNumber) {
-                // Set the final round flag AFTER the message has been displayed
+                // Set the final round flag for max rounds reached
                 setTimeout(() => {
                   setMessageStatus(prev => ({ 
                     ...prev, 
-                    finalRoundReached: true,
-                    polling: false 
+                    finalRoundReached: true
                   }));
                 }, 150); // Delay the final round state change to ensure smooth UI transition
-              } else {
-                // For non-final rounds, just update polling state
-                setMessageStatus(prev => ({ ...prev, polling: false }));
               }
               
               // Stop polling since we received a response

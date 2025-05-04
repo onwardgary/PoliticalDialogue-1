@@ -188,8 +188,11 @@ export default function ChatInterface({
           );
         })}
 
-        {/* Bot typing indicator - only show this if we don't already have a typing indicator in messages */}
-        {isLoading && !filteredMessages.some(msg => msg.id.startsWith('typing-')) && (
+        {/* Bot typing indicator - only show this if we're in loading state, with no typing message,
+            and the last message isn't from the bot (prevents showing immediately after bot responds) */}
+        {isLoading && 
+          !filteredMessages.some(msg => msg.id.startsWith('typing-')) && 
+          (filteredMessages.length === 0 || filteredMessages[filteredMessages.length - 1].role !== 'assistant') && (
           <div className="flex mb-4 animate-fadeIn">
             <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center mr-2 flex-shrink-0">
               <span className="text-white font-bold text-xs">{partyShortName}</span>
