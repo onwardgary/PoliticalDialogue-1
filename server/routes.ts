@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { nanoid } from "nanoid";
 import { createPartySystemMessage, generatePartyResponse, generateDebateSummary, generateAggregateSummary } from "./openai";
+import { registerDebateActivity } from "./debateTimeout";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -91,6 +92,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         completed: false,
         maxRounds
       });
+      
+      // Register initial debate activity
+      registerDebateActivity(debate.id);
       
       // Return debate with welcome message only (no system message)
       res.status(201).json({
@@ -269,6 +273,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // This ensures the user message is saved right away
       await storage.updateDebateMessages(debateId, updatedMessages);
       
+      // Register debate activity to reset inactivity timeout
+      registerDebateActivity(debateId);
+      
       // Generate and save the AI response synchronously
       try {
         console.log(`Generating AI response for debate ${debateId}...`);
@@ -371,6 +378,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // First, immediately update the debate with the user message
       // This ensures the user message is saved right away
       await storage.updateDebateMessages(debate.id, updatedMessages);
+      
+      // Register debate activity to reset inactivity timeout
+      registerDebateActivity(debate.id);
       
       // Generate and save the AI response synchronously
       try {
@@ -607,6 +617,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update the maxRounds field
       console.log(`Updating maxRounds for debate ${debate.id} (${secureId}) from ${currentMaxRounds} to ${maxRounds}`);
       const updatedDebate = await storage.updateDebateMaxRounds(debate.id, maxRounds);
+      
+      // Register debate activity to reset inactivity timeout
+      registerDebateActivity(debate.id);
       
       res.status(200).json({ 
         success: true, 

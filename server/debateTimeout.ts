@@ -66,7 +66,8 @@ export async function checkInactiveDebates(): Promise<void> {
   }
   
   // Cleanup activity map - remove entries for completed debates
-  for (const debateId of debateActivityMap.keys()) {
+  const debateIds = Array.from(debateActivityMap.keys());
+  for (const debateId of debateIds) {
     const debate = await storage.getDebate(debateId);
     if (debate?.completed) {
       debateActivityMap.delete(debateId);

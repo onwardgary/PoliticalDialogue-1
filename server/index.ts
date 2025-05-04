@@ -75,5 +75,8 @@ app.use((req, res, next) => {
     } catch (error) {
       console.error("Error initializing database:", error);
     }
+    
+    // Start the debate timeout checker
+    startDebateTimeoutChecker();
   });
 })();
