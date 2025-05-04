@@ -9,7 +9,8 @@ import ChatInterface from "@/components/chat/chat-interface-new";
 import ChatInput from "@/components/chat/chat-input";
 import { useToast } from "@/hooks/use-toast";
 import { Message } from "@shared/schema";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckIcon, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // Declare window property for animation tracking
 declare global {
@@ -391,34 +392,57 @@ export default function DebatePage() {
     },
   });
   
-  // End debate mutation - simplified to work with portal animation
+  // End debate mutation - simplified to work with embedded animation
   const endDebateMutation = useMutation({
     mutationFn: async () => {
-      // Instead of controlling animation steps directly, we simply
-      // set a flag to show the portal-based animation overlay
-      console.log("Button clicked: Triggering portal-based animation overlay");
+      console.log("Button clicked: Starting summary generation");
       
-      // Open the animation portal
+      // Show the animation immediately 
       setIsAnimationOpen(true);
       
-      // Return empty result as our portal handles the actual API call
-      return { success: true };
+      try {
+        // Make the API call directly
+        const response = await apiRequest("POST", endDebateEndpoint);
+        const data = await response.json();
+        
+        // Update the query cache with the new debate data
+        if (data) {
+          queryClient.setQueryData([apiEndpoint], data);
+        }
+        
+        // Prepare the summary path
+        const summaryPath = secureId 
+          ? `/summary/s/${secureId}` 
+          : `/summary/${debate?.id}`;
+            
+        setSummaryUrl(summaryPath);
+        
+        // Wait 3 seconds to give the illusion of processing (animation effect)
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        // Successfully completed
+        return { success: true, path: summaryPath };
+      } catch (error) {
+        console.error("Error ending debate:", error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
-      // Animation is now handled by the portal component
       console.log("End debate mutation completed successfully");
       
-      // We don't need to do anything else here, as all API calls and animation
-      // steps are handled by the SummaryAnimationOverlay component
+      // After 3 seconds, hide the animation and show the notification
+      setTimeout(() => {
+        setIsAnimationOpen(false);
+        setIsNotificationOpen(true);
+      }, 500);
     },
     onError: (error) => {
-      // Handle any mutation-level errors (shouldn't happen since we return success)
       console.error("Error in endDebateMutation:", error);
       setIsAnimationOpen(false);
       
       toast({
         title: "Error",
-        description: "Something went wrong. Please try again.",
+        description: "Failed to generate summary. Please try again.",
         variant: "destructive"
       });
     }
@@ -655,57 +679,87 @@ export default function DebatePage() {
           }
         />
         
-        {/* Portal-based Animation Components */}
-        <SummaryAnimationOverlay 
-          isOpen={isAnimationOpen}
-          onOpenChange={setIsAnimationOpen}
-          onStart={async () => {
-            // This will be called when the animation starts
-            try {
-              const response = await apiRequest("POST", endDebateEndpoint);
-              const data = await response.json();
-              
-              // Update the query cache with the new debate data
-              if (data) {
-                queryClient.setQueryData([apiEndpoint], data);
-              }
-              
-              // Prepare the summary path to return
-              const summaryPath = secureId 
-                ? `/summary/s/${secureId}` 
-                : `/summary/${debate?.id}`;
+        {/* Direct Animation Components (no portal) */}
+        {isAnimationOpen && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 max-w-md w-full">
+              <div className="flex flex-col items-center">
+                {/* Animation Title */}
+                <h2 className="text-2xl font-bold mb-6 text-center">
+                  Generating Debate Summary...
+                </h2>
                 
-              setSummaryUrl(summaryPath);
-              
-              // Mark animation as successful
-              return { success: true, path: summaryPath };
-            } catch (error) {
-              console.error("Error ending debate:", error);
-              toast({
-                title: "Error",
-                description: "Failed to generate summary. Please try again.",
-                variant: "destructive"
-              });
-              return { success: false, path: "" };
-            }
-          }}
-          onComplete={(path) => {
-            // This will be called when animation is complete
-            setIsAnimationOpen(false);
-            setIsNotificationOpen(true);
-          }}
-        />
+                {/* Progress Steps (simplified) */}
+                <div className="w-full space-y-6 mb-8">
+                  <div className="flex items-start">
+                    <div className="mr-4 flex-shrink-0">
+                      <div className="h-6 w-6 rounded-full bg-amber-500 animate-pulse flex items-center justify-center text-white font-bold">
+                        1
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-amber-500 font-bold">
+                        Processing debate
+                      </h3>
+                      <p className="text-sm text-gray-500">This may take a minute</p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Loading Indicator */}
+                <div className="flex items-center justify-center w-full">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
+                  <span>Please wait...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         
-        {/* Summary Ready Notification */}
+        {/* Summary Ready Notification (embedded directly) */}
         {isNotificationOpen && (
-          <SummaryReadyNotification 
-            onViewSummary={() => {
-              setIsNotificationOpen(false);
-              if (summaryUrl) {
-                setLocation(summaryUrl);
-              }
-            }} 
-          />
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 max-w-md w-full">
+              <div className="flex flex-col items-center">
+                <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center mb-4">
+                  <CheckIcon className="h-6 w-6 text-green-600" />
+                </div>
+                <h2 className="text-2xl font-bold mb-2 text-center">
+                  Summary Ready!
+                </h2>
+                <p className="text-center text-muted-foreground mb-6">
+                  Your debate summary has been created and is ready to view.
+                </p>
+                <Button 
+                  onClick={() => {
+                    try {
+                      setIsNotificationOpen(false);
+                      if (summaryUrl) {
+                        setLocation(summaryUrl);
+                      } else {
+                        // Fallback in case summaryUrl is not set
+                        const summaryPath = secureId 
+                          ? `/summary/s/${secureId}` 
+                          : `/summary/${debate?.id}`;
+                        setLocation(summaryPath);
+                      }
+                    } catch (error) {
+                      console.error("Error viewing summary:", error);
+                      try {
+                        // Fallback navigation
+                        window.location.href = window.location.href.replace('/debate/', '/summary/');
+                      } catch (e) {
+                        console.error("Even fallback navigation failed:", e);
+                      }
+                    }
+                  }}
+                  className="w-full"
+                >
+                  View Summary <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
         )}
         
         <MobileNavigation />
