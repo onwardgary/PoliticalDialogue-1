@@ -110,12 +110,17 @@ export default function DebatePageFixed() {
     setMessageStatus(prev => ({ ...prev, sending: true }));
     
     try {
-      const res = await fetch(`/api/debates/${debate?.id}/messages`, {
+      // Check if we should use secureId or regular id
+      const endpoint = secureId 
+        ? `/api/debates/s/${secureId}/messages` 
+        : `/api/debates/${debate?.id}/messages`;
+        
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: newMessage }),
+        body: JSON.stringify({ content: content }),
       });
       
       if (!res.ok) throw new Error("Failed to send message");
@@ -140,7 +145,12 @@ export default function DebatePageFixed() {
       // Update UI state to show animation
       setUiState("animating");
       
-      const res = await fetch(`/api/debates/${debate.id}/end`, {
+      // Check if we should use secureId or regular id
+      const endpoint = secureId 
+        ? `/api/debates/s/${secureId}/end` 
+        : `/api/debates/${debate.id}/end`;
+        
+      const res = await fetch(endpoint, {
         method: 'POST',
       });
       
