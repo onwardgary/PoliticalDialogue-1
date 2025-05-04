@@ -618,7 +618,7 @@ export default function DebatePage() {
     // Clear any typing indicators that might be lingering from previous sessions
     setLocalMessages(prev => prev.filter(msg => !msg.id.startsWith('typing-')));
     
-    // Return cleanup function
+    // Return comprehensive cleanup function
     return () => {
       // Reset message status when component unmounts
       setMessageStatus(prev => ({ ...prev, sending: false, polling: false }));
@@ -629,16 +629,22 @@ export default function DebatePage() {
         pollingRef.current = undefined;
       }
       
-      // Reset polling attempts counter on unmount
-      attemptsRef.current = 0;
+      // Cancel any in-flight queries to prevent memory leaks and unnecessary processing
+      queryClient.cancelQueries({ queryKey: [apiEndpoint] });
       
-      // Reset animation tracking to prevent blank screens due to stale state
+      // Reset all refs
+      attemptsRef.current = 0;
+      localMessagesRef.current = [];
+      pollingRef.current = undefined;
+      isMounted.current = false;
+      
+      // Reset global animation tracking to prevent blank screens due to stale state
       window.currentAnimationId = undefined;
       
       // Extra logging to help troubleshoot prod issues
-      console.log("DEBATE PAGE UNMOUNTED: Cleaned up animation state and polling intervals");
+      console.log("DEBATE PAGE UNMOUNTED: Comprehensive cleanup completed - reset refs, canceled queries, cleared intervals");
     };
-  }, []);
+  }, [apiEndpoint]);
   
   // Combined loading state
   const isLoading = isLoadingDebate || isLoadingParty;
