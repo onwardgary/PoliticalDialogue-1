@@ -47,12 +47,22 @@ export default function ChatInterface({
   
   // Compute whether to show summary generation prompt
   const showSummaryPrompt = 
-    currentRound === maxRounds && 
+    currentRound >= maxRounds && // Changed from === to >= to make sure it shows even if we exceed rounds
     !isLoading && 
     !isGeneratingSummary &&
     // Only show after bot has responded to last user message
     filteredMessages.length > 0 && 
     filteredMessages[filteredMessages.length - 1].role === 'assistant';
+    
+  // Debug why summary prompt isn't showing
+  console.log("SUMMARY PROMPT CHECK:", {
+    showSummaryPrompt,
+    currentRound,
+    maxRounds,
+    isLoading,
+    isGeneratingSummary,
+    lastMessageRole: filteredMessages.length > 0 ? filteredMessages[filteredMessages.length - 1].role : "none"
+  });
 
   // Auto-scroll to bottom when messages change or typing indicators appear
   useEffect(() => {
