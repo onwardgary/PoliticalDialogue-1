@@ -174,10 +174,10 @@ export default function MessageBubble({ message, partyShortName = "BOT", isGroup
       {!isGrouped ? (
         <div className={cn(
           "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
-          isUser ? "ml-2 bg-neutral-200" : "mr-2 bg-primary"
+          isUser ? "ml-2 bg-white border border-black" : "mr-2 bg-black"
         )}>
           {isUser ? (
-            <span className="text-neutral-500 text-xs">YOU</span>
+            <span className="text-black text-xs">YOU</span>
           ) : (
             <span className="text-white font-bold text-xs">{partyShortName}</span>
           )}
@@ -192,8 +192,8 @@ export default function MessageBubble({ message, partyShortName = "BOT", isGroup
       <div className={cn(
         "chat-bubble p-3 rounded-lg shadow-sm max-w-[88%] md:max-w-3xl",
         isUser 
-          ? "bg-primary text-white" 
-          : "bg-white text-neutral-800",
+          ? "bg-black text-white" 
+          : "bg-white text-black",
         // Adjust bubble corners for grouped messages
         isGrouped 
           ? isUser 
@@ -232,7 +232,7 @@ export default function MessageBubble({ message, partyShortName = "BOT", isGroup
         <div className="flex justify-between items-center mt-1">
           {/* Show search icon for assistant messages that used search */}
           {!isUser && message.searchEnabled && (
-            <div className="flex items-center text-blue-500" title="Web search was used to generate this response">
+            <div className="flex items-center text-black" title="Web search was used to generate this response">
               <Globe className="w-3 h-3 mr-1" />
               <span className="text-xs">Search-enhanced</span>
             </div>
@@ -240,7 +240,7 @@ export default function MessageBubble({ message, partyShortName = "BOT", isGroup
           
           {/* Show statistics disclaimer for non-search messages with stats */}
           {hasStatisticsWithoutSearch && (
-            <div className="flex items-center text-amber-500" title="Statistics in this message may not reflect the most current data">
+            <div className="flex items-center text-black" title="Statistics in this message may not reflect the most current data">
               <span className="text-xs italic">Stats may be outdated</span>
             </div>
           )}
@@ -248,7 +248,7 @@ export default function MessageBubble({ message, partyShortName = "BOT", isGroup
           {/* Always show timestamp */}
           <p className={cn(
             "text-xs",
-            isUser ? "text-white ml-auto" : "text-neutral-400 ml-auto"
+            isUser ? "text-white ml-auto" : "text-black ml-auto"
           )}>
             {formattedTime}
           </p>

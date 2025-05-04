@@ -94,10 +94,10 @@ export default function PartyCard({ party }: { party: Party }) {
             </div>
             <div>
               <h3 className="text-lg font-semibold">{party.name}</h3>
-              <div className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded inline-block mt-1">Unofficial Fanbot</div>
+              <div className="text-xs bg-black text-white px-2 py-0.5 rounded inline-block mt-1">Unofficial Fanbot</div>
             </div>
           </div>
-          <p className="text-neutral-600 text-sm mb-2">{party.description}</p>
+          <p className="text-black text-sm mb-2">{party.description}</p>
         </CardContent>
         <CardFooter className="px-5 pb-5 pt-0">
           <Button 
