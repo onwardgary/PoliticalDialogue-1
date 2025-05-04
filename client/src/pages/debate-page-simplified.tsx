@@ -364,38 +364,48 @@ export default function DebatePage() {
               
               const latestAIMessage = fetchedData.messages[fetchedData.messages.length - 1];
               
-              // First, remove typing indicator
+              // First, check if we already have this message to prevent duplicates
+              // We'll use a combined approach: remove typing indicator and carefully add the new message in a single update
               setLocalMessages(prev => {
-                return prev.filter(msg => !msg.id.startsWith('typing-'));
+                // Get all messages except typing indicators
+                const messagesWithoutTyping = prev.filter(msg => !msg.id.startsWith('typing-'));
+                
+                // Check if we already have the latest AI message (prevent duplicates)
+                const alreadyHasLatestMessage = messagesWithoutTyping.some(
+                  msg => msg.id === latestAIMessage.id
+                );
+                
+                // Only add the message if we don't already have it
+                if (!alreadyHasLatestMessage) {
+                  return [...messagesWithoutTyping, latestAIMessage];
+                } else {
+                  console.log('Message already exists, not adding duplicate:', latestAIMessage.id);
+                  return messagesWithoutTyping;
+                }
               });
               
-              // Wait longer before adding the real message to ensure React has processed all updates
-              setTimeout(() => {
-                // Add the real message
-                setLocalMessages(prev => [...prev, latestAIMessage]);
-                
-                // Update the cache
-                queryClient.setQueryData([apiEndpoint], fetchedData);
-                
-                // Check if this was the final round and set the flag only after adding the message
-                const userMessagesCount = fetchedData.messages.filter((msg: Message) => msg.role === 'user').length;
-                const maxRoundsNumber = debate?.maxRounds || 3;
-                
-                if (userMessagesCount >= maxRoundsNumber) {
-                  // Set the final round flag AFTER the message has been displayed
-                  setTimeout(() => {
-                    setMessageStatus(prev => ({ 
-                      ...prev, 
-                      finalRoundReached: true,
-                      polling: false 
-                    }));
-                  }, 150); // Delay the final round state change to ensure smooth UI transition
-                } else {
-                  // For non-final rounds, just update polling state
-                  setMessageStatus(prev => ({ ...prev, polling: false }));
-                }
-              }, 200); // Increased timeout for smoother transitions
+              // Update the cache
+              queryClient.setQueryData([apiEndpoint], fetchedData);
               
+              // Check if this was the final round and set the flag only after adding the message
+              const userMessagesCount = fetchedData.messages.filter((msg: Message) => msg.role === 'user').length;
+              const maxRoundsNumber = debate?.maxRounds || 3;
+              
+              if (userMessagesCount >= maxRoundsNumber) {
+                // Set the final round flag AFTER the message has been displayed
+                setTimeout(() => {
+                  setMessageStatus(prev => ({ 
+                    ...prev, 
+                    finalRoundReached: true,
+                    polling: false 
+                  }));
+                }, 150); // Delay the final round state change to ensure smooth UI transition
+              } else {
+                // For non-final rounds, just update polling state
+                setMessageStatus(prev => ({ ...prev, polling: false }));
+              }
+              
+              // Stop polling since we received a response
               clearInterval(pollInterval);
             }
           })
