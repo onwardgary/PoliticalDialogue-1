@@ -226,6 +226,194 @@ export default function DebateSummary({
           </div>
         )}
         
+        {/* Stakeholder Impact - Who will be happy/sad */}
+        {summary.stakeholderImpact && (
+          <div className="mt-6 border-t border-neutral-200 pt-4">
+            <h4 className="text-md font-semibold mb-4">Stakeholder Impact Analysis</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Party Impact */}
+              <div className="border border-neutral-200 rounded-lg overflow-hidden">
+                <div className="bg-neutral-50 p-3 border-b border-neutral-200">
+                  <div className="flex items-center">
+                    <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center mr-2">
+                      <span className="text-white font-bold text-xs">P</span>
+                    </div>
+                    <h5 className="font-medium text-neutral-800">{partyShortName} Policy Impact</h5>
+                  </div>
+                </div>
+                <div className="p-4">
+                  {/* Happy Groups */}
+                  <div className="mb-4">
+                    <div className="flex items-center mb-2">
+                      <div className="w-5 h-5 bg-green-100 border border-green-200 rounded-full flex items-center justify-center mr-2">
+                        <span className="text-green-600 font-bold text-xs">+</span>
+                      </div>
+                      <span className="text-sm font-medium text-green-700">Who would be happy</span>
+                    </div>
+                    <ul className="space-y-1 pl-7">
+                      {summary.stakeholderImpact.party.happy.map((group, index) => (
+                        <li key={index} className="text-sm text-neutral-700 list-disc">{group}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  {/* Sad Groups */}
+                  <div>
+                    <div className="flex items-center mb-2">
+                      <div className="w-5 h-5 bg-red-100 border border-red-200 rounded-full flex items-center justify-center mr-2">
+                        <span className="text-red-600 font-bold text-xs">-</span>
+                      </div>
+                      <span className="text-sm font-medium text-red-700">Who would be unhappy</span>
+                    </div>
+                    <ul className="space-y-1 pl-7">
+                      {summary.stakeholderImpact.party.sad.map((group, index) => (
+                        <li key={index} className="text-sm text-neutral-700 list-disc">{group}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Citizen Impact */}
+              <div className="border border-neutral-200 rounded-lg overflow-hidden">
+                <div className="bg-neutral-50 p-3 border-b border-neutral-200">
+                  <div className="flex items-center">
+                    <div className="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center mr-2">
+                      <span className="text-white font-bold text-xs">C</span>
+                    </div>
+                    <h5 className="font-medium text-neutral-800">Your Policy Impact</h5>
+                  </div>
+                </div>
+                <div className="p-4">
+                  {/* Happy Groups */}
+                  <div className="mb-4">
+                    <div className="flex items-center mb-2">
+                      <div className="w-5 h-5 bg-green-100 border border-green-200 rounded-full flex items-center justify-center mr-2">
+                        <span className="text-green-600 font-bold text-xs">+</span>
+                      </div>
+                      <span className="text-sm font-medium text-green-700">Who would be happy</span>
+                    </div>
+                    <ul className="space-y-1 pl-7">
+                      {summary.stakeholderImpact.citizen.happy.map((group, index) => (
+                        <li key={index} className="text-sm text-neutral-700 list-disc">{group}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  {/* Sad Groups */}
+                  <div>
+                    <div className="flex items-center mb-2">
+                      <div className="w-5 h-5 bg-red-100 border border-red-200 rounded-full flex items-center justify-center mr-2">
+                        <span className="text-red-600 font-bold text-xs">-</span>
+                      </div>
+                      <span className="text-sm font-medium text-red-700">Who would be unhappy</span>
+                    </div>
+                    <ul className="space-y-1 pl-7">
+                      {summary.stakeholderImpact.citizen.sad.map((group, index) => (
+                        <li key={index} className="text-sm text-neutral-700 list-disc">{group}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Policy Consequences - Good/Bad Outcomes */}
+        {summary.policyConsequences && (
+          <div className="mt-6 border-t border-neutral-200 pt-4">
+            <h4 className="text-md font-semibold mb-4">Policy Consequences</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Party Consequences */}
+              <div className="border border-neutral-200 rounded-lg overflow-hidden">
+                <div className="bg-neutral-50 p-3 border-b border-neutral-200">
+                  <div className="flex items-center">
+                    <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center mr-2">
+                      <span className="text-white font-bold text-xs">P</span>
+                    </div>
+                    <h5 className="font-medium text-neutral-800">{partyShortName} Policy Consequences</h5>
+                  </div>
+                </div>
+                <div className="p-4">
+                  {/* Positive Consequences */}
+                  <div className="mb-4">
+                    <div className="flex items-center mb-2">
+                      <div className="w-5 h-5 bg-green-100 border border-green-200 rounded-full flex items-center justify-center mr-2">
+                        <span className="text-green-600 font-bold text-xs">✓</span>
+                      </div>
+                      <span className="text-sm font-medium text-green-700">Positive Outcomes</span>
+                    </div>
+                    <ul className="space-y-1 pl-7">
+                      {summary.policyConsequences.party.positive.map((consequence, index) => (
+                        <li key={index} className="text-sm text-neutral-700 list-disc">{consequence}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  {/* Negative Consequences */}
+                  <div>
+                    <div className="flex items-center mb-2">
+                      <div className="w-5 h-5 bg-red-100 border border-red-200 rounded-full flex items-center justify-center mr-2">
+                        <span className="text-red-600 font-bold text-xs">✗</span>
+                      </div>
+                      <span className="text-sm font-medium text-red-700">Negative Outcomes</span>
+                    </div>
+                    <ul className="space-y-1 pl-7">
+                      {summary.policyConsequences.party.negative.map((consequence, index) => (
+                        <li key={index} className="text-sm text-neutral-700 list-disc">{consequence}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Citizen Consequences */}
+              <div className="border border-neutral-200 rounded-lg overflow-hidden">
+                <div className="bg-neutral-50 p-3 border-b border-neutral-200">
+                  <div className="flex items-center">
+                    <div className="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center mr-2">
+                      <span className="text-white font-bold text-xs">C</span>
+                    </div>
+                    <h5 className="font-medium text-neutral-800">Your Policy Consequences</h5>
+                  </div>
+                </div>
+                <div className="p-4">
+                  {/* Positive Consequences */}
+                  <div className="mb-4">
+                    <div className="flex items-center mb-2">
+                      <div className="w-5 h-5 bg-green-100 border border-green-200 rounded-full flex items-center justify-center mr-2">
+                        <span className="text-green-600 font-bold text-xs">✓</span>
+                      </div>
+                      <span className="text-sm font-medium text-green-700">Positive Outcomes</span>
+                    </div>
+                    <ul className="space-y-1 pl-7">
+                      {summary.policyConsequences.citizen.positive.map((consequence, index) => (
+                        <li key={index} className="text-sm text-neutral-700 list-disc">{consequence}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  {/* Negative Consequences */}
+                  <div>
+                    <div className="flex items-center mb-2">
+                      <div className="w-5 h-5 bg-red-100 border border-red-200 rounded-full flex items-center justify-center mr-2">
+                        <span className="text-red-600 font-bold text-xs">✗</span>
+                      </div>
+                      <span className="text-sm font-medium text-red-700">Negative Outcomes</span>
+                    </div>
+                    <ul className="space-y-1 pl-7">
+                      {summary.policyConsequences.citizen.negative.map((consequence, index) => (
+                        <li key={index} className="text-sm text-neutral-700 list-disc">{consequence}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* AI Deliberation with 5-Pillar Framework */}
         {summary.conclusion && (
           <div className="mt-6 border-t border-neutral-200 pt-4">

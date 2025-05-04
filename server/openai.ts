@@ -284,6 +284,26 @@ export async function generateDebateSummary(messages: Message[], mode: string = 
         partyArguments: summary.partyArguments || [],
         citizenArguments: summary.citizenArguments || [],
         keyPoints: summary.keyPoints || [],
+        stakeholderImpact: summary.stakeholderImpact || {
+          party: {
+            happy: ["People who support the party's approach", "Groups who would benefit from current policies", "Those who prefer stability and incremental change"],
+            sad: ["Those seeking more significant reforms", "Groups facing challenges under current policies", "People desiring more radical changes"]
+          },
+          citizen: {
+            happy: ["People who want policy changes", "Groups who would benefit from proposed alternatives", "Those seeking new approaches"],
+            sad: ["Beneficiaries of current systems", "Those who prefer policy continuity", "Groups who value stability over change"]
+          }
+        },
+        policyConsequences: summary.policyConsequences || {
+          party: {
+            positive: ["Likely maintains economic stability", "Builds on established systems", "Offers predictable outcomes based on track record"],
+            negative: ["May not address all emerging challenges", "Could perpetuate existing inequalities", "Might be slower to adapt to rapidly changing needs"]
+          },
+          citizen: {
+            positive: ["Potentially addresses overlooked issues", "Could introduce fresh perspectives", "May benefit groups currently underserved"],
+            negative: ["Implementation feasibility might be uncertain", "May have unintended consequences", "Could face practical challenges"]
+          }
+        },
         conclusion: summary.conclusion || {
           outcome: "party",
           evaluation: {
@@ -311,6 +331,26 @@ export async function generateDebateSummary(messages: Message[], mode: string = 
           partyPosition: "Official party position on this topic",
           citizenPosition: "Citizen's concerns and questions about this topic"
         }],
+        stakeholderImpact: {
+          party: {
+            happy: ["People who support the party's approach", "Groups benefiting from current systems", "Those who prefer gradual evolution of policies"],
+            sad: ["Those seeking more significant reforms", "Groups currently facing challenges", "People who want faster change"]
+          },
+          citizen: {
+            happy: ["Advocates for policy reform", "Groups seeking alternatives", "Those who would benefit from proposed changes"],
+            sad: ["Stakeholders who benefit from current systems", "Those who prefer policy continuity", "Groups concerned about disruptive changes"]
+          }
+        },
+        policyConsequences: {
+          party: {
+            positive: ["Continued stability in implementation", "Building on established systems", "Predictable outcomes"],
+            negative: ["Potentially slower to address emerging issues", "May not resolve all concerns", "Could maintain status quo limitations"]
+          },
+          citizen: {
+            positive: ["Fresh perspectives on persistent problems", "Potential solutions for underserved groups", "Innovation in policy approaches"],
+            negative: ["May face implementation challenges", "Could have unforeseen consequences", "Might require significant resources"]
+          }
+        },
         conclusion: {
           outcome: "party",
           evaluation: {
@@ -344,6 +384,26 @@ export async function generateDebateSummary(messages: Message[], mode: string = 
         partyPosition: "Could not be analyzed due to technical issues",
         citizenPosition: "Could not be analyzed due to technical issues"
       }],
+      stakeholderImpact: {
+        party: {
+          happy: ["This information could not be generated due to technical issues"],
+          sad: ["This information could not be generated due to technical issues"]
+        },
+        citizen: {
+          happy: ["This information could not be generated due to technical issues"],
+          sad: ["This information could not be generated due to technical issues"]
+        }
+      },
+      policyConsequences: {
+        party: {
+          positive: ["This information could not be generated due to technical issues"],
+          negative: ["This information could not be generated due to technical issues"]
+        },
+        citizen: {
+          positive: ["This information could not be generated due to technical issues"],
+          negative: ["This information could not be generated due to technical issues"]
+        }
+      },
       conclusion: {
         outcome: "party",
         evaluation: {
