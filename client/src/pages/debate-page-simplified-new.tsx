@@ -40,6 +40,10 @@ export default function DebatePage() {
   // This bypasses React Query's asynchronous cache updates
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
   
+  // Add a ref to track messages for closures in async operations
+  // This helps avoid stale state references in event handlers and callbacks
+  const localMessagesRef = useRef<Message[]>([]);
+  
   // Use a clear view state to control what's rendered
   // Using a string literal type to represent the different view states
   type ViewState = 'loading' | 'chat' | 'generating' | 'summary-ready' | 'summary';
@@ -54,6 +58,12 @@ export default function DebatePage() {
       isMounted.current = false;
     };
   }, []);
+  
+  // Keep the ref in sync with the state
+  useEffect(() => {
+    // Update the ref whenever localMessages changes
+    localMessagesRef.current = localMessages;
+  }, [localMessages]);
   
   // Custom setter for viewState that includes logging
   const setViewStateWithLogging = (newState: ViewState) => {
@@ -292,10 +302,13 @@ export default function DebatePage() {
           .then(response => response.json())
           .then(fetchedData => {
             const currentMessageCount = fetchedData?.messages?.length || 0;
-            const currentLocalCount = localMessages.length;
+            
+            // Use the ref instead of the state to avoid stale closures
+            const currentMessages = localMessagesRef.current;
+            const currentLocalCount = currentMessages.length;
             
             // Only compare with real messages
-            const realLocalMessages = localMessages.filter(msg => !msg.id.startsWith('typing-')).length;
+            const realLocalMessages = currentMessages.filter(msg => !msg.id.startsWith('typing-')).length;
             
             if (currentMessageCount > realLocalMessages) {
               hasReceivedResponse = true;
@@ -502,7 +515,9 @@ export default function DebatePage() {
     
     // Store if this is the final round, but don't update state yet
     // We'll use this flag in the onSuccess callback
-    const userMessagesCount = localMessages.filter(msg => msg.role === 'user').length + 1; // +1 for the new message
+    // Use ref instead of state to avoid stale closure issues
+    const currentMessages = localMessagesRef.current;
+    const userMessagesCount = currentMessages.filter(msg => msg.role === 'user').length + 1; // +1 for the new message
     const maxRoundsNumber = debate?.maxRounds || 3;
     const isFinalRound = userMessagesCount >= maxRoundsNumber;
     
