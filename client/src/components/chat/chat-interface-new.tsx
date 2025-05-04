@@ -174,9 +174,13 @@ export default function ChatInterface({
             return null;
           }
           
+          // Create a compound key that includes both the message ID and index position
+          // This ensures uniqueness even if we somehow get duplicate message IDs
+          const uniqueKey = `${message.id}-${index}`;
+          
           return (
             <MessageBubble 
-              key={message.id} 
+              key={uniqueKey} 
               message={message}
               partyShortName={partyShortName}
               isGrouped={isGrouped}

@@ -287,7 +287,7 @@ export default function DebatePage() {
       // Update local state with confirmed message
       setLocalMessages(prev => {
         const updatedMessages = prev.map((msg: Message) => {
-          if (msg.id.startsWith('temp-')) {
+          if (msg.id.startsWith('user-temp-')) {
             return data.userMessage;
           }
           return msg;
@@ -300,7 +300,7 @@ export default function DebatePage() {
         if (!old) return old;
         
         const updatedMessages = old.messages.map((msg: Message) => {
-          if (msg.id.startsWith('temp-')) {
+          if (msg.id.startsWith('user-temp-')) {
             return data.userMessage;
           }
           return msg;
@@ -316,11 +316,14 @@ export default function DebatePage() {
       // First, remove any existing typing indicators to prevent duplicates
       setLocalMessages(prev => prev.filter(msg => !msg.id.startsWith('typing-')));
       
-      // Add a temporary typing indicator message with a unique ID
-      // Use a UUID-like approach combining timestamp, random string, and counter for absolute uniqueness
+      // Add a temporary typing indicator message with a truly unique ID
+      // Use multiple sources of randomness for absolute uniqueness
       const timestamp = Date.now();
-      const randomPart = Math.random().toString(36).substring(2, 10);
-      const uniqueTypingId = `typing-${timestamp}-${randomPart}-${Math.floor(Math.random() * 1000000)}`;
+      const randomPart1 = Math.random().toString(36).substring(2, 10);
+      const randomPart2 = Math.random().toString(36).substring(2, 10);
+      const randomNumber = Math.floor(Math.random() * 100000000);
+      // Combine all these elements to create a very unique ID that cannot possibly collide
+      const uniqueTypingId = `typing-${timestamp}-${randomPart1}-${randomPart2}-${randomNumber}`;
       
       const typingIndicatorMessage: Message = {
         id: uniqueTypingId,
@@ -448,8 +451,8 @@ export default function DebatePage() {
       // Mark failed messages in local state
       setLocalMessages(prev => {
         return prev.map(msg => {
-          // Handle temp- messages with the new format (timestamp-randomstring-random number)
-          if (msg.id.startsWith('temp-') && !msg.content.includes('(Failed to send)')) {
+          // Handle user-temp- messages with the new format (timestamp-randomstring-random number)
+          if (msg.id.startsWith('user-temp-') && !msg.content.includes('(Failed to send)')) {
             return {
               ...msg,
               content: `${msg.content} (Failed to send)`,
@@ -464,8 +467,8 @@ export default function DebatePage() {
         if (!old) return old;
         
         const updatedMessages = old.messages.map((msg: Message) => {
-          // Check for any temp- prefixed message ID, regardless of the exact format
-          if (msg.id.startsWith('temp-') && !msg.content.includes('(Failed to send)')) {
+          // Check for any user-temp- prefixed message ID, regardless of the exact format
+          if (msg.id.startsWith('user-temp-') && !msg.content.includes('(Failed to send)')) {
             return {
               ...msg,
               content: `${msg.content} (Failed to send)`,
@@ -628,11 +631,15 @@ export default function DebatePage() {
   const handleSendMessage = (content: string) => {
     if (!content.trim()) return;
     
-    // Create a temporary user message to show immediately with guaranteed unique ID
-    // Same UUID-like approach as typing indicators for consistency and uniqueness
+    // Create a temporary user message with a truly unique ID using the same approach
+    // as the typing indicators for consistency and guaranteed uniqueness
+    // Use a distinctive prefix 'user-temp-' to avoid any possibility of ID overlap with typing indicators
     const timestamp = Date.now();
-    const randomPart = Math.random().toString(36).substring(2, 10);
-    const uniqueId = `temp-${timestamp}-${randomPart}-${Math.floor(Math.random() * 1000000)}`;
+    const randomPart1 = Math.random().toString(36).substring(2, 10);
+    const randomPart2 = Math.random().toString(36).substring(2, 10);
+    const randomNumber = Math.floor(Math.random() * 100000000);
+    // Combine all these elements to create a very unique ID that cannot possibly collide
+    const uniqueId = `user-temp-${timestamp}-${randomPart1}-${randomPart2}-${randomNumber}`;
     
     const tempUserMessage: Message = {
       id: uniqueId,
