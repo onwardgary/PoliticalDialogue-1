@@ -558,15 +558,19 @@ export default function DebatePage() {
     if (!debate) return;
     
     if (debate.completed && debate.summary) {
-      // Redirect to the summary page
-      const summaryPath = secureId 
-        ? `/summary/s/${secureId}` 
-        : `/summary/${debate.id}`;
-      setLocation(summaryPath);
+      // Only redirect if we're not already in the summary generation view
+      // This prevents the race condition where this effect might redirect before animation finishes
+      if (viewState !== 'generating') {
+        // Redirect to the summary page
+        const summaryPath = secureId 
+          ? `/summary/s/${secureId}` 
+          : `/summary/${debate.id}`;
+        setLocation(summaryPath);
+      }
     } else {
       setViewState('chat');
     }
-  }, [debate, secureId, setLocation]);
+  }, [debate, secureId, setLocation, viewState]);
   
   // Global cleanup effect to ensure polling state is reset if component unmounts
   // or if there's any other unexpected issue
