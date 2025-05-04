@@ -162,6 +162,23 @@ export default function SummaryPage() {
     // No ownership check - we're allowing any user to view debates
   }, [isLoading, debate, setLocation, toast]);
   
+  // Show share notification when summary page loads and data is available
+  useEffect(() => {
+    if (!isLoading && debate && debate.summary) {
+      // Slight delay to ensure the page is fully loaded
+      const timer = setTimeout(() => {
+        toast({
+          title: "Share your debate results!",
+          description: "Copy the link and share this debate summary with your friends to show them your discussion.",
+          variant: "default",
+          duration: 6000, // Show for 6 seconds
+        });
+      }, 1500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, debate, toast]);
+  
   if (isLoading || !debate || !party) {
     return (
       <div className="min-h-screen flex items-center justify-center">
