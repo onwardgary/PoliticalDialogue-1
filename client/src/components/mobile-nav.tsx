@@ -124,9 +124,7 @@ function MobileSidebar() {
           </Button>
         )}
         */}
-        <div className="flex items-center justify-center">
-          <p className="text-xs text-neutral-500">Powered by OpenAI's GPT-4o</p>
-        </div>
+        {/* Removed "Powered by" text */}
       </div>
     </div>
   );
