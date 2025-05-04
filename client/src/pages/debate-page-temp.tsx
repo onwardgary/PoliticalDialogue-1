@@ -499,7 +499,7 @@ export default function DebatePageSimplified() {
           isLoading={messageStatus.sending || messageStatus.polling}
           onSendMessage={handleSendMessage}
           onEndDebate={handleEndDebate}
-          partyShortName={party?.shortName}
+          partyShortName={party?.shortName || party?.short_name || "PAP"}
           userTyping={isUserTyping}
           maxRounds={debate?.maxRounds || 3}
           isGeneratingSummary={uiState === "animating"}
