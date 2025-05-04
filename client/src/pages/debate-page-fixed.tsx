@@ -520,7 +520,7 @@ export default function DebatePageFixed() {
                       setUiState("summaryReady");
                     }}
                   >
-                    Skip Animation
+                    Can't wait already!
                   </Button>
                 </div>
               </div>
