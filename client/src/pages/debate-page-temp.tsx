@@ -82,6 +82,30 @@ export default function DebatePageSimplified() {
     localMessagesRef.current = localMessages;
   }, [localMessages]);
   
+  // Add a safety mechanism to prevent stuck input states
+  useEffect(() => {
+    // Find the last message to determine if status flags are out of sync
+    const lastMessage = localMessages.length > 0 ? localMessages[localMessages.length - 1] : null;
+    const lastMessageIsAssistant = lastMessage?.role === 'assistant' && !lastMessage.id.startsWith('typing-');
+    
+    // If the last message is from the assistant but we're still showing loading/polling,
+    // then we've likely hit the race condition. Reset the state.
+    if (lastMessageIsAssistant && (messageStatus.sending || messageStatus.polling)) {
+      console.log("SAFETY CHECK: Detected stuck message status, resetting state flags");
+      setMessageStatus(prev => ({ ...prev, sending: false, polling: false }));
+    }
+    
+    // Additionally, set up a safety timer to reset state if it gets stuck for too long
+    const safetyTimer = setTimeout(() => {
+      if (messageStatus.sending || messageStatus.polling) {
+        console.log("SAFETY TIMER: Resetting potentially stuck message status after timeout");
+        setMessageStatus(prev => ({ ...prev, sending: false, polling: false }));
+      }
+    }, 15000); // 15 second safety timeout
+    
+    return () => clearTimeout(safetyTimer);
+  }, [localMessages, messageStatus.sending, messageStatus.polling]);
+  
   // Fetch debate data
   const { data: debate, isLoading: isLoadingDebate } = useQuery({
     queryKey: [apiEndpoint],
