@@ -523,7 +523,7 @@ export default function DebatePageSimplified() {
     partyId: debate?.partyId,
     party,
     partyShortName: party?.shortName,
-    isPartyLoading
+    isLoadingParty
   });
   
   return (
@@ -534,7 +534,7 @@ export default function DebatePageSimplified() {
         <MobileHeader />
         
         {/* Only render the chat interface when party data is loaded */}
-        {isPartyLoading ? (
+        {isLoadingParty ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
@@ -551,40 +551,33 @@ export default function DebatePageSimplified() {
           />
         )}
         
-        {/* Chat Input */}
-        <ChatInput 
-          onSendMessage={handleSendMessage}
-          isLoading={messageStatus.sending || messageStatus.polling || uiState === "animating"}
-          onTypingStateChange={setIsUserTyping}
-          disabled={
-            // CASE 1: While sending or polling
-            messageStatus.sending || messageStatus.polling ||
-            
-            // CASE 2: When at max rounds
-            messageStatus.finalRoundReached ||
-            (debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 3)) ||
-            
-            // CASE 3: When last message is from user
-            (localMessages.length > 0 && localMessages[localMessages.length - 1].role === 'user') ||
-            
-            // CASE 4: When animating or summary ready
-            uiState === "animating" || uiState === "summaryReady"
-          }
-          disabledReason={
-            // Set reason based on priority
-            uiState === "animating"
-              ? 'generating'
-            : uiState === "summaryReady"
-              ? 'summaryReady'
-            : (messageStatus.finalRoundReached || 
-               debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 3))
-                ? 'finalRound'
-            : (messageStatus.sending || messageStatus.polling ||
-               (localMessages.length > 0 && localMessages[localMessages.length - 1].role === 'user'))
-                ? 'waiting'
-            : 'maxRounds' // Changed from 'default' to 'maxRounds' to match expected type
-          }
-        />
+        {/* Chat Input - only show when not loading party data */}
+        {!isLoadingParty && (
+          <ChatInput 
+            onSendMessage={handleSendMessage}
+            isLoading={messageStatus.sending || messageStatus.polling || uiState === "animating"}
+            onTypingStateChange={setIsUserTyping}
+            disabled={
+              messageStatus.sending || 
+              messageStatus.polling ||
+              messageStatus.finalRoundReached ||
+              (debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 3)) ||
+              (localMessages.length > 0 && localMessages[localMessages.length - 1].role === 'user') ||
+              uiState === "animating" || 
+              uiState === "summaryReady"
+            }
+            disabledReason={
+              uiState === "animating" ? 'generating' :
+              uiState === "summaryReady" ? 'summaryReady' :
+              (messageStatus.finalRoundReached || 
+               debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 3)) ? 'finalRound' :
+              (messageStatus.sending || 
+               messageStatus.polling ||
+              (localMessages.length > 0 && localMessages[localMessages.length - 1].role === 'user')) ? 'waiting' :
+              'maxRounds'
+            }
+          />
+        )}
         
         {/* Animation */}
         {uiState === "animating" && (
