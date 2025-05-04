@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/sidebar";
 import { MobileHeader, MobileNavigation } from "@/components/mobile-nav";
-import DebateSummary from "@/components/debate-summary";
+import DebateSummaryTabbed from "@/components/debate-summary-tabbed";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Check, Copy, Loader2, RefreshCw, Share2 } from "lucide-react";
@@ -290,7 +290,7 @@ export default function SummaryPage() {
         </header>
         
         <div className="p-6">
-          <DebateSummary 
+          <DebateSummaryTabbed 
             debateId={secureId || String(debate.id)}
             summary={debate.summary}
             partyName={party.name}
