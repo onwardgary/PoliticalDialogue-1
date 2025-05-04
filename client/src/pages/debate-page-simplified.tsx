@@ -25,15 +25,15 @@ function SummaryGenerationLoader({ step }: { step: number }) {
   
   return (
     <div className="flex flex-col items-center justify-center h-full p-6 bg-black">
-      <Card className="w-full max-w-lg border-2 border-white">
+      <Card className="w-full max-w-lg border-2 border-white bg-black text-white">
         <CardContent className="pt-6">
           <div className="space-y-6">
             <div className="text-center mb-6">
-              <h3 className="text-xl font-semibold">Generating Debate Summary</h3>
-              <p className="text-muted-foreground text-sm">Please wait while we analyze your debate</p>
+              <h3 className="text-2xl font-bold mb-2">Generating Debate Summary</h3>
+              <p className="text-gray-300 text-sm">Please wait while we analyze your debate</p>
             </div>
             
-            <Progress value={(step / steps.length) * 100} className="h-2 mb-8" />
+            <Progress value={(step / steps.length) * 100} className="h-3 mb-8 bg-gray-800" />
             
             <div className="space-y-4">
               {steps.map((s) => {
@@ -44,47 +44,53 @@ function SummaryGenerationLoader({ step }: { step: number }) {
                 return (
                   <div 
                     key={s.id} 
-                    className={`flex items-center p-3 rounded-lg transition-all ${
+                    className={`flex items-center p-4 rounded-lg transition-all ${
                       isActive 
-                        ? "bg-primary/10 border border-primary/20" 
+                        ? "bg-white/10 border-2 border-white" 
                         : isCompleted 
-                          ? "bg-green-50 border border-green-100"
-                          : "bg-neutral-50 border border-neutral-100"
+                          ? "bg-gray-800 border border-gray-700"
+                          : "bg-gray-900 border border-gray-800"
                     }`}
                   >
                     <div 
-                      className={`rounded-full p-2 mr-3 ${
+                      className={`rounded-full p-2 mr-4 ${
                         isActive 
-                          ? "bg-primary/20 text-primary" 
+                          ? "bg-white text-black animate-pulse" 
                           : isCompleted 
-                            ? "bg-green-100 text-green-700"
-                            : "bg-neutral-100 text-neutral-400"
+                            ? "bg-gray-200 text-black"
+                            : "bg-gray-700 text-gray-300"
                       }`}
                     >
-                      <Icon className="h-5 w-5" />
+                      <Icon className="h-6 w-6" />
                     </div>
-                    <div>
-                      <p className={`font-medium ${
+                    <div className="flex-1">
+                      <p className={`font-bold text-base ${
                         isActive 
-                          ? "text-primary" 
+                          ? "text-white" 
                           : isCompleted 
-                            ? "text-green-700"
-                            : "text-neutral-500"
+                            ? "text-gray-200"
+                            : "text-gray-400"
                       }`}>
                         {s.name}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className={`text-sm ${
+                        isActive 
+                          ? "text-gray-300" 
+                          : isCompleted 
+                            ? "text-gray-400"
+                            : "text-gray-500"
+                      }`}>
                         {s.description}
                       </p>
                     </div>
                     {isActive && (
                       <div className="ml-auto">
-                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                        <Loader2 className="h-5 w-5 animate-spin text-white" />
                       </div>
                     )}
                     {isCompleted && (
                       <div className="ml-auto">
-                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <CheckCircle2 className="h-5 w-5 text-white" />
                       </div>
                     )}
                   </div>
@@ -469,11 +475,21 @@ export default function DebatePage() {
                   description: "Your debate has been analyzed and summarized.",
                 });
                 
-                // Redirect to the summary page
-                const summaryPath = secureId 
-                  ? `/summary/s/${secureId}` 
-                  : `/summary/${debate?.id}`;
-                setLocation(summaryPath);
+                // Ensure we've shown all steps of the animation first
+                setTimeout(() => {
+                  // Final check to make sure we're still in generating state before redirecting
+                  if (viewState === 'generating') {
+                    console.log("All animation steps completed, now redirecting to summary page");
+                    
+                    // Redirect to the summary page
+                    const summaryPath = secureId 
+                      ? `/summary/s/${secureId}` 
+                      : `/summary/${debate?.id}`;
+                    setLocation(summaryPath);
+                  } else {
+                    console.log("Warning: View state changed during animation, not redirecting");
+                  }
+                }, 500); // Small additional delay to ensure all animations are visible
               }, 1500); // Changed back to 1500ms for more visible animation
             }, 1500); // Changed back to 1500ms for more visible animation
           }, 1500); // Changed back to 1500ms for more visible animation
@@ -483,6 +499,7 @@ export default function DebatePage() {
       simulateSteps();
     },
     onError: (error) => {
+      console.log("Error generating summary, resetting to chat view");
       setViewStateWithLogging('chat');
       setSummaryGenerationStep(null);
       
@@ -563,6 +580,15 @@ export default function DebatePage() {
   
   // Handle ending debate and generating summary
   const handleEndDebate = () => {
+    console.log("Ending debate and generating summary");
+    
+    // Check current state before mutating
+    console.log("Current state before ending debate:", { 
+      viewState,
+      currentStep: summaryGenerationStep,
+      isGenerating: endDebateMutation.isPending
+    });
+    
     endDebateMutation.mutate();
   };
   
@@ -584,9 +610,13 @@ export default function DebatePage() {
       } else {
         console.log("Completed debate detected BUT not redirecting because viewState is already 'generating'");
       }
-    } else {
-      // If debate exists but isn't completed, ensure we're in chat view
+    } else if (viewState !== 'generating') {
+      // ONLY change to chat view if we're not currently generating a summary
+      // This prevents the race condition where this effect resets the view during summary generation
+      console.log("Debate not completed and viewState is not 'generating', setting to 'chat'");
       setViewStateWithLogging('chat');
+    } else {
+      console.log("Debate not completed BUT not changing view because viewState is 'generating'");
     }
   }, [debate, secureId, setLocation, viewState]);
   
