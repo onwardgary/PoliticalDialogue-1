@@ -232,7 +232,7 @@ export default function MessageBubble({ message, partyShortName = "BOT", isGroup
         <div className="flex justify-between items-center mt-1">
           {/* Show search icon for assistant messages that used search */}
           {!isUser && message.searchEnabled && (
-            <div className="flex items-center text-black" title="Web search was used to generate this response">
+            <div className="flex items-center text-blue-600" title="Web search was used to generate this response">
               <Globe className="w-3 h-3 mr-1" />
               <span className="text-xs">Search-enhanced</span>
             </div>
@@ -240,7 +240,7 @@ export default function MessageBubble({ message, partyShortName = "BOT", isGroup
           
           {/* Show statistics disclaimer for non-search messages with stats */}
           {hasStatisticsWithoutSearch && (
-            <div className="flex items-center text-black" title="Statistics in this message may not reflect the most current data">
+            <div className="flex items-center text-amber-500" title="Statistics in this message may not reflect the most current data">
               <span className="text-xs italic">Stats may be outdated</span>
             </div>
           )}
