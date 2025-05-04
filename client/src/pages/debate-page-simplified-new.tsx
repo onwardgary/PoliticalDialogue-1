@@ -32,6 +32,9 @@ export default function DebatePage() {
   const [isAnimationOpen, setIsAnimationOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   
+  // Track component mounting status
+  const isMounted = useRef(true);
+  
   // Add a local cache of messages for immediate updates
   // This bypasses React Query's asynchronous cache updates
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
@@ -44,10 +47,19 @@ export default function DebatePage() {
   // State to store the summary URL for delayed navigation
   const [summaryUrl, setSummaryUrl] = useState<string | null>(null);
   
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+  
   // Custom setter for viewState that includes logging
   const setViewStateWithLogging = (newState: ViewState) => {
     console.log(`Changing view state from ${viewState} to ${newState}`);
-    setViewState(newState);
+    if (isMounted.current) {
+      setViewState(newState);
+    }
   };
   
   // Track message sending state for UI feedback

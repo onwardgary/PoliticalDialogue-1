@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -40,13 +40,26 @@ export default function SummaryAnimationOverlay({
     summaryPath: null
   });
   
+  // Track unmounting to prevent state updates after component is gone
+  const isMounted = useRef(true);
+  
+  // Set up cleanup for unmounting
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+  
   // Only run the animation if the portal is open
   useEffect(() => {
     if (isOpen && !animationState.isActive) {
       console.log("Animation overlay opened, starting animation sequence");
       
-      // Mark animation as active
-      setAnimationState(prev => ({ ...prev, isActive: true }));
+      // Only update state if still mounted
+      if (isMounted.current) {
+        // Mark animation as active
+        setAnimationState(prev => ({ ...prev, isActive: true }));
+      }
       
       // Run the animation sequence
       const runAnimation = async () => {
@@ -54,6 +67,9 @@ export default function SummaryAnimationOverlay({
           // Run onStart callback to trigger the API request
           console.log("Calling onStart callback");
           const result = await onStart();
+          
+          // Always check if still mounted before state updates
+          if (!isMounted.current) return;
           
           if (!result.success) {
             console.error("Animation failed - API call unsuccessful");
@@ -67,18 +83,34 @@ export default function SummaryAnimationOverlay({
             summaryPath: result.path 
           }));
           
-          // Simulate the steps of the animation with delays
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          // Create safe timeout that checks mounting status
+          const safeTimeout = (ms: number) => new Promise<void>(resolve => {
+            const timer = setTimeout(() => {
+              if (isMounted.current) {
+                resolve();
+              }
+            }, ms);
+            
+            // Clean up timer if component unmounts during timeout
+            return () => clearTimeout(timer);
+          });
+          
+          // Simulate the steps of the animation with delays and mount checks
+          await safeTimeout(1500);
+          if (!isMounted.current) return;
           setAnimationState(prev => ({ ...prev, currentStep: 2 }));
           
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          await safeTimeout(1500);
+          if (!isMounted.current) return;
           setAnimationState(prev => ({ ...prev, currentStep: 3 }));
           
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          await safeTimeout(1500);
+          if (!isMounted.current) return;
           setAnimationState(prev => ({ ...prev, currentStep: 4 }));
           
           // Mark as completed
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          await safeTimeout(1500);
+          if (!isMounted.current) return;
           setAnimationState(prev => ({ 
             ...prev, 
             isCompleted: true 
@@ -86,18 +118,23 @@ export default function SummaryAnimationOverlay({
           
           // Call the onComplete callback
           console.log("Animation sequence completed, calling onComplete");
-          onComplete(result.path);
+          if (result.path && isMounted.current) {
+            onComplete(result.path);
+          }
         } catch (error) {
           console.error("Error during animation sequence:", error);
-          // Close the animation portal on error
-          onOpenChange(false);
+          // Only update if still mounted
+          if (isMounted.current) {
+            // Close the animation portal on error
+            onOpenChange(false);
+          }
         }
       };
       
       // Start the animation
       runAnimation();
-    } else if (!isOpen && animationState.isActive) {
-      // Reset animation state when portal is closed
+    } else if (!isOpen && animationState.isActive && isMounted.current) {
+      // Reset animation state when portal is closed (only if still mounted)
       setAnimationState({
         isActive: false,
         currentStep: 1,
@@ -239,8 +276,12 @@ export function SummaryReadyNotification({
 }: { 
   onViewSummary: () => void 
 }) {
+  // Only create portal if document is available
+  // This prevents errors during SSR or unmounting
+  if (typeof document === 'undefined') return null;
+  
   return createPortal(
-    <div className="fixed bottom-6 right-6 z-50">
+    <div id="summary-notification" className="fixed bottom-6 right-6 z-50">
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-4 max-w-sm animate-slide-up">
         <div className="flex items-start">
           <div className="mr-3 mt-0.5">
@@ -253,7 +294,15 @@ export function SummaryReadyNotification({
             </p>
             <Button 
               size="sm" 
-              onClick={onViewSummary}
+              onClick={() => {
+                try {
+                  onViewSummary();
+                } catch (error) {
+                  console.error("Error in notification view summary click:", error);
+                  // Navigate manually as fallback
+                  window.location.href = window.location.href.replace('/debate/', '/summary/');
+                }
+              }}
               className="w-full"
             >
               View Summary <ArrowRight className="ml-2 h-4 w-4" />
@@ -261,12 +310,17 @@ export function SummaryReadyNotification({
           </div>
           <button 
             onClick={() => {
-              const notification = document.getElementById('summary-notification');
-              if (notification) {
-                notification.classList.add('animate-slide-down');
-                setTimeout(() => {
-                  notification.remove();
-                }, 300);
+              try {
+                // Close notification without navigation
+                const notification = document.getElementById('summary-notification');
+                if (notification) {
+                  notification.classList.add('animate-slide-down');
+                  setTimeout(() => {
+                    notification.remove();
+                  }, 300);
+                }
+              } catch (error) {
+                console.error("Error closing notification:", error);
               }
             }}
             className="ml-2 text-gray-400 hover:text-gray-500"
