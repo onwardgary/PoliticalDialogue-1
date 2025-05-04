@@ -40,10 +40,13 @@ export default function HomePage() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
-              {parties.map((party) => (
-                <PartyCard key={party.id} party={party} />
-              ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-5 mb-8">
+              {parties
+                .filter(party => party.shortName !== "PSP") // Filter out PSP
+                .map((party) => (
+                  <PartyCard key={party.id} party={party} />
+                ))
+              }
             </div>
           )}
         </section>
