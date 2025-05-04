@@ -215,50 +215,73 @@ export default function DebatePageSimplified() {
             const serverMessageIds = new Set(serverMessages.map(msg => msg.id));
             const localMessageIds = new Set(realLocalMessages.map(msg => msg.id));
             
-            // Find any message IDs that exist on server but not locally
-            let hasNewMessages = false;
-            let latestAIMessage = null;
+            // Find all messages that exist on server but not locally
+            const newMessages = serverMessages.filter(msg => !localMessageIds.has(msg.id));
             
-            // Check specifically for new AI messages (role=assistant)
-            for (let i = serverMessages.length - 1; i >= 0; i--) {
-              const msg = serverMessages[i];
-              if (msg.role === 'assistant' && !localMessageIds.has(msg.id)) {
-                hasNewMessages = true;
-                latestAIMessage = msg;
-                break;
-              }
-            }
+            // Separate user and assistant messages
+            const newUserMessages = newMessages.filter(msg => msg.role === 'user');
+            const newAssistantMessages = newMessages.filter(msg => msg.role === 'assistant');
             
-            // Debug the message comparison
-            console.log("Message comparison:", {
+            // Check if the last server message is an assistant message (this tells us the AI has responded)
+            const lastServerMessage = serverMessages.length > 0 ? serverMessages[serverMessages.length - 1] : null;
+            const lastMessageIsAssistant = lastServerMessage && lastServerMessage.role === 'assistant';
+            
+            // We'll use this to determine if we should stop polling
+            const aiHasResponded = newAssistantMessages.length > 0 || 
+                                  (lastMessageIsAssistant && realLocalMessages.length < serverMessages.length);
+            
+            // Debug the message comparison - much more comprehensive now
+            console.log("Message comparison (detailed):", {
               serverMessageCount: serverMessages.length,
               localMessageCount: realLocalMessages.length,
-              hasNewMessages,
-              latestAIMessage: latestAIMessage?.id || null
+              serverMessageIds: Array.from(serverMessageIds),
+              localMessageIds: Array.from(localMessageIds),
+              newMessages: newMessages.map(m => ({ id: m.id, role: m.role })),
+              lastServerMessage: lastServerMessage ? { id: lastServerMessage.id, role: lastServerMessage.role } : null,
+              lastMessageIsAssistant,
+              aiHasResponded
             });
             
-            if (hasNewMessages && latestAIMessage) {
+            // We can stop polling if either condition is met:
+            // 1. We have new AI messages to display
+            // 2. There are no new messages but the last server message is from the AI and we're out of sync
+            if (aiHasResponded) {
+              console.log("AI has responded, stopping polling");
+              
+              // Find the most recent AI message
+              let latestAIMessage = null;
+              for (let i = serverMessages.length - 1; i >= 0; i--) {
+                if (serverMessages[i].role === 'assistant') {
+                  latestAIMessage = serverMessages[i];
+                  break;
+                }
+              }
               // We found a new assistant message
-              console.log("Found new AI message with ID:", latestAIMessage.id);
+              console.log("Found new AI message with ID:", latestAIMessage?.id || "No AI message found");
               
               // Stop polling and update state (ensure state is fully reset)
               setMessageStatus(prev => ({ ...prev, polling: false, sending: false }));
               
-              // Update messages
-              setLocalMessages(prev => {
-                const messagesWithoutTyping = prev.filter(msg => !msg.id.startsWith('typing-'));
-                
-                // Ensure we don't have duplicate messages
-                const alreadyHasLatestMessage = messagesWithoutTyping.some(
-                  msg => msg.id === latestAIMessage.id
-                );
-                
-                if (!alreadyHasLatestMessage) {
-                  return [...messagesWithoutTyping, latestAIMessage];
-                } else {
-                  return messagesWithoutTyping;
-                }
-              });
+              // Update messages, but check if we actually have a new message to add
+              if (latestAIMessage) {
+                setLocalMessages(prev => {
+                  const messagesWithoutTyping = prev.filter(msg => !msg.id.startsWith('typing-'));
+                  
+                  // Ensure we don't have duplicate messages
+                  const alreadyHasLatestMessage = messagesWithoutTyping.some(
+                    msg => msg.id === latestAIMessage.id
+                  );
+                  
+                  if (!alreadyHasLatestMessage) {
+                    return [...messagesWithoutTyping, latestAIMessage];
+                  } else {
+                    return messagesWithoutTyping;
+                  }
+                });
+              } else {
+                // If there's no new AI message but polling should stop, at least remove typing indicators
+                setLocalMessages(prev => prev.filter(msg => !msg.id.startsWith('typing-')));
+              }
               
               // Check if final round
               const userMessagesCount = data.messages.filter((msg: Message) => msg.role === 'user').length;
