@@ -23,8 +23,7 @@ export default function HomePage() {
         <header className="bg-white border-b border-black px-6 py-10 md:py-16">
           <h1 className="text-3xl md:text-4xl font-bold text-black mb-2">Welcome to Suara.sg</h1>
           <p className="text-black text-lg md:w-3/4 lg:w-2/3">
-            Engage in meaningful debates with <strong>unofficial AI-powered fanbots</strong> that represent 
-            different policy perspectives. These bots are not endorsed by or affiliated with any political parties.
+            Step into a new era of civic dialogue. Here, you can challenge ideas, test your reasoning, and engage in meaningful debates with AI-powered fanbots that reflect diverse political perspectives. These bots aren't affiliated with any party—they're here to help you sharpen your views and find your voice.
           </p>
         </header>
         
