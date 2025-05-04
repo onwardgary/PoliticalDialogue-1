@@ -234,8 +234,28 @@ export default function DebatePage() {
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
       setMessageStatus(prev => ({ ...prev, sending: true }));
-      const res = await apiRequest("POST", messageEndpoint, { content });
-      return await res.json();
+      try {
+        const res = await apiRequest("POST", messageEndpoint, { content });
+        return await res.json();
+      } catch (error) {
+        console.error("Error sending message:", error);
+        
+        // Reset message status on error to prevent stuck states
+        setMessageStatus(prev => ({
+          ...prev,
+          sending: false,
+          polling: false
+        }));
+        
+        // Use toast notification instead of a modal for a better UX
+        toast({
+          title: "Failed to send message",
+          description: "Please try again in a moment",
+          variant: "destructive"
+        });
+        
+        throw error;
+      }
     },
     onSuccess: (data) => {
       setMessageStatus(prev => ({ ...prev, sending: false, polling: true }));
