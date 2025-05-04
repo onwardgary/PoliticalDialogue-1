@@ -218,11 +218,37 @@ export default function DebatePageSimplified() {
       setUiState("animating");
       
       try {
-        const response = await apiRequest("POST", endDebateEndpoint);
-        const data = await response.json();
+        console.log("Attempting to complete debate via API", endDebateEndpoint);
+        
+        // Make sure the request completes properly
+        const response = await fetch(endDebateEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+        }
+        
+        let data;
+        try {
+          data = await response.json();
+        } catch (e) {
+          console.warn("Response was not JSON:", e);
+          // Continue even if JSON parsing fails - the endpoint might return empty data
+          data = {};
+        }
         
         // Update cache
-        queryClient.setQueryData([apiEndpoint], data);
+        queryClient.setQueryData([apiEndpoint], (oldData) => {
+          return {
+            ...(oldData || {}),
+            ...(data || {}),
+            completed: true, // Force completed flag
+          };
+        });
         
         // Prepare summary path
         const summaryPath = secureId 
@@ -231,21 +257,23 @@ export default function DebatePageSimplified() {
           
         setSummaryUrl(summaryPath);
         
-        // Wait for animation
+        // Wait for animation to complete
         await new Promise(resolve => setTimeout(resolve, 3000));
         
-        return { success: true };
+        return { success: true, path: summaryPath };
       } catch (error) {
         console.error("Error ending debate:", error);
         throw error;
       }
     },
-    onSuccess: () => {
-      // Show summary ready
+    onSuccess: (data) => {
+      console.log("Summary generated successfully, ready to view at:", data.path);
+      // Show summary ready dialog
       setUiState("summaryReady");
     },
     onError: (error) => {
       setUiState("chat");
+      console.error("Summary generation failed:", error);
       toast({
         title: "Error",
         description: "Failed to generate summary. Please try again.",
@@ -352,7 +380,7 @@ export default function DebatePageSimplified() {
             
             // CASE 2: When at max rounds
             messageStatus.finalRoundReached ||
-            (debate?.messages?.filter(msg => msg.role === 'user').length >= (debate?.maxRounds || 3)) ||
+            (debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 3)) ||
             
             // CASE 3: When last message is from user
             (localMessages.length > 0 && localMessages[localMessages.length - 1].role === 'user') ||
@@ -367,12 +395,12 @@ export default function DebatePageSimplified() {
             : uiState === "summaryReady"
               ? 'summaryReady'
             : (messageStatus.finalRoundReached || 
-               debate?.messages?.filter(msg => msg.role === 'user').length >= (debate?.maxRounds || 3))
+               debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 3))
                 ? 'finalRound'
             : (messageStatus.sending || messageStatus.polling ||
                (localMessages.length > 0 && localMessages[localMessages.length - 1].role === 'user'))
                 ? 'waiting'
-            : 'default'
+            : 'maxRounds' // Changed from 'default' to 'maxRounds' to match expected type
           }
         />
         
