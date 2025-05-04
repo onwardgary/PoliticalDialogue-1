@@ -438,7 +438,7 @@ export default function DebatePage() {
       return await response.json();
     },
     onSuccess: (data) => {
-      // Simulate the steps of generating a summary (with faster transitions)
+      // Simulate the steps of generating a summary (with longer, more visible transitions)
       const simulateSteps = () => {
         setTimeout(() => {
           setSummaryGenerationStep(2);
@@ -461,10 +461,10 @@ export default function DebatePage() {
                   ? `/summary/s/${secureId}` 
                   : `/summary/${debate?.id}`;
                 setLocation(summaryPath);
-              }, 750); // Reduced from 1500ms to 750ms
-            }, 750); // Reduced from 1500ms to 750ms
-          }, 750); // Reduced from 1500ms to 750ms
-        }, 750); // Reduced from 1500ms to 750ms
+              }, 1500); // Changed back to 1500ms for more visible animation
+            }, 1500); // Changed back to 1500ms for more visible animation
+          }, 1500); // Changed back to 1500ms for more visible animation
+        }, 1500); // Changed back to 1500ms for more visible animation
       };
       
       simulateSteps();
