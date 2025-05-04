@@ -146,9 +146,7 @@ export default function Sidebar() {
         )}
         */}
         
-        <div className="flex items-center justify-center mt-4">
-          <p className="text-xs text-neutral-500">Powered by OpenAI's GPT-4o</p>
-        </div>
+        {/* Removed "Powered by" text as requested */}
       </div>
     </aside>
   );
