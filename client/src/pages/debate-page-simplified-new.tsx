@@ -689,19 +689,22 @@ export default function DebatePage() {
                   Generating Debate Summary...
                 </h2>
                 
-                {/* Progress Steps (simplified) */}
+                {/* Processing Indicator */}
                 <div className="w-full space-y-6 mb-8">
                   <div className="flex items-start">
                     <div className="mr-4 flex-shrink-0">
-                      <div className="h-6 w-6 rounded-full bg-amber-500 animate-pulse flex items-center justify-center text-white font-bold">
-                        1
+                      <div className="h-6 w-6 rounded-full bg-amber-500 animate-pulse flex items-center justify-center text-white">
+                        <CheckIcon className="h-3 w-3" />
                       </div>
                     </div>
                     <div>
                       <h3 className="font-medium text-amber-500 font-bold">
-                        Processing debate
+                        Analyzing your conversation
                       </h3>
-                      <p className="text-sm text-gray-500">This may take a minute</p>
+                      <p className="text-sm text-gray-500">
+                        Our AI is reviewing the debate, comparing arguments, 
+                        and preparing a comprehensive summary with key points
+                      </p>
                     </div>
                   </div>
                 </div>
