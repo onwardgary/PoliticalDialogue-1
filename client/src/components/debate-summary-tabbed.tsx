@@ -165,7 +165,7 @@ export default function DebateSummaryTabbed({
           </TabsList>
           
           {/* TAB 1: Key Arguments Summary */}
-          <TabsContent value="arguments" className="mt-0">
+          <TabsContent value="arguments" className="mt-0 max-h-[65vh] overflow-y-auto p-2 border border-neutral-100 rounded-lg">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="border border-neutral-200 rounded-lg p-4">
                 <h4 className="text-md font-medium text-primary mb-3 flex items-center">
@@ -204,7 +204,7 @@ export default function DebateSummaryTabbed({
           </TabsContent>
           
           {/* TAB 2: Point-by-Point Comparison */}
-          <TabsContent value="key-points" className="mt-0">
+          <TabsContent value="key-points" className="mt-0 max-h-[65vh] overflow-y-auto p-2 border border-neutral-100 rounded-lg">
             {summary.keyPoints && summary.keyPoints.length > 0 ? (
               <div className="space-y-4">
                 {summary.keyPoints.map((point, index) => (
