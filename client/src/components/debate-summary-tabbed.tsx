@@ -243,7 +243,7 @@ export default function DebateSummaryTabbed({
           </TabsContent>
           
           {/* TAB 3: Stakeholder Impact - Who will be happy/sad */}
-          <TabsContent value="stakeholders" className="mt-0">
+          <TabsContent value="stakeholders" className="mt-0 max-h-[65vh] overflow-y-auto p-2 border border-neutral-100 rounded-lg">
             {summary.stakeholderImpact ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Party Impact */}
@@ -340,7 +340,7 @@ export default function DebateSummaryTabbed({
           </TabsContent>
           
           {/* TAB 4: Policy Consequences */}
-          <TabsContent value="consequences" className="mt-0">
+          <TabsContent value="consequences" className="mt-0 max-h-[65vh] overflow-y-auto p-2 border border-neutral-100 rounded-lg">
             {summary.policyConsequences ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Party Consequences */}
@@ -437,7 +437,7 @@ export default function DebateSummaryTabbed({
           </TabsContent>
           
           {/* TAB 5: Final Conclusion */}
-          <TabsContent value="conclusion" className="mt-0">
+          <TabsContent value="conclusion" className="mt-0 max-h-[65vh] overflow-y-auto p-2 border border-neutral-100 rounded-lg">
             {summary.conclusion ? (
               <div>
                 <div className="flex flex-col items-center mb-6 border border-neutral-200 rounded-lg p-4">
