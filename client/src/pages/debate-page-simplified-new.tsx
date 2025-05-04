@@ -681,6 +681,19 @@ export default function DebatePage() {
     !messageStatus.polling && 
     debate.messages.filter((msg: Message) => msg.role === 'user').length < (debate.maxRounds || 3) && 
     (debate.messages.length === 0 || debate.messages[debate.messages.length - 1].role !== 'user');
+    
+  // Debug logging for message status - helpful to find why input remains disabled
+  useEffect(() => {
+    console.log("DISABLED STATE CHECK:", {
+      sending: messageStatus.sending,
+      polling: messageStatus.polling,
+      finalRoundReached: messageStatus.finalRoundReached,
+      lastMessageIsUser: debate?.messages && debate.messages.length > 0 && 
+                          debate.messages[debate.messages.length - 1].role === 'user',
+      animatingOrSummaryReady: ui.status === 'animating' || ui.status === 'summaryReady',
+      uiState: ui.status
+    });
+  }, [messageStatus, debate?.messages, ui.status]);
   
   return (
     <div id="debate-container" className="min-h-screen flex flex-col md:flex-row">
@@ -715,8 +728,11 @@ export default function DebatePage() {
             (debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 3)) ||
             
             // CASE 3: Always disable when the last message is from the user (waiting for bot)
-            (debate?.messages && debate.messages.length > 0 && 
-            debate.messages[debate.messages.length - 1].role === 'user') ||
+            // This is a critical change: we're checking localMessages instead of debate.messages
+            // because localMessages is updated immediately when a response is received
+            ((localMessages.length > 0 ? localMessages : debate?.messages)?.length > 0 && 
+             (localMessages.length > 0 ? localMessages : debate?.messages)
+               [localMessages.length > 0 ? localMessages.length - 1 : (debate?.messages?.length || 0) - 1]?.role === 'user') ||
             
             // CASE 4: When generating a summary or summary is ready
             ui.status === 'animating' || ui.status === 'summaryReady'
@@ -737,8 +753,10 @@ export default function DebatePage() {
             
             // PRIORITY 3: When waiting for the bot to respond
             : (messageStatus.sending || messageStatus.polling ||
-               (debate?.messages && debate.messages.length > 0 && 
-                debate.messages[debate.messages.length - 1].role === 'user'))
+               // Critical change: use localMessages to check if the last message is from the user
+               ((localMessages.length > 0 ? localMessages : debate?.messages)?.length > 0 && 
+                (localMessages.length > 0 ? localMessages : debate?.messages)
+                  [localMessages.length > 0 ? localMessages.length - 1 : (debate?.messages?.length || 0) - 1]?.role === 'user'))
                 ? 'waiting'
             
             // PRIORITY 4: Default state
