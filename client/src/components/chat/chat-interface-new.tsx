@@ -137,7 +137,7 @@ export default function ChatInterface({
         {/* System welcome message */}
         <div className="flex justify-center mb-4">
           <div className="bg-neutral-100 rounded-2xl px-4 py-3 text-sm text-neutral-700 max-w-md text-center shadow-sm">
-            <p>Start a conversation with the {partyShortName} Unofficial Fanbot. You can discuss any policy position or political topic relevant to Singapore.</p>
+            <p>Start a conversation with the <strong>{partyShortName} Unofficial Fanbot</strong>. You can discuss any policy position or political topic relevant to Singapore.</p>
             
             {/* Round indicator */}
             <div className="mt-2 flex items-center justify-center space-x-1">
@@ -205,7 +205,7 @@ export default function ChatInterface({
           (filteredMessages.length === 0 || filteredMessages[filteredMessages.length - 1].role !== 'assistant') && (
           <div className="flex mb-4 animate-fadeIn">
             <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center mr-2 flex-shrink-0">
-              <span className="text-white font-bold text-xs">{partyShortName}</span>
+              <span className="text-white font-bold text-xs">{partyShortName} FB</span>
             </div>
             <div className="bg-white px-4 py-3 rounded-lg rounded-tl-none shadow-sm flex items-center min-h-[3rem]">
               <div className="flex flex-col space-y-1">

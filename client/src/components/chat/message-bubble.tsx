@@ -181,7 +181,7 @@ export default function MessageBubble({ message, partyShortName = "PAP", isGroup
           {isUser ? (
             <span className="text-black text-xs">YOU</span>
           ) : (
-            <span className="text-white font-bold text-xs" title={botName}>{partyShortName}</span>
+            <span className="text-white font-bold text-xs" title={botName}>{partyShortName} FB</span>
           )}
         </div>
       ) : (
