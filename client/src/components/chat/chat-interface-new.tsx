@@ -211,7 +211,7 @@ export default function ChatInterface({
               <div className="flex flex-col space-y-1">
                 <div className="flex items-center space-x-2">
                   <div className="w-3 h-3 bg-primary rounded-full animate-pulse"></div>
-                  <span className="text-sm font-medium text-primary">Thinking...</span>
+                  <span className="text-sm font-medium text-primary">{partyShortName} Unofficial Fanbot is thinking...</span>
                 </div>
                 <div className="flex space-x-2">
                   <div className="w-2 h-2 bg-neutral-300 rounded-full animate-bounce"></div>

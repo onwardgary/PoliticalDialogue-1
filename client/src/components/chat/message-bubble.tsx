@@ -13,6 +13,8 @@ type MessageBubbleProps = {
 };
 
 export default function MessageBubble({ message, partyShortName = "PAP", isGrouped = false }: MessageBubbleProps) {
+  // Get bot name format for display
+  const botName = partyShortName ? `${partyShortName} Unofficial Fanbot` : "PAP Unofficial Fanbot";
   const isUser = message.role === "user";
   const isBot = message.role === "assistant";
   const formattedTime = format(new Date(message.timestamp), "h:mm a");
@@ -179,7 +181,7 @@ export default function MessageBubble({ message, partyShortName = "PAP", isGroup
           {isUser ? (
             <span className="text-black text-xs">YOU</span>
           ) : (
-            <span className="text-white font-bold text-xs">{partyShortName}</span>
+            <span className="text-white font-bold text-xs" title={botName}>{partyShortName}</span>
           )}
         </div>
       ) : (
