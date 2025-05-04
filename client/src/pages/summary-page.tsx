@@ -143,7 +143,7 @@ export default function SummaryPage() {
     staleTime: 10000
   });
   // Fetch party data
-  const { data: party, isLoading: isLoadingParty } = useQuery({
+  const { data: partyData, isLoading: isLoadingParty } = useQuery({
     queryKey: ["/api/parties", debate?.partyId],
     queryFn: async () => {
       if (!debate) return null;
@@ -189,18 +189,40 @@ export default function SummaryPage() {
       });
   };
 
-  // Only redirect if debate doesn't exist
+  // Handle loading errors and missing debates
   useEffect(() => {
-    if (!isLoading && !debate) {
-      toast({
-        title: "Debate not found",
-        description: "The debate you are looking for does not exist.",
-        variant: "destructive",
-      });
-      setLocation("/");
+    // Only trigger this logic after loading is complete
+    if (!isLoading) {
+      // If there's an error and no debate data
+      if (error && !debate) {
+        console.error("Error loading debate:", error);
+        toast({
+          title: "Error loading debate",
+          description: "There was a problem loading the debate summary. Returning to home page.",
+          variant: "destructive",
+        });
+        
+        // Small delay to ensure toast is visible before redirect
+        setTimeout(() => {
+          setLocation("/");
+        }, 1500);
+      } 
+      // If there's no error but no debate data
+      else if (!debate) {
+        toast({
+          title: "Debate not found",
+          description: "The debate you are looking for does not exist.",
+          variant: "destructive",
+        });
+        
+        // Small delay to ensure toast is visible before redirect
+        setTimeout(() => {
+          setLocation("/");
+        }, 1500);
+      }
     }
     // No ownership check - we're allowing any user to view debates
-  }, [isLoading, debate, setLocation, toast]);
+  }, [isLoading, debate, error, setLocation, toast]);
   
   // Show share notification when summary page loads and data is available
   useEffect(() => {
@@ -219,13 +241,28 @@ export default function SummaryPage() {
     }
   }, [isLoading, debate, toast]);
   
-  if (isLoading || !debate || !party) {
+  // Show a better loading state with more context
+  if (isLoading || !debate) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-black text-white">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <h3 className="text-xl font-semibold mb-2">Loading Debate Summary</h3>
+        <p className="text-gray-400 text-sm max-w-md text-center px-4">
+          Please wait while we retrieve your debate summary. This may take a few moments if the summary was just generated.
+        </p>
       </div>
     );
   }
+  
+  // Create a party object to use in the component
+  // If partyData is available, use it, otherwise create a fallback party object
+  const party = partyData || {
+    id: debate.partyId,
+    name: "Political Party",
+    shortName: debate.partyShortName || "Party",
+    color: "#333333",
+    description: ""
+  };
   
   // Check if summary exists, if not show a loading message
   if (!debate.summary) {
