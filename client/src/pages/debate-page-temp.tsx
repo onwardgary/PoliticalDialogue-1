@@ -522,7 +522,8 @@ export default function DebatePageSimplified() {
     partyEndpoint,
     partyId: debate?.partyId,
     party,
-    partyShortName: party?.shortName
+    partyShortName: party?.shortName,
+    isPartyLoading
   });
   
   return (
@@ -532,17 +533,23 @@ export default function DebatePageSimplified() {
       <main className="flex-1 flex flex-col h-screen">
         <MobileHeader />
         
-        {/* Chat Interface */}
-        <ChatInterface 
-          messages={localMessages.length > 0 ? localMessages : (debate?.messages || [])}
-          isLoading={messageStatus.sending || messageStatus.polling}
-          onSendMessage={handleSendMessage}
-          onEndDebate={handleEndDebate}
-          partyShortName={party?.shortName || "PAP"}
-          userTyping={isUserTyping}
-          maxRounds={debate?.maxRounds || 3}
-          isGeneratingSummary={uiState === "animating"}
-        />
+        {/* Only render the chat interface when party data is loaded */}
+        {isPartyLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <ChatInterface 
+            messages={localMessages.length > 0 ? localMessages : (debate?.messages || [])}
+            isLoading={messageStatus.sending || messageStatus.polling}
+            onSendMessage={handleSendMessage}
+            onEndDebate={handleEndDebate}
+            partyShortName={party?.shortName || "Bot"}
+            userTyping={isUserTyping}
+            maxRounds={debate?.maxRounds || 3}
+            isGeneratingSummary={uiState === "animating"}
+          />
+        )}
         
         {/* Chat Input */}
         <ChatInput 
