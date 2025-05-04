@@ -181,7 +181,7 @@ export default function MessageBubble({ message, partyShortName = "PAP", isGroup
           {isUser ? (
             <span className="text-black text-xs">YOU</span>
           ) : (
-            <span className="text-white font-bold text-xs" title={botName}>{partyShortName} FB</span>
+            <span className="text-white font-bold text-xs" title={botName}>{partyShortName}</span>
           )}
         </div>
       ) : (
@@ -215,18 +215,32 @@ export default function MessageBubble({ message, partyShortName = "PAP", isGroup
             </ReactMarkdown>
           ) : message.id.startsWith('typing-') ? (
             // Special case for typing indicator - larger, more prominent animation
-            <div className="flex space-x-2 items-center py-3 px-1">
-              <div className="w-2.5 h-2.5 bg-neutral-400 rounded-full animate-pulse" style={{ animationDelay: "0ms", animationDuration: "800ms" }}></div>
-              <div className="w-2.5 h-2.5 bg-neutral-400 rounded-full animate-pulse" style={{ animationDelay: "200ms", animationDuration: "800ms" }}></div>
-              <div className="w-2.5 h-2.5 bg-neutral-400 rounded-full animate-pulse" style={{ animationDelay: "400ms", animationDuration: "800ms" }}></div>
-            </div>
+            <>
+              {!isGrouped && (
+                <div className="text-xs text-primary font-medium mb-1">
+                  {botName}
+                </div>
+              )}
+              <div className="flex space-x-2 items-center py-3 px-1">
+                <div className="w-2.5 h-2.5 bg-neutral-400 rounded-full animate-pulse" style={{ animationDelay: "0ms", animationDuration: "800ms" }}></div>
+                <div className="w-2.5 h-2.5 bg-neutral-400 rounded-full animate-pulse" style={{ animationDelay: "200ms", animationDuration: "800ms" }}></div>
+                <div className="w-2.5 h-2.5 bg-neutral-400 rounded-full animate-pulse" style={{ animationDelay: "400ms", animationDuration: "800ms" }}></div>
+              </div>
+            </>
           ) : (
-            <Typewriter 
-              key={`typewriter-${message.id}`} // More distinctive key prefix to avoid collisions
-              text={message.content} 
-              speed={7} 
-              onComplete={() => setTypewriterComplete(true)}
-            />
+            <>
+              {!isGrouped && (
+                <div className="text-xs text-primary font-medium mb-1">
+                  {botName}
+                </div>
+              )}
+              <Typewriter 
+                key={`typewriter-${message.id}`} // More distinctive key prefix to avoid collisions
+                text={message.content} 
+                speed={7} 
+                onComplete={() => setTypewriterComplete(true)}
+              />
+            </>
           )}
         </div>
         

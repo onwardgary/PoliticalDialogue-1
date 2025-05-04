@@ -205,7 +205,7 @@ export default function ChatInterface({
           (filteredMessages.length === 0 || filteredMessages[filteredMessages.length - 1].role !== 'assistant') && (
           <div className="flex mb-4 animate-fadeIn">
             <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center mr-2 flex-shrink-0">
-              <span className="text-white font-bold text-xs">{partyShortName} FB</span>
+              <span className="text-white font-bold text-xs">{partyShortName}</span>
             </div>
             <div className="bg-white px-4 py-3 rounded-lg rounded-tl-none shadow-sm flex items-center min-h-[3rem]">
               <div className="flex flex-col space-y-1">
