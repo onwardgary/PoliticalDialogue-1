@@ -41,92 +41,38 @@ function SummaryReadyNotification({
   );
 }
 
-// Component to display summary generation progress
+// Component to display the summary loading notification
 function SummaryGenerationLoader({ step }: { step: number }) {
   const steps = [
-    { id: 1, name: "Analyzing Arguments", icon: BrainCircuit, description: "Identifying key points from both sides" },
-    { id: 2, name: "Evaluating Logic", icon: Scale, description: "Assessing the strength of each argument" },
-    { id: 3, name: "Determining Outcome", icon: MedalIcon, description: "Deciding on the debate winner" },
-    { id: 4, name: "Creating Summary", icon: CheckCircle2, description: "Finalizing the debate summary and recommendations" },
+    { id: 1, name: "Analyzing Arguments", icon: BrainCircuit },
+    { id: 2, name: "Evaluating Logic", icon: Scale },
+    { id: 3, name: "Determining Outcome", icon: MedalIcon },
+    { id: 4, name: "Creating Summary", icon: CheckCircle2 },
   ];
   
+  // Find the current step
+  const currentStep = steps.find(s => s.id === step) || steps[0];
+  const Icon = currentStep.icon;
+  
   return (
-    <div className="flex flex-col items-center justify-center h-full p-6 bg-black">
-      <Card className="w-full max-w-lg border-2 border-white bg-black text-white">
-        <CardContent className="pt-6">
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h3 className="text-2xl font-bold mb-2">Generating Debate Summary</h3>
-              <p className="text-gray-300 text-sm">Please wait while we analyze your debate</p>
-            </div>
-            
-            <Progress value={(step / steps.length) * 100} className="h-3 mb-8 bg-gray-800" />
-            
-            <div className="space-y-4">
-              {steps.map((s) => {
-                const Icon = s.icon;
-                const isActive = s.id === step;
-                const isCompleted = s.id < step;
-                
-                return (
-                  <div 
-                    key={s.id} 
-                    className={`flex items-center p-4 rounded-lg transition-all ${
-                      isActive 
-                        ? "bg-white/10 border-2 border-white" 
-                        : isCompleted 
-                          ? "bg-gray-800 border border-gray-700"
-                          : "bg-gray-900 border border-gray-800"
-                    }`}
-                  >
-                    <div 
-                      className={`rounded-full p-2 mr-4 ${
-                        isActive 
-                          ? "bg-white text-black animate-pulse" 
-                          : isCompleted 
-                            ? "bg-gray-200 text-black"
-                            : "bg-gray-700 text-gray-300"
-                      }`}
-                    >
-                      <Icon className="h-6 w-6" />
-                    </div>
-                    <div className="flex-1">
-                      <p className={`font-bold text-base ${
-                        isActive 
-                          ? "text-white" 
-                          : isCompleted 
-                            ? "text-gray-200"
-                            : "text-gray-400"
-                      }`}>
-                        {s.name}
-                      </p>
-                      <p className={`text-sm ${
-                        isActive 
-                          ? "text-gray-300" 
-                          : isCompleted 
-                            ? "text-gray-400"
-                            : "text-gray-500"
-                      }`}>
-                        {s.description}
-                      </p>
-                    </div>
-                    {isActive && (
-                      <div className="ml-auto">
-                        <Loader2 className="h-5 w-5 animate-spin text-white" />
-                      </div>
-                    )}
-                    {isCompleted && (
-                      <div className="ml-auto">
-                        <CheckCircle2 className="h-5 w-5 text-white" />
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+    <div className="fixed bottom-24 left-0 right-0 flex justify-center z-50 mb-4 px-4">
+      <div className="bg-gray-900 text-white p-4 rounded-lg shadow-lg max-w-md w-full border border-gray-700">
+        <div className="flex items-center">
+          <div className="rounded-full p-2 mr-3 bg-white/10 animate-pulse">
+            <Icon className="h-5 w-5 text-white" />
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex-1">
+            <p className="font-medium text-white">{currentStep.name}</p>
+            <div className="mt-2">
+              <Progress value={(step / steps.length) * 100} className="h-2 bg-gray-800" />
+            </div>
+            <p className="text-xs text-gray-300 mt-1">
+              Step {step} of {steps.length}: Generating debate summary
+            </p>
+          </div>
+          <Loader2 className="h-5 w-5 animate-spin text-white ml-3" />
+        </div>
+      </div>
     </div>
   );
 }
@@ -829,77 +775,71 @@ export default function DebatePage() {
       <main className="flex-1 flex flex-col h-screen">
         <MobileHeader />
         
-        {/* Summary Generation View */}
+        {/* Chat View - Always displayed */}
+        <ChatInterface 
+          messages={localMessages.length > 0 ? localMessages : (debate?.messages || [])}
+          isLoading={messageStatus.sending || messageStatus.polling}
+          onSendMessage={handleSendMessage}
+          onEndDebate={handleEndDebate}
+          partyShortName={party?.shortName}
+          userTyping={isUserTyping}
+          maxRounds={debate?.maxRounds || 3}
+          isGeneratingSummary={viewState === 'generating' as ViewState ? true : false}
+        />
+        <ChatInput 
+          onSendMessage={handleSendMessage}
+          isLoading={messageStatus.sending || messageStatus.polling || viewState === 'generating' as ViewState}
+          onTypingStateChange={setIsUserTyping}
+          disabled={
+            // Disable input in these scenarios:
+            
+            // CASE 1: While waiting for AI response (disable immediately after sending)
+            messageStatus.sending || messageStatus.polling ||
+            
+            // CASE 2: When at max rounds (any number) - permanent disabling
+            messageStatus.finalRoundReached ||
+            (debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 3)) ||
+            
+            // CASE 3: Always disable when the last message is from the user (waiting for bot)
+            (debate?.messages && debate.messages.length > 0 && 
+            debate.messages[debate.messages.length - 1].role === 'user') ||
+            
+            // CASE 4: When generating a summary or summary is ready
+            viewState === ('generating' as ViewState) || viewState === ('summary-ready' as ViewState)
+          }
+          disabledReason={
+            // Determine the reason for disabling:
+            
+            // PRIORITY 1: When generating a summary or summary is ready
+            viewState === 'generating' as ViewState
+              ? 'generating'
+            : viewState === 'summary-ready' as ViewState
+              ? 'summaryReady'
+            
+            // PRIORITY 2: When at maximum allowed rounds
+            : (messageStatus.finalRoundReached || 
+              debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 3))
+                ? 'finalRound'
+            
+            // PRIORITY 3: When waiting for the bot to respond
+            : (messageStatus.sending || messageStatus.polling ||
+               (debate?.messages && debate.messages.length > 0 && 
+                debate.messages[debate.messages.length - 1].role === 'user'))
+                ? 'waiting'
+            
+            // PRIORITY 4: Default state
+            : 'maxRounds'
+          }
+        />
+        
+        {/* Summary Generation Loading Notification - shows when generating */}
         {viewState === ('generating' as ViewState) && (
-          <div className="flex-1 overflow-auto bg-black w-full h-full">
-            <SummaryGenerationLoader step={summaryGenerationStep || 1} />
-          </div>
+          <SummaryGenerationLoader step={summaryGenerationStep || 1} />
         )}
         
-        {/* Chat View */}
-        {(viewState === ('chat' as ViewState) || viewState === ('summary-ready' as ViewState)) && (
-          <>
-            <ChatInterface 
-              messages={localMessages.length > 0 ? localMessages : (debate?.messages || [])}
-              isLoading={messageStatus.sending || messageStatus.polling}
-              onSendMessage={handleSendMessage}
-              onEndDebate={handleEndDebate}
-              partyShortName={party?.shortName}
-              userTyping={isUserTyping}
-              maxRounds={debate?.maxRounds || 3}
-              isGeneratingSummary={viewState === 'generating' as ViewState ? true : false}
-            />
-            <ChatInput 
-              onSendMessage={handleSendMessage}
-              isLoading={messageStatus.sending || messageStatus.polling || viewState === 'generating' as ViewState}
-              onTypingStateChange={setIsUserTyping}
-              disabled={
-                // Disable input in these scenarios:
-                
-                // CASE 1: While waiting for AI response (disable immediately after sending)
-                messageStatus.sending || messageStatus.polling ||
-                
-                // CASE 2: When at max rounds (any number) - permanent disabling
-                messageStatus.finalRoundReached ||
-                (debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 3)) ||
-                
-                // CASE 3: Always disable when the last message is from the user (waiting for bot)
-                (debate?.messages && debate.messages.length > 0 && 
-                debate.messages[debate.messages.length - 1].role === 'user') ||
-                
-                // CASE 4: When generating a summary or summary is ready
-                viewState === ('generating' as ViewState) || viewState === ('summary-ready' as ViewState)
-              }
-              disabledReason={
-                // Determine the reason for disabling:
-                
-                // PRIORITY 1: When generating a summary or summary is ready
-                viewState === 'generating' as ViewState
-                  ? 'generating'
-                : viewState === 'summary-ready' as ViewState
-                  ? 'summaryReady'
-                
-                // PRIORITY 2: When at maximum allowed rounds
-                : (messageStatus.finalRoundReached || 
-                  debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 3))
-                    ? 'finalRound'
-                
-                // PRIORITY 3: When waiting for the bot to respond
-                : (messageStatus.sending || messageStatus.polling ||
-                   (debate?.messages && debate.messages.length > 0 && 
-                    debate.messages[debate.messages.length - 1].role === 'user'))
-                    ? 'waiting'
-                
-                // PRIORITY 4: Default state
-                : 'maxRounds'
-              }
-            />
-            
-            {/* Summary Ready Notification */}
-            {viewState === ('summary-ready' as ViewState) && (
-              <SummaryReadyNotification onViewSummary={handleViewSummary} />
-            )}
-          </>
+        {/* Summary Ready Notification - shows when ready */}
+        {viewState === ('summary-ready' as ViewState) && (
+          <SummaryReadyNotification onViewSummary={handleViewSummary} />
         )}
         
         <MobileNavigation />
