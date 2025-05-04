@@ -538,8 +538,10 @@ export default function DebatePageSimplified() {
                         Analyzing your conversation
                       </h3>
                       <p className="text-sm text-gray-500">
-                        Our AI is reviewing the debate, comparing arguments, 
-                        and preparing a comprehensive summary with key points
+                        Our AI is evaluating this debate through a 5-pillar assessment:
+                        logical soundness, emotional reasoning, key point resolution,
+                        tone clarity, and pragmatism. A winner will be declared with
+                        specific action recommendations.
                       </p>
                     </div>
                   </div>
@@ -566,7 +568,9 @@ export default function DebatePageSimplified() {
                   Summary Ready!
                 </h2>
                 <p className="text-center text-muted-foreground mb-6">
-                  Your debate summary has been created and is ready to view.
+                  Your debate has been analyzed! View the point-by-point comparison,
+                  stakeholder impact assessment, and find out which side made the most 
+                  compelling arguments.
                 </p>
                 <Button 
                   onClick={handleViewSummary}
