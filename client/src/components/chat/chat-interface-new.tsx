@@ -238,13 +238,16 @@ export default function ChatInterface({
                   variant="default"
                   size="sm"
                   className="justify-start gap-2"
-                  onClick={() => {
-                    setTimeout(() => {
-                      if (onEndDebate) {
-                        console.log("Ending debate and generating summary");
-                        onEndDebate();
-                      }
-                    }, 100);
+                  onClick={(e) => {
+                    // Prevent any default behavior and event bubbling
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Disable the button immediately to prevent double clicks
+                    if (onEndDebate && !isGeneratingSummary) {
+                      console.log("Ending debate and generating summary");
+                      onEndDebate();
+                    }
                   }}
                   disabled={isGeneratingSummary}
                 >
@@ -272,13 +275,16 @@ export default function ChatInterface({
                   variant="default"
                   size="sm"
                   className="justify-start gap-2"
-                  onClick={() => {
-                    setTimeout(() => {
-                      if (onEndDebate) {
-                        console.log("Ending debate and generating summary (max rounds)");
-                        onEndDebate();
-                      }
-                    }, 100);
+                  onClick={(e) => {
+                    // Prevent any default behavior and event bubbling
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Disable the button immediately to prevent double clicks
+                    if (onEndDebate && !isGeneratingSummary) {
+                      console.log("Ending debate and generating summary (max rounds)");
+                      onEndDebate();
+                    }
                   }}
                   disabled={isGeneratingSummary}
                 >

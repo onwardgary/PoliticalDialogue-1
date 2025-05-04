@@ -24,8 +24,8 @@ function SummaryGenerationLoader({ step }: { step: number }) {
   ];
   
   return (
-    <div className="flex flex-col items-center justify-center h-full p-6">
-      <Card className="w-full max-w-lg">
+    <div className="flex flex-col items-center justify-center h-full p-6 bg-black">
+      <Card className="w-full max-w-lg border-2 border-white">
         <CardContent className="pt-6">
           <div className="space-y-6">
             <div className="text-center mb-6">
@@ -431,8 +431,13 @@ export default function DebatePage() {
     
   const endDebateMutation = useMutation({
     mutationFn: async () => {
+      // Set the view state and summary step before making the API request
+      // This ensures animation is visible immediately when button is clicked
       setViewState('generating');
       setSummaryGenerationStep(1);
+      
+      // Add a small delay to ensure UI updates before API call
+      await new Promise(resolve => setTimeout(resolve, 50));
       
       const response = await apiRequest("POST", endDebateEndpoint);
       return await response.json();
@@ -616,7 +621,7 @@ export default function DebatePage() {
         
         {/* Summary Generation View */}
         {viewState === ('generating' as ViewState) && (
-          <div className="flex-1 overflow-auto bg-neutral-50">
+          <div className="flex-1 overflow-auto bg-black w-full h-full">
             <SummaryGenerationLoader step={summaryGenerationStep || 1} />
           </div>
         )}
