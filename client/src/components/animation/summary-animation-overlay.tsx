@@ -1,19 +1,8 @@
-import { useState, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
-import { cn } from "@/lib/utils";
+import { CheckCircle2, ArrowRight, XCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, XCircle, CheckCircle2, Loader2 } from "lucide-react";
-
-// Type for the animation steps
-export type SummaryAnimationStep = 1 | 2 | 3 | 4;
-
-// Type for animation state
-export type AnimationState = {
-  isActive: boolean;
-  currentStep: SummaryAnimationStep;
-  isCompleted: boolean;
-  summaryPath: string | null;
-};
+import { cn } from "@/lib/utils";
+import { createPortal } from "react-dom";
+import { useState, useEffect } from "react";
 
 // Animation component props
 type SummaryAnimationOverlayProps = {
@@ -24,8 +13,8 @@ type SummaryAnimationOverlayProps = {
 };
 
 /**
- * A portal-based animation overlay that can't be accidentally unmounted
- * during component re-renders. Uses an independent state life cycle.
+ * A simplified animation overlay with minimal state management
+ * to prevent race conditions and ensure reliability
  */
 export default function SummaryAnimationOverlay({
   onStart,
@@ -33,130 +22,88 @@ export default function SummaryAnimationOverlay({
   isOpen,
   onOpenChange
 }: SummaryAnimationOverlayProps) {
-  const [animationState, setAnimationState] = useState<AnimationState>({
-    isActive: false,
-    currentStep: 1,
-    isCompleted: false,
-    summaryPath: null
-  });
-  
-  // Track unmounting to prevent state updates after component is gone
-  const isMounted = useRef(true);
-  
-  // Set up cleanup for unmounting
+  // Track each step separately for simplicity
+  const [step, setStep] = useState(1);
+  const [isDone, setIsDone] = useState(false);
+  const [summaryPath, setSummaryPath] = useState("");
+  const [hasStarted, setHasStarted] = useState(false);
+
+  // Reset state when closed
   useEffect(() => {
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
-  
-  // Only run the animation if the portal is open
+    if (!isOpen) {
+      setStep(1);
+      setIsDone(false);
+      setHasStarted(false);
+    }
+  }, [isOpen]);
+
+  // Start the API call and animation only once when opened
   useEffect(() => {
-    if (isOpen && !animationState.isActive) {
-      console.log("Animation overlay opened, starting animation sequence");
+    let isActive = true; // Track whether component is still mounted
+    
+    if (isOpen && !hasStarted) {
+      setHasStarted(true);
       
-      // Only update state if still mounted
-      if (isMounted.current) {
-        // Mark animation as active
-        setAnimationState(prev => ({ ...prev, isActive: true }));
-      }
-      
-      // Run the animation sequence
-      const runAnimation = async () => {
+      // Make the API call
+      const startSummaryGeneration = async () => {
         try {
-          // Run onStart callback to trigger the API request
-          console.log("Calling onStart callback");
+          console.log("Starting API call to generate summary");
           const result = await onStart();
           
-          // Always check if still mounted before state updates
-          if (!isMounted.current) return;
+          if (!isActive) return; // Don't update state if unmounted
           
           if (!result.success) {
-            console.error("Animation failed - API call unsuccessful");
+            console.error("Failed to generate summary");
             onOpenChange(false);
             return;
           }
           
-          // Store the summary path
-          setAnimationState(prev => ({ 
-            ...prev, 
-            summaryPath: result.path 
-          }));
+          // Store the path
+          setSummaryPath(result.path);
           
-          // Create safe timeout that checks mounting status
-          const safeTimeout = (ms: number) => new Promise<void>(resolve => {
-            const timer = setTimeout(() => {
-              if (isMounted.current) {
-                resolve();
-              }
-            }, ms);
-            
-            // Clean up timer if component unmounts during timeout
-            return () => clearTimeout(timer);
-          });
+          // Simple fixed-time steps (animation is just visual feedback)
+          setTimeout(() => { 
+            if (isActive) setStep(2); 
+            setTimeout(() => { 
+              if (isActive) setStep(3);
+              setTimeout(() => { 
+                if (isActive) setStep(4);
+                setTimeout(() => { 
+                  if (isActive) {
+                    setIsDone(true);
+                    onComplete(result.path);
+                  }
+                }, 1000);
+              }, 1000);
+            }, 1000);
+          }, 1000);
           
-          // Simulate the steps of the animation with delays and mount checks
-          await safeTimeout(1500);
-          if (!isMounted.current) return;
-          setAnimationState(prev => ({ ...prev, currentStep: 2 }));
-          
-          await safeTimeout(1500);
-          if (!isMounted.current) return;
-          setAnimationState(prev => ({ ...prev, currentStep: 3 }));
-          
-          await safeTimeout(1500);
-          if (!isMounted.current) return;
-          setAnimationState(prev => ({ ...prev, currentStep: 4 }));
-          
-          // Mark as completed
-          await safeTimeout(1500);
-          if (!isMounted.current) return;
-          setAnimationState(prev => ({ 
-            ...prev, 
-            isCompleted: true 
-          }));
-          
-          // Call the onComplete callback
-          console.log("Animation sequence completed, calling onComplete");
-          if (result.path && isMounted.current) {
-            onComplete(result.path);
-          }
         } catch (error) {
-          console.error("Error during animation sequence:", error);
-          // Only update if still mounted
-          if (isMounted.current) {
-            // Close the animation portal on error
-            onOpenChange(false);
-          }
+          console.error("Error generating summary:", error);
+          if (isActive) onOpenChange(false);
         }
       };
       
-      // Start the animation
-      runAnimation();
-    } else if (!isOpen && animationState.isActive && isMounted.current) {
-      // Reset animation state when portal is closed (only if still mounted)
-      setAnimationState({
-        isActive: false,
-        currentStep: 1,
-        isCompleted: false,
-        summaryPath: null
-      });
+      startSummaryGeneration();
     }
-  }, [isOpen, animationState.isActive, onStart, onComplete, onOpenChange]);
+    
+    // Cleanup function to prevent state updates after unmount
+    return () => {
+      isActive = false;
+    };
+  }, [isOpen, hasStarted, onStart, onComplete, onOpenChange]);
   
   // Don't render anything if not open
   if (!isOpen) return null;
   
-  // Create a portal to render the animation overlay
+  // Create portal for the animation overlay
   return createPortal(
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 max-w-md w-full">
         <div className="flex flex-col items-center">
-          {/* Animation Title */}
+          {/* Title */}
           <h2 className="text-2xl font-bold mb-6 text-center">
-            {animationState.isCompleted 
-              ? "Debate Summary Ready!" 
-              : "Generating Debate Summary..."}
+            {isDone ? "Debate Summary Ready!" : "Generating Debate Summary..."}
           </h2>
           
           {/* Progress Steps */}
@@ -165,42 +112,39 @@ export default function SummaryAnimationOverlay({
               number={1}
               title="Analyzing arguments"
               description="Identifying key points from both sides"
-              isActive={animationState.currentStep === 1}
-              isCompleted={animationState.currentStep > 1}
+              isActive={step === 1}
+              isCompleted={step > 1}
             />
             
             <AnimationStep 
               number={2}
               title="Evaluating evidence"
               description="Assessing the quality of reasoning and factual support"
-              isActive={animationState.currentStep === 2}
-              isCompleted={animationState.currentStep > 2}
+              isActive={step === 2}
+              isCompleted={step > 2}
             />
             
             <AnimationStep 
               number={3}
               title="Comparing positions"
               description="Creating point-by-point comparison"
-              isActive={animationState.currentStep === 3}
-              isCompleted={animationState.currentStep > 3}
+              isActive={step === 3}
+              isCompleted={step > 3}
             />
             
             <AnimationStep 
               number={4}
               title="Forming conclusions"
               description="Determining outcome based on logical assessment"
-              isActive={animationState.currentStep === 4}
-              isCompleted={animationState.currentStep > 4 || animationState.isCompleted}
+              isActive={step === 4}
+              isCompleted={isDone}
             />
           </div>
           
-          {/* Action Button */}
-          {animationState.isCompleted ? (
+          {/* Action Button or Loading Indicator */}
+          {isDone ? (
             <Button
-              onClick={() => {
-                // Close the animation portal
-                onOpenChange(false);
-              }}
+              onClick={() => onOpenChange(false)}
               className="w-full"
             >
               Continue <ArrowRight className="ml-2 h-4 w-4" />
@@ -218,7 +162,7 @@ export default function SummaryAnimationOverlay({
   );
 }
 
-// Individual animation step component
+// Animation step component
 type AnimationStepProps = {
   number: number;
   title: string;
@@ -277,7 +221,6 @@ export function SummaryReadyNotification({
   onViewSummary: () => void 
 }) {
   // Only create portal if document is available
-  // This prevents errors during SSR or unmounting
   if (typeof document === 'undefined') return null;
   
   return createPortal(
@@ -298,9 +241,13 @@ export function SummaryReadyNotification({
                 try {
                   onViewSummary();
                 } catch (error) {
-                  console.error("Error in notification view summary click:", error);
-                  // Navigate manually as fallback
-                  window.location.href = window.location.href.replace('/debate/', '/summary/');
+                  console.error("Error viewing summary:", error);
+                  try {
+                    // Fallback navigation
+                    window.location.href = window.location.href.replace('/debate/', '/summary/');
+                  } catch (e) {
+                    console.error("Even fallback navigation failed:", e);
+                  }
                 }
               }}
               className="w-full"
@@ -311,12 +258,15 @@ export function SummaryReadyNotification({
           <button 
             onClick={() => {
               try {
-                // Close notification without navigation
                 const notification = document.getElementById('summary-notification');
                 if (notification) {
                   notification.classList.add('animate-slide-down');
                   setTimeout(() => {
-                    notification.remove();
+                    try {
+                      notification.remove();
+                    } catch (e) {
+                      console.error("Error removing notification:", e);
+                    }
                   }, 300);
                 }
               } catch (error) {
