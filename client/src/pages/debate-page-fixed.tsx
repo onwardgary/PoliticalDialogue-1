@@ -225,7 +225,7 @@ export default function DebatePageFixed() {
       console.log("Debate already complete, showing summary UI", debate);
       // Always set to summaryReady state
       setUiState("summaryReady");
-      const summaryRoute = `/debate/${secureId}/summary`;
+      const summaryRoute = secureId ? `/summary/s/${secureId}` : `/summary/${debate.id}`;
       setSummaryUrl(summaryRoute);
       return;
     }
@@ -256,7 +256,7 @@ export default function DebatePageFixed() {
           
           console.log("Debate was already completed, skipping to summary view");
           // Go directly to summary page since it already exists
-          const summaryRoute = `/debate/${secureId}/summary`;
+          const summaryRoute = secureId ? `/summary/s/${secureId}` : `/summary/${debate.id}`;
           setSummaryUrl(summaryRoute);
           setUiState("summaryReady");
           return; // Exit the function early since we're redirecting
@@ -300,7 +300,7 @@ export default function DebatePageFixed() {
             }
             
             // Set the summary URL for redirection
-            const summaryRoute = `/debate/${secureId}/summary`;
+            const summaryRoute = secureId ? `/summary/s/${secureId}` : `/summary/${debate?.id}`;
             setSummaryUrl(summaryRoute);
             
             // Update UI state to show summary ready notification
@@ -351,8 +351,8 @@ export default function DebatePageFixed() {
     if (summaryUrl) {
       setLocation(summaryUrl);
     } else {
-      // Fallback URL
-      setLocation(`/debate/${secureId}/summary`);
+      // Fallback URL - use the correct route format based on App.tsx routes
+      setLocation(secureId ? `/summary/s/${secureId}` : `/summary/${debate?.id}`);
     }
   };
   
