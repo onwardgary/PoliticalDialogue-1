@@ -35,7 +35,7 @@ export default function PartyCard({ party }: { party: Party }) {
   const { toast } = useToast();
   const [_, setLocation] = useLocation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedRounds, setSelectedRounds] = useState<string>("6"); // Default to 6 rounds
+  const [selectedRounds, setSelectedRounds] = useState<string>("3"); // Default to 3 rounds
   
   const startConversationMutation = useMutation({
     mutationFn: async (data: { 

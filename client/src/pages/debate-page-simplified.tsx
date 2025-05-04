@@ -318,7 +318,7 @@ export default function DebatePage() {
                 
                 // Check if this was the final round and set the flag only after adding the message
                 const userMessagesCount = fetchedData.messages.filter((msg: Message) => msg.role === 'user').length;
-                const maxRoundsNumber = debate?.maxRounds || 6;
+                const maxRoundsNumber = debate?.maxRounds || 3;
                 
                 if (userMessagesCount >= maxRoundsNumber) {
                   // Set the final round flag AFTER the message has been displayed
@@ -532,7 +532,7 @@ export default function DebatePage() {
     // Store if this is the final round, but don't update state yet
     // We'll use this flag in the onSuccess callback
     const userMessagesCount = localMessages.filter(msg => msg.role === 'user').length + 1; // +1 for the new message
-    const maxRoundsNumber = debate?.maxRounds || 6;
+    const maxRoundsNumber = debate?.maxRounds || 3;
     const isFinalRound = userMessagesCount >= maxRoundsNumber;
     
     // Only update UI immediately to disable input, but don't affect other state yet
@@ -600,7 +600,7 @@ export default function DebatePage() {
     !debate.completed && 
     !messageStatus.sending && 
     !messageStatus.polling && 
-    debate.messages.filter((msg: Message) => msg.role === 'user').length < (debate.maxRounds || 6) && 
+    debate.messages.filter((msg: Message) => msg.role === 'user').length < (debate.maxRounds || 3) && 
     (debate.messages.length === 0 || debate.messages[debate.messages.length - 1].role !== 'user');
   
   return (
@@ -627,7 +627,7 @@ export default function DebatePage() {
               onEndDebate={handleEndDebate}
               partyShortName={party?.shortName}
               userTyping={isUserTyping}
-              maxRounds={debate?.maxRounds || 6}
+              maxRounds={debate?.maxRounds || 3}
               isGeneratingSummary={viewState === 'generating' as ViewState ? true : false}
             />
             <ChatInput 
@@ -642,7 +642,7 @@ export default function DebatePage() {
                 
                 // CASE 2: When at max rounds (any number) - permanent disabling
                 messageStatus.finalRoundReached ||
-                (debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 6)) ||
+                (debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 3)) ||
                 
                 // CASE 3: Always disable when the last message is from the user (waiting for bot)
                 (debate?.messages && debate.messages.length > 0 && 
@@ -661,7 +661,7 @@ export default function DebatePage() {
                 // PRIORITY 2: When at maximum allowed rounds (moved up in priority)
                 // This ensures "Maximum rounds reached" shows immediately when user hits the limit
                 : (messageStatus.finalRoundReached || 
-                  debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 6))
+                  debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 3))
                     ? 'finalRound'
                 
                 // PRIORITY 3: When waiting for the bot to respond (moved down in priority)
