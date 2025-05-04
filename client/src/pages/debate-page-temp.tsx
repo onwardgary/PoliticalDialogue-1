@@ -204,13 +204,42 @@ export default function DebatePageSimplified() {
             // Check if we're still mounted
             if (!isMounted.current) return;
             
-            const currentMessageCount = data?.messages?.length || 0;
-            const currentMessages = localMessagesRef.current;
-            const realLocalMessages = currentMessages.filter(msg => !msg.id.startsWith('typing-')).length;
+            // Improved comparison logic - instead of just comparing counts, we'll track message IDs
+            const serverMessages = data?.messages || [];
+            const currentMessages = localMessagesRef.current || [];
             
-            if (currentMessageCount > realLocalMessages) {
-              // We got a new message
-              const latestAIMessage = data.messages[data.messages.length - 1];
+            // Get the actual messages without typing indicators
+            const realLocalMessages = currentMessages.filter(msg => !msg.id.startsWith('typing-'));
+            
+            // Extract IDs for easy comparison
+            const serverMessageIds = new Set(serverMessages.map(msg => msg.id));
+            const localMessageIds = new Set(realLocalMessages.map(msg => msg.id));
+            
+            // Find any message IDs that exist on server but not locally
+            let hasNewMessages = false;
+            let latestAIMessage = null;
+            
+            // Check specifically for new AI messages (role=assistant)
+            for (let i = serverMessages.length - 1; i >= 0; i--) {
+              const msg = serverMessages[i];
+              if (msg.role === 'assistant' && !localMessageIds.has(msg.id)) {
+                hasNewMessages = true;
+                latestAIMessage = msg;
+                break;
+              }
+            }
+            
+            // Debug the message comparison
+            console.log("Message comparison:", {
+              serverMessageCount: serverMessages.length,
+              localMessageCount: realLocalMessages.length,
+              hasNewMessages,
+              latestAIMessage: latestAIMessage?.id || null
+            });
+            
+            if (hasNewMessages && latestAIMessage) {
+              // We found a new assistant message
+              console.log("Found new AI message with ID:", latestAIMessage.id);
               
               // Stop polling and update state (ensure state is fully reset)
               setMessageStatus(prev => ({ ...prev, polling: false, sending: false }));
@@ -218,6 +247,8 @@ export default function DebatePageSimplified() {
               // Update messages
               setLocalMessages(prev => {
                 const messagesWithoutTyping = prev.filter(msg => !msg.id.startsWith('typing-'));
+                
+                // Ensure we don't have duplicate messages
                 const alreadyHasLatestMessage = messagesWithoutTyping.some(
                   msg => msg.id === latestAIMessage.id
                 );
