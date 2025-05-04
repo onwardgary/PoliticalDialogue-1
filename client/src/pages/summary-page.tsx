@@ -73,6 +73,10 @@ export default function SummaryPage() {
     ? `/api/debates/s/${secureId}` 
     : `/api/debates/${id}`;
   
+  // State to track polling attempts and expiration
+  const [pollingAttempts, setPollingAttempts] = useState(0);
+  const MAX_POLLING_ATTEMPTS = 15; // Stop after ~30 seconds (15 attempts at 2 second intervals)
+  
   // Fetch debate data with automatic polling if summary is not available
   const { 
     data: debate, 
@@ -82,7 +86,7 @@ export default function SummaryPage() {
   } = useQuery({
     queryKey: [apiEndpoint],
     queryFn: async () => {
-      console.log("Fetching debate summary from:", apiEndpoint);
+      console.log(`Fetching debate summary from: ${apiEndpoint} (attempt ${pollingAttempts + 1}/${MAX_POLLING_ATTEMPTS})`);
       
       // Add a retry mechanism for initial load
       let attempts = 0;
@@ -109,7 +113,14 @@ export default function SummaryPage() {
           }
           
           const data = await response.json();
-          console.log("Successfully fetched debate data:", data);
+          
+          // Only log first few characters to avoid console spam
+          const summaryExists = data && data.summary;
+          console.log(
+            `Fetch success: Debate ID ${data.id}, secureId ${data.secureId}, ` +
+            `completed: ${data.completed}, has summary: ${summaryExists}`
+          );
+          
           return data;
         } catch (err) {
           console.error(`Attempt ${attempts + 1}/${maxAttempts} error:`, err);
@@ -126,21 +137,40 @@ export default function SummaryPage() {
     },
     refetchOnWindowFocus: false,
     refetchInterval: (data: any) => {
+      // Increment polling attempts counter
+      setPollingAttempts(prev => prev + 1);
+      
+      // Check if we should stop polling due to max attempts reached
+      if (pollingAttempts >= MAX_POLLING_ATTEMPTS) {
+        console.log(`Maximum polling attempts (${MAX_POLLING_ATTEMPTS}) reached, stopping polling`);
+        return false;
+      }
+      
       // If we have a completed debate with a summary, stop polling
       if (data && data.summary) {
         console.log("Summary found, stopping polling");
         return false;
       }
       
-      // If debate is still being processed, poll frequently
-      console.log("Summary not found yet, continuing to poll");
-      return 2000; // Poll every 2 seconds while waiting for summary
+      // If debate is complete but no summary, use exponential backoff
+      if (data && data.completed) {
+        const backoffTime = Math.min(2000 * Math.pow(1.5, pollingAttempts - 1), 10000);
+        console.log(`Debate completed but no summary yet, polling with backoff: ${backoffTime}ms`);
+        return backoffTime;
+      }
+      
+      // If debate is still being processed, poll frequently with slightly increasing intervals
+      const baseInterval = 2000 + (pollingAttempts * 200);
+      console.log(`Summary not found yet, polling in ${baseInterval}ms (attempt ${pollingAttempts + 1}/${MAX_POLLING_ATTEMPTS})`);
+      return baseInterval;
     },
     // Add retry logic
     retry: 3,
     retryDelay: 1000,
     // Add stale time to prevent unnecessary refetches
-    staleTime: 10000
+    staleTime: 10000,
+    // Use longer cache time for debates with summaries
+    gcTime: 5 * 60 * 1000 // 5 minutes
   });
   // Fetch party data
   const { data: partyData, isLoading: isLoadingParty } = useQuery({

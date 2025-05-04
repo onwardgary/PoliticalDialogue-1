@@ -142,11 +142,15 @@ export default function DebatePage() {
     ? `/api/debates/s/${secureId}` 
     : `/api/debates/${id}`;
   
+  // Add state to track polling behavior
+  const [pollingAttempts, setPollingAttempts] = useState(0);
+  const MAX_POLLING_ATTEMPTS = 30; // About 60 seconds of polling at varying intervals
+  
   // Fetch debate data
   const { data: debate, isLoading: isLoadingDebate } = useQuery({
     queryKey: [apiEndpoint],
     queryFn: async () => {
-      console.log("Fetching debate data from:", apiEndpoint);
+      console.log(`Fetching debate data from: ${apiEndpoint} (attempt ${pollingAttempts + 1})`);
       const response = await fetch(apiEndpoint, {
         headers: {
           'Cache-Control': 'no-cache',
@@ -159,6 +163,12 @@ export default function DebatePage() {
         throw new Error("Failed to fetch debate");
       }
       const data = await response.json();
+      
+      // More focused logging to avoid console spam
+      console.log(
+        `Fetch success: Debate ID ${data.id}, secureId ${data.secureId}, ` +
+        `completed: ${data.completed}, messages: ${data.messages?.length || 0}`
+      );
       
       // Update local messages unless debate is completed
       if (data.messages) {
@@ -173,28 +183,51 @@ export default function DebatePage() {
     },
     refetchOnWindowFocus: true,
     refetchInterval: (data: any) => {
+      // Increment polling attempt counter
+      setPollingAttempts(prev => prev + 1);
+      
+      // If we've reached max attempts, stop polling
+      if (pollingAttempts >= MAX_POLLING_ATTEMPTS) {
+        console.log(`Maximum polling attempts (${MAX_POLLING_ATTEMPTS}) reached, stopping automatic polling`);
+        return false;
+      }
+      
       // If debate is completed, stop polling
-      if (data?.completed) return false;
+      if (data?.completed) {
+        console.log("Debate is completed, stopping polling");
+        return false;
+      }
       
       const messages = data?.messages || [];
       const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
       
       // More frequent polling when waiting for AI response
       if (lastMessage?.role === 'user') {
+        console.log("Waiting for bot response, polling every 1 second");
         return 1000;
       }
       
-      // Regular polling for active conversations
+      // Adaptive polling based on conversation activity
       const lastMessageTime = lastMessage?.timestamp || 0;
       const timeSinceLastMessage = Date.now() - lastMessageTime;
+      
+      // Regular polling for active conversations (within the last minute)
       if (timeSinceLastMessage < 60000) {
+        console.log("Active conversation, polling every 3 seconds");
         return 3000;
       }
       
-      // Less frequent polling for inactive conversations
-      return 10000;
+      // Gradually reduce polling frequency for inactive conversations
+      // Use exponential backoff: 10s, 15s, 22.5s, etc. up to 60s
+      const backoffTime = Math.min(10000 * Math.pow(1.5, Math.floor(pollingAttempts / 5)), 60000);
+      console.log(`Inactive conversation, polling with backoff: ${backoffTime}ms`);
+      return backoffTime;
     },
     enabled: !!(id || secureId) && !messageStatus.sending,
+    // Add stale time to prevent unnecessary refetches
+    staleTime: 5000,
+    // Add garbage collection time
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
   
   // Fetch party data

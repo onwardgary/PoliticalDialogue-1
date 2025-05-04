@@ -161,6 +161,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Filter out system messages
       const filteredMessages = debate.messages.filter(msg => msg.role !== "system");
       
+      // Apply caching based on debate state
+      if (debate.completed) {
+        // Completed debates with summary won't change, safe to cache longer
+        if (debate.summary) {
+          // Set longer cache for debates with summaries (these are completely done)
+          res.set('Cache-Control', 'public, max-age=3600'); // 1 hour cache
+          res.set('ETag', `W/"debate-${debate.id}-${debate.updatedAt}"`);
+        } else {
+          // Completed debates waiting for summary still might change
+          res.set('Cache-Control', 'public, max-age=10'); // Short cache, check again soon
+        }
+      } else {
+        // Active debates shouldn't be cached
+        res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.set('Pragma', 'no-cache');
+        res.set('Expires', '0');
+      }
+      
       res.json({
         ...debate,
         messages: filteredMessages,
@@ -191,6 +209,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Filter out system messages
       const filteredMessages = debate.messages.filter(msg => msg.role !== "system");
+      
+      // Apply caching based on debate state
+      if (debate.completed) {
+        // Completed debates with summary won't change, safe to cache longer
+        if (debate.summary) {
+          // Set longer cache for debates with summaries (these are completely done)
+          res.set('Cache-Control', 'public, max-age=3600'); // 1 hour cache
+          res.set('ETag', `W/"debate-${debate.secureId}-${debate.updatedAt}"`);
+        } else {
+          // Completed debates waiting for summary still might change
+          res.set('Cache-Control', 'public, max-age=10'); // Short cache, check again soon
+        }
+      } else {
+        // Active debates shouldn't be cached
+        res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.set('Pragma', 'no-cache');
+        res.set('Expires', '0');
+      }
       
       res.json({
         ...debate,
