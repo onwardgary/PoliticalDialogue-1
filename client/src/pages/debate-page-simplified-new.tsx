@@ -3,6 +3,13 @@ import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import SummaryAnimationOverlay, { SummaryReadyNotification } from "@/components/animation/summary-animation-overlay";
+import Sidebar from "@/components/sidebar";
+import { MobileHeader, MobileNavigation } from "@/components/mobile-nav";
+import ChatInterface from "@/components/chat/chat-interface-new";
+import ChatInput from "@/components/chat/chat-input";
+import { useToast } from "@/hooks/use-toast";
+import { Message } from "@shared/schema";
+import { Loader2 } from "lucide-react";
 
 // Declare window property for animation tracking
 declare global {
@@ -10,21 +17,6 @@ declare global {
     currentAnimationId?: string;
   }
 }
-import Sidebar from "@/components/sidebar";
-import { MobileHeader, MobileNavigation } from "@/components/mobile-nav";
-import ChatInterface from "@/components/chat/chat-interface-new";
-import ChatInput from "@/components/chat/chat-input";
-import { useToast } from "@/hooks/use-toast";
-import { Message, DebateSummary as DebateSummaryType } from "@shared/schema";
-import DebateSummary from "@/components/debate-summary";
-import { Loader2 } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
-import { Card, CardContent } from "@/components/ui/card";
-import { InfoIcon, XIcon, CheckCircle2, Scale, MedalIcon, BrainCircuit } from "lucide-react";
-
-// Using imported SummaryReadyNotification instead
-
-// No longer needed - using portal-based animation overlay component
 
 export default function DebatePage() {
   // Extract parameters from the URL - could be either regular ID or secure ID
@@ -35,6 +27,8 @@ export default function DebatePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isUserTyping, setIsUserTyping] = useState(false);
+  
+  // Animation states
   const [isAnimationOpen, setIsAnimationOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   
@@ -337,94 +331,55 @@ export default function DebatePage() {
           .catch(error => {
             console.error("Error polling for response:", error);
             
-            // If there's a polling error, make sure to update the state so the UI reflects that
-            if (pollCount >= 5) {
-              // After a few retries, let the user know something is wrong
-              setMessageStatus(prev => ({ ...prev, polling: false }));
-              
-              // Remove typing indicator if it's still there
-              setLocalMessages(prev => {
-                return prev.filter(msg => !msg.id.startsWith('typing-'));
-              });
-              
-              toast({
-                title: "Connection issue",
-                description: "Having trouble getting a response. Please wait or try again.",
-                variant: "destructive",
-              });
-              
-              clearInterval(pollInterval);
-            }
+            // Increase the delay with backoff strategy
+            currentDelay = Math.min(currentDelay * 1.5, 10000);
           });
-          
-          if (pollCount > 5) {
-            currentDelay = Math.min(currentDelay * 1.2, 3000);
-          }
         } else {
+          // After max attempts or after receiving response, stop polling
+          if (!hasReceivedResponse) {
+            console.warn("Max polling attempts reached, giving up on getting bot response");
+          
+            // Clear the typing indicator since we stopped polling
+            setLocalMessages(prev => prev.filter(msg => !msg.id.startsWith('typing-')));
+            
+            // Reset the polling state
+            setMessageStatus(prev => ({ ...prev, polling: false }));
+            
+            // Show error toast
+            toast({
+              title: "Connection issue",
+              description: "Having trouble getting a response. Please try again.",
+              variant: "destructive",
+            });
+          }
           clearInterval(pollInterval);
-          
-          // Remove typing indicator if it's still there
-          setLocalMessages(prev => {
-            return prev.filter(msg => !msg.id.startsWith('typing-'));
-          });
-          
-          // Always set polling to false when we clear the interval after reaching the maximum poll count
-          // This ensures the visual indicator is removed if we fail to get a response
-          setMessageStatus(prev => ({ ...prev, polling: false }));
         }
-      }, currentDelay);
+      }, 1000);
+      
+      // Return a cleanup function that clears the interval if unmounted
+      return () => {
+        clearInterval(pollInterval);
+      };
     },
     onError: (error) => {
+      // Reset state on error
       setMessageStatus(prev => ({ ...prev, sending: false, polling: false }));
       
+      // Show error toast
       toast({
-        title: "Message failed to send",
-        description: "There was a problem sending your message. Please try again.",
+        title: "Failed to send message",
+        description: error.message || "An error occurred while sending your message",
         variant: "destructive",
       });
-      
-      // Mark failed messages in local state
-      setLocalMessages(prev => {
-        return prev.map(msg => {
-          // Handle user-temp- messages with the new format (timestamp-randomstring-random number)
-          if (msg.id.startsWith('user-temp-') && !msg.content.includes('(Failed to send)')) {
-            return {
-              ...msg,
-              content: `${msg.content} (Failed to send)`,
-            };
-          }
-          return msg;
-        });
-      });
-      
-      // Update React Query cache
-      queryClient.setQueryData([apiEndpoint], (old: any) => {
-        if (!old) return old;
-        
-        const updatedMessages = old.messages.map((msg: Message) => {
-          // Check for any user-temp- prefixed message ID, regardless of the exact format
-          if (msg.id.startsWith('user-temp-') && !msg.content.includes('(Failed to send)')) {
-            return {
-              ...msg,
-              content: `${msg.content} (Failed to send)`,
-            };
-          }
-          return msg;
-        });
-        
-        return {
-          ...old,
-          messages: updatedMessages,
-        };
-      });
-    }
+    },
   });
   
-  // End debate
+  // End debate endpoint
   const endDebateEndpoint = secureId
     ? `/api/debates/s/${secureId}/end`
     : `/api/debates/${id}/end`;
-    
+  
+  // End debate mutation - simplified to work with portal animation
   const endDebateMutation = useMutation({
     mutationFn: async () => {
       // Instead of controlling animation steps directly, we simply
@@ -455,7 +410,6 @@ export default function DebatePage() {
         variant: "destructive"
       });
     }
-  });
   });
   
   // Vote on debate outcome
@@ -538,7 +492,7 @@ export default function DebatePage() {
       // Fallback in case summaryUrl is not set
       const summaryPath = secureId 
         ? `/summary/s/${secureId}` 
-        : `/summary/${debate.id}`;
+        : `/summary/${debate?.id}`;
       console.log(`Navigating to summary page (fallback): ${summaryPath}`);
       setLocation(summaryPath);
     }
@@ -557,12 +511,9 @@ export default function DebatePage() {
     endDebateMutation.mutate();
   };
   
-  // Monitor debate state to set appropriate view and show notification when summary is ready
+  // Monitor debate state to update when completed
   useEffect(() => {
     if (!debate) return;
-    
-    // Get a flag from localStorage to see if we're currently animating
-    const isAnimating = summaryGenerationStep !== null;
     
     if (debate.completed && debate.summary) {
       // Store the summary URL for later navigation
@@ -575,37 +526,20 @@ export default function DebatePage() {
         setSummaryUrl(summaryPath);
       }
       
-      // Only show summary notification if we're:
-      // 1. Not already in the generating view 
-      // 2. Not animating
-      // 3. Not already showing the summary-ready notification
-      if (viewState !== 'generating' && !isAnimating && viewState !== 'summary-ready') {
-        // If we've finished the animation, change to summary-ready state
-        if (summaryGenerationStep === 4 || (viewState === 'chat' && !summaryGenerationStep)) {
-          console.log(`Summary ready! Setting viewState to 'summary-ready' with path: ${summaryPath}`);
-          setViewStateWithLogging('summary-ready');
-        }
-      } else if (viewState === 'generating' && summaryGenerationStep === 4) {
-        // When we hit step 4 in the animation, wait 1 second then show summary-ready notification
-        setTimeout(() => {
-          console.log("Animation complete, showing summary ready notification");
-          setViewStateWithLogging('summary-ready');
-        }, 1000);
-      } else {
-        console.log("Completed debate detected BUT not showing notification yet due to ongoing animation");
+      // If animation is not currently showing, set to chat view
+      if (!isAnimationOpen && !isNotificationOpen) {
+        setViewStateWithLogging('chat');
       }
-    } else if (viewState !== 'generating' && !isAnimating) {
-      // ONLY change to chat view if we're not currently generating a summary or animating
-      // This prevents the race condition where this effect resets the view during summary generation
-      console.log("Debate not completed and viewState is not 'generating', setting to 'chat'");
-      setViewStateWithLogging('chat');
     } else {
-      console.log("Debate not completed BUT not changing view because animation is in progress");
+      // ONLY change to chat view if we're not currently animating
+      // This prevents the race condition where this effect resets the view during summary generation
+      if (!isAnimationOpen && !isNotificationOpen) {
+        setViewStateWithLogging('chat');
+      }
     }
-  }, [debate, secureId, viewState, summaryGenerationStep, summaryUrl]);
+  }, [debate, secureId, summaryUrl, isAnimationOpen, isNotificationOpen]);
   
-  // Global cleanup effect to ensure polling state is reset if component unmounts
-  // or if there's any other unexpected issue
+  // Global cleanup effect
   useEffect(() => {
     // Reset polling state on mount to ensure clean state
     setMessageStatus(prev => ({ ...prev, polling: false }));
@@ -613,7 +547,7 @@ export default function DebatePage() {
     // Clear any typing indicators that might be lingering from previous sessions
     setLocalMessages(prev => prev.filter(msg => !msg.id.startsWith('typing-')));
     
-    // Return cleanup function to ensure everything is reset when unmounting
+    // Return cleanup function
     return () => {
       // Reset message status when component unmounts
       setMessageStatus(prev => ({ ...prev, sending: false, polling: false }));
@@ -629,7 +563,7 @@ export default function DebatePage() {
   // Combined loading state
   const isLoading = isLoadingDebate || isLoadingParty;
   
-  if (isLoading && viewState === 'loading' as ViewState) {
+  if (isLoading && viewState === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -661,11 +595,11 @@ export default function DebatePage() {
           partyShortName={party?.shortName}
           userTyping={isUserTyping}
           maxRounds={debate?.maxRounds || 3}
-          isGeneratingSummary={viewState === 'generating' as ViewState ? true : false}
+          isGeneratingSummary={isAnimationOpen}
         />
         <ChatInput 
           onSendMessage={handleSendMessage}
-          isLoading={messageStatus.sending || messageStatus.polling || viewState === 'generating' as ViewState}
+          isLoading={messageStatus.sending || messageStatus.polling || isAnimationOpen}
           onTypingStateChange={setIsUserTyping}
           disabled={
             // Disable input in these scenarios:
@@ -682,15 +616,15 @@ export default function DebatePage() {
             debate.messages[debate.messages.length - 1].role === 'user') ||
             
             // CASE 4: When generating a summary or summary is ready
-            viewState === ('generating' as ViewState) || viewState === ('summary-ready' as ViewState)
+            isAnimationOpen || isNotificationOpen
           }
           disabledReason={
             // Determine the reason for disabling:
             
             // PRIORITY 1: When generating a summary or summary is ready
-            viewState === 'generating' as ViewState
+            isAnimationOpen
               ? 'generating'
-            : viewState === 'summary-ready' as ViewState
+            : isNotificationOpen
               ? 'summaryReady'
             
             // PRIORITY 2: When at maximum allowed rounds

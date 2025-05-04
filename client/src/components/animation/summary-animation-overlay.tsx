@@ -1,11 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { BrainCircuit, CheckCircle2, Loader2, MedalIcon, Scale } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, XCircle, CheckCircle2, Loader2 } from "lucide-react";
 
+// Type for the animation steps
 export type SummaryAnimationStep = 1 | 2 | 3 | 4;
 
+// Type for animation state
 export type AnimationState = {
   isActive: boolean;
   currentStep: SummaryAnimationStep;
@@ -13,6 +15,7 @@ export type AnimationState = {
   summaryPath: string | null;
 };
 
+// Animation component props
 type SummaryAnimationOverlayProps = {
   onStart: () => Promise<{ success: boolean; path: string }>;
   onComplete: (path: string) => void;
@@ -28,187 +31,203 @@ export default function SummaryAnimationOverlay({
   onStart,
   onComplete,
   isOpen,
-  onOpenChange,
+  onOpenChange
 }: SummaryAnimationOverlayProps) {
-  const { toast } = useToast();
+  const [animationState, setAnimationState] = useState<AnimationState>({
+    isActive: false,
+    currentStep: 1,
+    isCompleted: false,
+    summaryPath: null
+  });
   
-  // Animation steps
-  const steps = [
-    { id: 1, name: "Analyzing Arguments", icon: BrainCircuit },
-    { id: 2, name: "Evaluating Logic", icon: Scale },
-    { id: 3, name: "Determining Outcome", icon: MedalIcon },
-    { id: 4, name: "Creating Summary", icon: CheckCircle2 },
-  ];
-
-  // Local state for animation
-  const [currentStep, setCurrentStep] = useState<SummaryAnimationStep>(1);
-  const [isCompleted, setIsCompleted] = useState(false);
-  const [summaryPath, setSummaryPath] = useState<string | null>(null);
-  
-  // Track component mounted state reliably
-  const isMounted = useRef(true);
-  
-  // Control animation timer safely
-  const animationTimerRef = useRef<number | null>(null);
-  
-  // Track animation instance to avoid race conditions
-  const animationIdRef = useRef<string | null>(null);
-
-  // Handle animation initialization when opened
+  // Only run the animation if the portal is open
   useEffect(() => {
-    if (isOpen && !isCompleted && !animationIdRef.current) {
-      // Generate a unique ID for this animation instance
-      animationIdRef.current = `animation-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
-      console.log(`Starting animation sequence: ${animationIdRef.current}`);
+    if (isOpen && !animationState.isActive) {
+      console.log("Animation overlay opened, starting animation sequence");
       
-      // Start animation with step 1
-      setCurrentStep(1);
+      // Mark animation as active
+      setAnimationState(prev => ({ ...prev, isActive: true }));
       
-      // Actually run the callback to start generating the summary
-      onStart().then(result => {
-        if (isMounted.current && result.success && result.path) {
-          setSummaryPath(result.path);
+      // Run the animation sequence
+      const runAnimation = async () => {
+        try {
+          // Run onStart callback to trigger the API request
+          console.log("Calling onStart callback");
+          const result = await onStart();
           
-          // Continue with animation even if API call completes faster than animation
-          console.log(`API call completed successfully, but continuing animation: ${animationIdRef.current}`);
-        }
-      }).catch(error => {
-        if (isMounted.current) {
-          console.error("Error starting animation:", error);
-          toast({
-            title: "An error occurred",
-            description: "Unable to generate summary. Please try again.",
-            variant: "destructive"
-          });
-          // Close the animation overlay on error
+          if (!result.success) {
+            console.error("Animation failed - API call unsuccessful");
+            onOpenChange(false);
+            return;
+          }
+          
+          // Store the summary path
+          setAnimationState(prev => ({ 
+            ...prev, 
+            summaryPath: result.path 
+          }));
+          
+          // Simulate the steps of the animation with delays
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          setAnimationState(prev => ({ ...prev, currentStep: 2 }));
+          
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          setAnimationState(prev => ({ ...prev, currentStep: 3 }));
+          
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          setAnimationState(prev => ({ ...prev, currentStep: 4 }));
+          
+          // Mark as completed
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          setAnimationState(prev => ({ 
+            ...prev, 
+            isCompleted: true 
+          }));
+          
+          // Call the onComplete callback
+          console.log("Animation sequence completed, calling onComplete");
+          onComplete(result.path);
+        } catch (error) {
+          console.error("Error during animation sequence:", error);
+          // Close the animation portal on error
           onOpenChange(false);
         }
+      };
+      
+      // Start the animation
+      runAnimation();
+    } else if (!isOpen && animationState.isActive) {
+      // Reset animation state when portal is closed
+      setAnimationState({
+        isActive: false,
+        currentStep: 1,
+        isCompleted: false,
+        summaryPath: null
       });
-      
-      // Start the step-by-step animation
-      runAnimationSequence();
     }
-    
-    // Handle animation reset when closed
-    if (!isOpen) {
-      resetAnimation();
-    }
-    
-    // Cleanup function to handle unmounting
-    return () => {
-      if (animationTimerRef.current) {
-        clearTimeout(animationTimerRef.current);
-      }
-    };
-  }, [isOpen, onStart]);
+  }, [isOpen, animationState.isActive, onStart, onComplete, onOpenChange]);
   
-  // Set component unmount flag
-  useEffect(() => {
-    return () => {
-      isMounted.current = false;
-      if (animationTimerRef.current) {
-        clearTimeout(animationTimerRef.current);
-      }
-    };
-  }, []);
+  // Don't render anything if not open
+  if (!isOpen) return null;
   
-  // Complete animation when step 4 is reached and summaryPath is available
-  useEffect(() => {
-    if (isOpen && currentStep === 4 && summaryPath) {
-      // Add a small delay to make animation look smoother
-      const completeTimer = setTimeout(() => {
-        if (isMounted.current) {
-          setIsCompleted(true);
-          
-          // Show success toast
-          toast({
-            title: "Debate summary generated",
-            description: "Your debate has been analyzed and summarized.",
-          });
-          
-          // Notify parent component about completion with path
-          onComplete(summaryPath);
-        }
-      }, 1500);
-      
-      return () => clearTimeout(completeTimer);
-    }
-  }, [currentStep, summaryPath, isOpen, onComplete]);
-  
-  // Reset animation state
-  const resetAnimation = () => {
-    setCurrentStep(1);
-    setIsCompleted(false);
-    setSummaryPath(null);
-    
-    if (animationTimerRef.current) {
-      clearTimeout(animationTimerRef.current);
-      animationTimerRef.current = null;
-    }
-    
-    animationIdRef.current = null;
-  };
-  
-  // Run the animation sequence
-  const runAnimationSequence = () => {
-    // Remember the current animation ID to validate state updates
-    const currentAnimationId = animationIdRef.current;
-    
-    // Step 1 is already active at start
-    
-    // Schedule step 2
-    animationTimerRef.current = window.setTimeout(() => {
-      if (isMounted.current && animationIdRef.current === currentAnimationId) {
-        setCurrentStep(2);
-        
-        // Schedule step 3
-        animationTimerRef.current = window.setTimeout(() => {
-          if (isMounted.current && animationIdRef.current === currentAnimationId) {
-            setCurrentStep(3);
-            
-            // Schedule step 4
-            animationTimerRef.current = window.setTimeout(() => {
-              if (isMounted.current && animationIdRef.current === currentAnimationId) {
-                setCurrentStep(4);
-                // The completion effect above will handle the last step
-              }
-            }, 1500);
-          }
-        }, 1500);
-      }
-    }, 1500);
-  };
-  
-  // Get current step info
-  const currentStepInfo = steps.find(s => s.id === currentStep) || steps[0];
-  const Icon = currentStepInfo.icon;
-  
-  // Create portal to render outside of normal component hierarchy
+  // Create a portal to render the animation overlay
   return createPortal(
-    isOpen ? (
-      <div className="fixed inset-0 z-50 flex items-end justify-center pointer-events-none">
-        <div className="relative bottom-24 mb-4 px-4 w-full max-w-md">
-          <div className="bg-gray-900 text-white p-4 rounded-lg shadow-lg w-full border border-gray-700 pointer-events-auto">
-            <div className="flex items-center">
-              <div className="rounded-full p-2 mr-3 bg-white/10 animate-pulse">
-                <Icon className="h-5 w-5 text-white" />
-              </div>
-              <div className="flex-1">
-                <p className="font-medium text-white">{currentStepInfo.name}</p>
-                <div className="mt-2">
-                  <Progress value={(currentStep / steps.length) * 100} className="h-2 bg-gray-800" />
-                </div>
-                <p className="text-xs text-gray-300 mt-1">
-                  Step {currentStep} of {steps.length}: Generating debate summary
-                </p>
-              </div>
-              <Loader2 className="h-5 w-5 animate-spin text-white ml-3" />
-            </div>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 max-w-md w-full">
+        <div className="flex flex-col items-center">
+          {/* Animation Title */}
+          <h2 className="text-2xl font-bold mb-6 text-center">
+            {animationState.isCompleted 
+              ? "Debate Summary Ready!" 
+              : "Generating Debate Summary..."}
+          </h2>
+          
+          {/* Progress Steps */}
+          <div className="w-full space-y-6 mb-8">
+            <AnimationStep 
+              number={1}
+              title="Analyzing arguments"
+              description="Identifying key points from both sides"
+              isActive={animationState.currentStep === 1}
+              isCompleted={animationState.currentStep > 1}
+            />
+            
+            <AnimationStep 
+              number={2}
+              title="Evaluating evidence"
+              description="Assessing the quality of reasoning and factual support"
+              isActive={animationState.currentStep === 2}
+              isCompleted={animationState.currentStep > 2}
+            />
+            
+            <AnimationStep 
+              number={3}
+              title="Comparing positions"
+              description="Creating point-by-point comparison"
+              isActive={animationState.currentStep === 3}
+              isCompleted={animationState.currentStep > 3}
+            />
+            
+            <AnimationStep 
+              number={4}
+              title="Forming conclusions"
+              description="Determining outcome based on logical assessment"
+              isActive={animationState.currentStep === 4}
+              isCompleted={animationState.currentStep > 4 || animationState.isCompleted}
+            />
           </div>
+          
+          {/* Action Button */}
+          {animationState.isCompleted ? (
+            <Button
+              onClick={() => {
+                // Close the animation portal
+                onOpenChange(false);
+              }}
+              className="w-full"
+            >
+              Continue <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          ) : (
+            <div className="flex items-center justify-center w-full">
+              <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
+              <span>Please wait...</span>
+            </div>
+          )}
         </div>
       </div>
-    ) : null,
+    </div>,
     document.body
+  );
+}
+
+// Individual animation step component
+type AnimationStepProps = {
+  number: number;
+  title: string;
+  description: string;
+  isActive: boolean;
+  isCompleted: boolean;
+};
+
+function AnimationStep({ 
+  number, 
+  title, 
+  description, 
+  isActive, 
+  isCompleted 
+}: AnimationStepProps) {
+  return (
+    <div className={cn(
+      "flex items-start",
+      isActive && "animate-pulse",
+      isCompleted && "opacity-100",
+      !isActive && !isCompleted && "opacity-50"
+    )}>
+      <div className="mr-4 flex-shrink-0">
+        {isCompleted ? (
+          <CheckCircle2 className="h-6 w-6 text-green-500" />
+        ) : isActive ? (
+          <div className="h-6 w-6 rounded-full bg-amber-500 animate-pulse flex items-center justify-center text-white font-bold">
+            {number}
+          </div>
+        ) : (
+          <div className="h-6 w-6 rounded-full border-2 border-gray-300 flex items-center justify-center text-gray-500 font-bold">
+            {number}
+          </div>
+        )}
+      </div>
+      <div>
+        <h3 className={cn(
+          "font-medium",
+          isActive && "text-amber-500 font-bold",
+          isCompleted && "text-green-500"
+        )}>
+          {title}
+        </h3>
+        <p className="text-sm text-gray-500">{description}</p>
+      </div>
+    </div>
   );
 }
 
@@ -221,21 +240,38 @@ export function SummaryReadyNotification({
   onViewSummary: () => void 
 }) {
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end justify-center pointer-events-none">
-      <div className="relative bottom-24 mb-4 px-4 w-full max-w-md">
-        <div className="bg-primary text-white p-4 rounded-lg shadow-lg w-full flex items-center justify-between pointer-events-auto">
-          <div className="flex items-center">
-            <CheckCircle2 className="h-5 w-5 mr-3 text-white" />
-            <div>
-              <p className="font-medium">Summary Ready!</p>
-              <p className="text-xs opacity-90">Your debate has been analyzed and summarized.</p>
-            </div>
+    <div className="fixed bottom-6 right-6 z-50">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-4 max-w-sm animate-slide-up">
+        <div className="flex items-start">
+          <div className="mr-3 mt-0.5">
+            <CheckCircle2 className="h-6 w-6 text-green-500" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-bold">Debate Summary Ready</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              Your debate has been analyzed and conclusions have been drawn.
+            </p>
+            <Button 
+              size="sm" 
+              onClick={onViewSummary}
+              className="w-full"
+            >
+              View Summary <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
           </div>
           <button 
-            onClick={onViewSummary}
-            className="bg-white text-primary px-3 py-1.5 rounded-md text-sm font-medium hover:bg-opacity-90 transition-colors"
+            onClick={() => {
+              const notification = document.getElementById('summary-notification');
+              if (notification) {
+                notification.classList.add('animate-slide-down');
+                setTimeout(() => {
+                  notification.remove();
+                }, 300);
+              }
+            }}
+            className="ml-2 text-gray-400 hover:text-gray-500"
           >
-            View Summary
+            <XCircle className="h-5 w-5" />
           </button>
         </div>
       </div>

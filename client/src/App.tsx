@@ -6,7 +6,7 @@ import { ReduxProvider } from "./providers/redux-provider";
 import NotFound from "./pages/not-found";
 import HomePage from "./pages/home-page";
 import AuthPage from "./pages/auth-page";
-import DebatePage from "./pages/debate-page-simplified";
+import DebatePage from "./pages/debate-page-simplified-new";
 import DebatePageRedux from "./pages/debate-page-redux"; // New Redux implementation
 import SummaryPage from "./pages/summary-page";
 import ProfilePage from "./pages/profile-page";
