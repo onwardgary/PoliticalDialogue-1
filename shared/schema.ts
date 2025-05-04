@@ -96,6 +96,28 @@ export type DebateSummary = {
     partyPosition: string;
     citizenPosition: string;
   }[];
+  // Happy & Sad stakeholders for each side
+  stakeholderImpact?: {
+    party: {
+      happy: string[];  // Groups who would be happy with party policies
+      sad: string[];    // Groups who would be sad with party policies
+    };
+    citizen: {
+      happy: string[];  // Groups who would be happy with citizen policies
+      sad: string[];    // Groups who would be sad with citizen policies
+    };
+  };
+  // Consequences of policies
+  policyConsequences?: {
+    party: {
+      positive: string[];  // Positive consequences of party policies
+      negative: string[];  // Negative consequences of party policies
+    };
+    citizen: {
+      positive: string[];  // Positive consequences of citizen policies
+      negative: string[];  // Negative consequences of citizen policies
+    };
+  };
   // Final deliberation with 5-pillar assessment
   conclusion?: {
     outcome: "party" | "citizen";

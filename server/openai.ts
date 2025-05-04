@@ -213,7 +213,21 @@ export async function generateDebateSummary(messages: Message[], mode: string = 
          - "point": The core issue being debated
          - "partyPosition": The party's stance on this issue
          - "citizenPosition": The citizen's stance on this issue
-      4. "conclusion": An in-depth assessment of the debate with:
+      4. "stakeholderImpact": Assess which groups in society would be impacted by each side's policies:
+         - "party": 
+            * "happy": An array of 3-5 groups who would benefit from the party's proposed policies
+            * "sad": An array of 3-5 groups who might be disadvantaged by the party's proposed policies
+         - "citizen": 
+            * "happy": An array of 3-5 groups who would benefit from the citizen's proposed policies
+            * "sad": An array of 3-5 groups who might be disadvantaged by the citizen's proposed policies
+      5. "policyConsequences": A thorough analysis of the real-world consequences:
+         - "party":
+            * "positive": An array of 3-5 likely positive outcomes if the party's policies were implemented
+            * "negative": An array of 3-5 likely negative outcomes or unintended consequences if the party's policies were implemented
+         - "citizen":
+            * "positive": An array of 3-5 likely positive outcomes if the citizen's policies were implemented
+            * "negative": An array of 3-5 likely negative outcomes or unintended consequences if the citizen's policies were implemented
+      6. "conclusion": An in-depth assessment of the debate with:
          - "outcome": Must be either "party" (if party arguments were stronger) or "citizen" (if citizen arguments were stronger). Choose the side that presented the overall more convincing case
          - "evaluation": A structured analysis based on five key pillars:
             * "logicalSoundness": Brief assessment (1-2 sentences) of how fact-based and logically coherent each side's arguments were 
