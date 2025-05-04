@@ -98,9 +98,11 @@ export default function SummaryPage() {
       // If we have a completed debate with a summary, stop polling
       // We're using an explicit 'any' type to handle the debate data structure
       if (data && data.summary) return false;
-      // Otherwise, poll every 2 seconds
-      return 2000;
-    }
+      // Otherwise, poll every 5 seconds instead of 2 to reduce server load
+      return 5000;
+    },
+    // Add stale time to prevent unnecessary refetches
+    staleTime: 10000
   });
   // Fetch party data
   const { data: party, isLoading: isLoadingParty } = useQuery({
