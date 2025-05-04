@@ -2,6 +2,13 @@ import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+
+// Declare global window property for animation tracking
+declare global {
+  interface Window {
+    currentAnimationId?: string;
+  }
+}
 import Sidebar from "@/components/sidebar";
 import { MobileHeader, MobileNavigation } from "@/components/mobile-nav";
 import ChatInterface from "@/components/chat/chat-interface-new";
@@ -515,59 +522,99 @@ export default function DebatePage() {
         
       // Simulate the steps of generating a summary (with longer, more visible transitions)
       const simulateSteps = async () => {
-        // Step 1 is already set before the mutation starts
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Create a unique ID for this animation sequence to avoid race conditions
+        const animationId = `animation-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
+        console.log(`Animation starting with ID: ${animationId}`);
         
-        setSummaryGenerationStep(2);
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Store the animation ID to help debug production issues
+        window.currentAnimationId = animationId;
         
-        setSummaryGenerationStep(3);
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        setSummaryGenerationStep(4);
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Show success toast
-        toast({
-          title: "Debate summary generated",
-          description: "Your debate has been analyzed and summarized.",
-        });
-        
-        // Fetch the complete debate data one last time before redirecting
-        // This ensures the data is in the cache
         try {
-          console.log("Pre-fetching debate data before navigation");
-          const response = await fetch(apiEndpoint, {
-            headers: {
-              'Cache-Control': 'no-cache',
-              'Pragma': 'no-cache'
-            }
+          // Step 1 is already set before the mutation starts
+          if (window.currentAnimationId !== animationId) {
+            console.warn(`Animation ${animationId} aborted: superseded by ${window.currentAnimationId}`);
+            return;
+          }
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          // Check if component is still mounted or another animation started
+          if (window.currentAnimationId !== animationId) {
+            console.warn(`Animation ${animationId} aborted after step 1: superseded by ${window.currentAnimationId}`);
+            return;
+          }
+          setSummaryGenerationStep(2);
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          // Check if component is still mounted or another animation started
+          if (window.currentAnimationId !== animationId) {
+            console.warn(`Animation ${animationId} aborted after step 2: superseded by ${window.currentAnimationId}`);
+            return;
+          }
+          setSummaryGenerationStep(3);
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          // Check if component is still mounted or another animation started
+          if (window.currentAnimationId !== animationId) {
+            console.warn(`Animation ${animationId} aborted after step 3: superseded by ${window.currentAnimationId}`);
+            return;
+          }
+          setSummaryGenerationStep(4);
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          // Show success toast
+          toast({
+            title: "Debate summary generated",
+            description: "Your debate has been analyzed and summarized.",
           });
           
-          if (response.ok) {
-            const freshData = await response.json();
-            // Update the cache with the freshest data
-            queryClient.setQueryData([apiEndpoint], freshData);
-            console.log("Pre-fetch successful, cache updated with fresh data");
+          // Fetch the complete debate data one last time before redirecting
+          // This ensures the data is in the cache
+          try {
+            console.log(`Animation ${animationId}: Pre-fetching debate data before navigation`);
+            const response = await fetch(apiEndpoint, {
+              headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+              }
+            });
+            
+            if (response.ok) {
+              const freshData = await response.json();
+              // Update the cache with the freshest data
+              queryClient.setQueryData([apiEndpoint], freshData);
+              console.log(`Animation ${animationId}: Pre-fetch successful, cache updated with fresh data`);
+            }
+          } catch (error) {
+            console.warn(`Animation ${animationId}: Pre-fetch failed, proceeding with navigation anyway:`, error);
+          }
+          
+          // Add a small final delay to ensure cache updates have propagated
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Final check to make sure we're still the current animation
+          if (window.currentAnimationId !== animationId) {
+            console.warn(`Animation ${animationId} aborted before completion: superseded by ${window.currentAnimationId}`);
+            return;
+          }
+          
+          // Final check to make sure component is still mounted
+          if (document.body.contains(document.getElementById('debate-container'))) {
+            console.log(`Animation ${animationId}: All animation steps completed, showing summary ready notification`);
+            
+            // Store the path for later navigation
+            setSummaryUrl(summaryPath);
+            
+            // Transition to summary-ready state
+            setViewStateWithLogging('summary-ready');
+          } else {
+            console.warn(`Animation ${animationId}: Component unmounted during animation, aborting state updates`);
           }
         } catch (error) {
-          console.warn("Pre-fetch failed, proceeding with navigation anyway:", error);
-        }
-        
-        // Add a small final delay to ensure cache updates have propagated
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Final check to make sure we're still in generating state before showing the notification
-        if (viewState === 'generating') {
-          console.log("All animation steps completed, showing summary ready notification");
-          
-          // Store the path for later navigation
-          setSummaryUrl(summaryPath);
-          
-          // Transition to summary-ready state
-          setViewStateWithLogging('summary-ready');
-        } else {
-          console.log("Warning: View state changed during animation, not transitioning to summary-ready");
+          console.error(`Animation ${animationId} error:`, error);
+          // Try to recover UI if possible
+          if (document.body.contains(document.getElementById('debate-container'))) {
+            setViewStateWithLogging('chat');
+          }
         }
       };
       
@@ -746,6 +793,12 @@ export default function DebatePage() {
     return () => {
       // Reset message status when component unmounts
       setMessageStatus(prev => ({ ...prev, sending: false, polling: false }));
+      
+      // Reset animation tracking to prevent blank screens due to stale state
+      window.currentAnimationId = undefined;
+      
+      // Extra logging to help troubleshoot prod issues
+      console.log("DEBATE PAGE UNMOUNTED: Cleaned up animation state");
     };
   }, []);
   
@@ -769,7 +822,7 @@ export default function DebatePage() {
     (debate.messages.length === 0 || debate.messages[debate.messages.length - 1].role !== 'user');
   
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
+    <div id="debate-container" className="min-h-screen flex flex-col md:flex-row">
       <Sidebar />
       
       <main className="flex-1 flex flex-col h-screen">
