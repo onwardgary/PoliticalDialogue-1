@@ -280,31 +280,49 @@ export default function DebatePageFixed() {
         safetyTimeoutRef.current = null;
       }
       
-      // Poll for summary completion
+      // Poll for summary completion 
       pollIntervalRef.current = setInterval(async () => {
         try {
+          console.log("Polling for summary completion...");
           const checkRes = await fetch(`/api/debates/s/${secureId}`);
+          
+          if (!checkRes.ok) {
+            console.error("Error checking debate status:", checkRes.status, checkRes.statusText);
+            return;
+          }
+          
           const checkData = await checkRes.json();
+          console.log("Poll result:", { 
+            complete: checkData.complete, 
+            hasSummary: Boolean(checkData.summary),
+            currentUIState: uiState
+          });
           
           if (checkData.complete && checkData.summary) {
+            console.log("Summary detected! Transitioning to ready state");
+            
             // Clear the interval
             if (pollIntervalRef.current) {
               clearInterval(pollIntervalRef.current);
               pollIntervalRef.current = null;
+              console.log("Cleared poll interval");
             }
             
             // Clear the safety timeout
             if (safetyTimeoutRef.current) {
               clearTimeout(safetyTimeoutRef.current);
               safetyTimeoutRef.current = null;
+              console.log("Cleared safety timeout");
             }
             
             // Set the summary URL for redirection
             const summaryRoute = secureId ? `/summary/s/${secureId}` : `/summary/${debate?.id}`;
             setSummaryUrl(summaryRoute);
             
-            // Update UI state to show summary ready notification
+            // Force UI state update to show summary ready notification
             setUiState("summaryReady");
+          } else if (checkData.complete && !checkData.summary) {
+            console.log("Debate is marked complete but no summary yet");
           }
         } catch (error) {
           console.error("Error checking summary status:", error);
@@ -476,9 +494,34 @@ export default function DebatePageFixed() {
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-center w-full">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
-                  <span>Please wait...</span>
+                <div className="flex flex-col items-center justify-center w-full gap-4">
+                  <div className="flex items-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
+                    <span>Please wait...</span>
+                  </div>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      // Force transition to summary ready state
+                      console.log("Manual escape from loading state");
+                      if (pollIntervalRef.current) {
+                        clearInterval(pollIntervalRef.current);
+                        pollIntervalRef.current = null;
+                      }
+                      if (safetyTimeoutRef.current) {
+                        clearTimeout(safetyTimeoutRef.current);
+                        safetyTimeoutRef.current = null;
+                      }
+                      
+                      const summaryRoute = secureId ? `/summary/s/${secureId}` : `/summary/${debate?.id}`;
+                      setSummaryUrl(summaryRoute);
+                      setUiState("summaryReady");
+                    }}
+                  >
+                    Skip Animation
+                  </Button>
                 </div>
               </div>
             </div>
