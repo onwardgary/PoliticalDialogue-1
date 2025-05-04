@@ -118,6 +118,12 @@ export default function DebatePage() {
   type ViewState = 'loading' | 'chat' | 'generating' | 'summary';
   const [viewState, setViewState] = useState<ViewState>('loading');
   
+  // Custom setter for viewState that includes logging
+  const setViewStateWithLogging = (newState: ViewState) => {
+    console.log(`Changing view state from ${viewState} to ${newState}`);
+    setViewState(newState);
+  };
+  
   // Track message sending state for UI feedback
   const [messageStatus, setMessageStatus] = useState({
     sending: false,
@@ -433,8 +439,10 @@ export default function DebatePage() {
     mutationFn: async () => {
       // Set the view state and summary step before making the API request
       // This ensures animation is visible immediately when button is clicked
-      setViewState('generating');
+      setViewStateWithLogging('generating');
       setSummaryGenerationStep(1);
+      
+      console.log("Button clicked: Changing to generating view and setting step 1");
       
       // Add a small delay to ensure UI updates before API call
       await new Promise(resolve => setTimeout(resolve, 50));
@@ -475,7 +483,7 @@ export default function DebatePage() {
       simulateSteps();
     },
     onError: (error) => {
-      setViewState('chat');
+      setViewStateWithLogging('chat');
       setSummaryGenerationStep(null);
       
       toast({
@@ -570,10 +578,15 @@ export default function DebatePage() {
         const summaryPath = secureId 
           ? `/summary/s/${secureId}` 
           : `/summary/${debate.id}`;
+        
+        console.log(`Completed debate detected: Redirecting from ${viewState} to summary page ${summaryPath}`);
         setLocation(summaryPath);
+      } else {
+        console.log("Completed debate detected BUT not redirecting because viewState is already 'generating'");
       }
     } else {
-      setViewState('chat');
+      // If debate exists but isn't completed, ensure we're in chat view
+      setViewStateWithLogging('chat');
     }
   }, [debate, secureId, setLocation, viewState]);
   
