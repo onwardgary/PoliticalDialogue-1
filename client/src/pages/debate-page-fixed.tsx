@@ -54,19 +54,7 @@ export default function DebatePageFixed() {
     };
   }, [localMessages, messageStatus.sending, messageStatus.polling]);
   
-  // Monitor for assistant messages to reset polling state
-  useEffect(() => {
-    // If we have messages and the last one is from the assistant
-    if (localMessages.length > 0 && localMessages[localMessages.length - 1].role === 'assistant') {
-      console.log("RESETTING POLLING: Found assistant message, enabling input");
-      // Reset polling state since we received the assistant's response
-      setMessageStatus(prev => {
-        const newState = { ...prev, polling: false };
-        console.log("Message status updated:", newState);
-        return newState;
-      });
-    }
-  }, [localMessages]);
+  // Monitor for assistant messages to reset polling state (removed to avoid race conditions)
   
   // Fetch debate data
   const { data: debate, isLoading: isLoadingDebate } = useQuery({
@@ -148,11 +136,25 @@ export default function DebatePageFixed() {
       
       if (!res.ok) throw new Error("Failed to send message");
       
-      // Start polling for response
-      setMessageStatus(prev => ({ ...prev, sending: false, polling: true }));
-      
-      // Force an immediate refetch to start getting the assistant response
-      queryClient.invalidateQueries({ queryKey: [apiEndpoint] });
+      // Start polling for response after a short delay to ensure we don't
+      // have a race condition with the response coming back too quickly
+      setTimeout(() => {
+        setMessageStatus(prev => {
+          // Only set polling to true if we're still in sending state
+          // This prevents race conditions when responses are very fast
+          if (prev.sending) {
+            console.log("TIMEOUT: Setting polling state after sending completed");
+            return { ...prev, sending: false, polling: true };
+          } else {
+            // Message was already received, don't enable polling
+            console.log("TIMEOUT: Message already received, not enabling polling");
+            return prev;
+          }
+        });
+        
+        // Force an immediate refetch to start getting the assistant response
+        queryClient.invalidateQueries({ queryKey: [apiEndpoint] });
+      }, 100); // Short delay to prevent race conditions
       
     } catch (error) {
       console.error("Error sending message:", error);
