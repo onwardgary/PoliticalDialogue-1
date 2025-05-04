@@ -229,11 +229,6 @@ export default function MessageBubble({ message, partyShortName = "PAP", isGroup
             </>
           ) : (
             <>
-              {!isGrouped && (
-                <div className="text-xs text-primary font-medium mb-1">
-                  {botName}
-                </div>
-              )}
               <Typewriter 
                 key={`typewriter-${message.id}`} // More distinctive key prefix to avoid collisions
                 text={message.content} 
