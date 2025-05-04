@@ -141,7 +141,9 @@ export default function DebatePageSimplified() {
     queryFn: async () => {
       if (!partyEndpoint) return null;
       const res = await fetch(partyEndpoint);
-      return await res.json();
+      const partyData = await res.json();
+      console.log("Party data fetched:", partyData);
+      return partyData;
     },
     enabled: !!partyEndpoint,
   });
@@ -528,7 +530,7 @@ export default function DebatePageSimplified() {
           isLoading={messageStatus.sending || messageStatus.polling}
           onSendMessage={handleSendMessage}
           onEndDebate={handleEndDebate}
-          partyShortName={party?.shortName || party?.short_name || "PAP"}
+          partyShortName={party?.shortName || "PAP"}
           userTyping={isUserTyping}
           maxRounds={debate?.maxRounds || 3}
           isGeneratingSummary={uiState === "animating"}
