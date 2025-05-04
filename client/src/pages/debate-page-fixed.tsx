@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { nanoid } from 'nanoid';
 import Sidebar from "@/components/sidebar";
 import { MobileHeader, MobileNavigation } from "@/components/mobile-nav";
@@ -20,8 +21,9 @@ type MessageStatus = {
 type UIState = "loading" | "chat" | "animating" | "summaryReady";
 
 export default function DebatePageFixed() {
-  const [, params] = useParams();
-  const secureId = params.secureId;
+  // Get secureId from URL params
+  const params = useParams();
+  const secureId = params?.secureId;
   const apiEndpoint = `/api/debates/s/${secureId}`;
   const [, setLocation] = useLocation();
   
@@ -190,13 +192,41 @@ export default function DebatePageFixed() {
   };
   
   // Add a debug output for party data right before rendering
-  console.log("IMPORTANT DEBUG - Party data being passed to ChatInterface:", {
-    partyEndpoint,
+  // Fetch the party data directly from the debugging data
+  const fetchedPartyShortName = party?.shortName;
+  
+  // Log both raw and processed data
+  console.log("PARTY DATA FROM API:", {
+    rawParty: party,
+    fetchedShortName: fetchedPartyShortName,
     partyId: debate?.partyId,
-    party,
-    partyShortName: party?.shortName,
     isLoadingParty
   });
+  
+  // Use this helper to guarantee we have a valid party name
+  const getPartyShortName = () => {
+    // If we have valid party data from API, use it
+    if (fetchedPartyShortName) {
+      return fetchedPartyShortName;
+    }
+    
+    // Manual mapping based on party ID if party object is missing the shortName
+    if (debate?.partyId) {
+      const partyMap = {
+        1: "PAP",
+        2: "WP",
+        3: "PSP"
+      };
+      return partyMap[debate.partyId as 1 | 2 | 3] || "BOT";
+    }
+    
+    // Ultimate fallback
+    return "BOT";
+  };
+  
+  const safePartyShortName = getPartyShortName();
+  
+  console.log("FINAL PARTY SHORT NAME:", safePartyShortName);
   
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
@@ -216,7 +246,7 @@ export default function DebatePageFixed() {
             isLoading={messageStatus.sending || messageStatus.polling}
             onSendMessage={handleSendMessage}
             onEndDebate={handleEndDebate}
-            partyShortName={party?.shortName || "Bot"}
+            partyShortName={safePartyShortName}
             userTyping={isUserTyping}
             maxRounds={debate?.maxRounds || 3}
             isGeneratingSummary={uiState === "animating"}
@@ -233,7 +263,7 @@ export default function DebatePageFixed() {
               messageStatus.sending || 
               messageStatus.polling ||
               messageStatus.finalRoundReached ||
-              (debate?.messages?.filter(msg => msg.role === 'user').length >= (debate?.maxRounds || 3)) ||
+              (debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 3)) ||
               (localMessages.length > 0 && localMessages[localMessages.length - 1].role === 'user') ||
               uiState === "animating" || 
               uiState === "summaryReady"
@@ -242,7 +272,7 @@ export default function DebatePageFixed() {
               uiState === "animating" ? 'generating' :
               uiState === "summaryReady" ? 'summaryReady' :
               (messageStatus.finalRoundReached || 
-               debate?.messages?.filter(msg => msg.role === 'user').length >= (debate?.maxRounds || 3)) ? 'finalRound' :
+               debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 3)) ? 'finalRound' :
               (messageStatus.sending || 
                messageStatus.polling ||
               (localMessages.length > 0 && localMessages[localMessages.length - 1].role === 'user')) ? 'waiting' :
