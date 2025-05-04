@@ -155,12 +155,13 @@ export default function DebateSummaryTabbed({
         <h3 className="text-xl font-semibold mb-4">Your Debate Summary</h3>
         
         <Tabs defaultValue="arguments" className="w-full">
-          <TabsList className="grid grid-cols-5 mb-4">
-            <TabsTrigger value="arguments">Arguments</TabsTrigger>
-            <TabsTrigger value="key-points">Key Points</TabsTrigger>
-            <TabsTrigger value="stakeholders">Stakeholders</TabsTrigger>
-            <TabsTrigger value="consequences">Consequences</TabsTrigger>
-            <TabsTrigger value="conclusion">Conclusion</TabsTrigger>
+          {/* Modified tab layout for better mobile experience */}
+          <TabsList className="flex flex-wrap justify-center mb-4 gap-1">
+            <TabsTrigger value="arguments" className="text-xs sm:text-sm md:text-base px-2 py-1.5 flex-1">Arguments</TabsTrigger>
+            <TabsTrigger value="key-points" className="text-xs sm:text-sm md:text-base px-2 py-1.5 flex-1">Key Points</TabsTrigger>
+            <TabsTrigger value="stakeholders" className="text-xs sm:text-sm md:text-base px-2 py-1.5 flex-1">Stakeholders</TabsTrigger>
+            <TabsTrigger value="consequences" className="text-xs sm:text-sm md:text-base px-2 py-1.5 flex-1">Consequences</TabsTrigger>
+            <TabsTrigger value="conclusion" className="text-xs sm:text-sm md:text-base px-2 py-1.5 flex-1">Conclusion</TabsTrigger>
           </TabsList>
           
           {/* TAB 1: Key Arguments Summary */}
