@@ -147,9 +147,18 @@ export default function SummaryPage() {
       }
       
       // If we have a completed debate with a summary, stop polling
-      if (data && data.summary) {
+      if (data && data.summary && typeof data.summary === 'object') {
+        // Debug summary structure to see what we're getting
+        console.log("Summary object received:", JSON.stringify(data.summary).substring(0, 100) + "...");
         console.log("Summary found, stopping polling");
-        return false;
+        
+        // Force a specific property check to ensure it's a valid summary
+        if (data.summary.partyArguments || data.summary.citizenArguments || 
+            data.summary.keyPoints || data.summary.stakeholderImpact || 
+            data.summary.policyConsequences || data.summary.conclusion) {
+          console.log("Valid summary properties found, definitely stopping polling");
+          return false;
+        }
       }
       
       // If debate is complete but no summary, use exponential backoff
@@ -172,18 +181,32 @@ export default function SummaryPage() {
     // Use longer cache time for debates with summaries
     gcTime: 5 * 60 * 1000 // 5 minutes
   });
+  // Check if summary actually has data despite being present in the object
+  useEffect(() => {
+    if (debate && debate.summary) {
+      console.log("Summary exists in useEffect check:", debate.summary);
+      // Force stop polling by setting attempts to max
+      setPollingAttempts(MAX_POLLING_ATTEMPTS);
+    }
+  }, [debate, MAX_POLLING_ATTEMPTS]);
+  
   // Use effect to safely increment polling counter
   useEffect(() => {
     // Only increment when debate exists but has no summary
     if (debate && !debate.summary) {
+      console.log("No summary found yet, continuing to poll");
       // Use a timer to control polling attempts increments
       const timer = setTimeout(() => {
-        setPollingAttempts(prev => Math.min(prev + 1, MAX_POLLING_ATTEMPTS));
+        setPollingAttempts(prev => {
+          const newValue = Math.min(prev + 1, MAX_POLLING_ATTEMPTS);
+          console.log(`Incrementing polling attempts from ${prev} to ${newValue}`);
+          return newValue;
+        });
       }, 2000); // Every 2 seconds increment the counter safely
       
       return () => clearTimeout(timer);
     }
-  }, [debate, debate?.summary]);
+  }, [debate, debate?.summary, MAX_POLLING_ATTEMPTS]);
   
   // Fetch party data
   const { data: partyData, isLoading: isLoadingParty } = useQuery({
@@ -307,8 +330,17 @@ export default function SummaryPage() {
     description: ""
   };
   
-  // Check if summary exists, if not show a loading message
-  if (!debate.summary) {
+  // Check if summary exists and has valid content
+  // We need to validate that summary is not only present but contains expected properties
+  const hasSummary = debate.summary && (
+    (Array.isArray(debate.summary.partyArguments) && debate.summary.partyArguments.length > 0) || 
+    (Array.isArray(debate.summary.citizenArguments) && debate.summary.citizenArguments.length > 0) ||
+    (Array.isArray(debate.summary.keyPoints) && debate.summary.keyPoints.length > 0) ||
+    debate.summary.conclusion
+  );
+
+  if (!hasSummary) {
+    console.log("Summary is missing or invalid in the render check:", debate.summary);
     return (
       <div className="min-h-screen flex flex-col md:flex-row">
         <Sidebar />

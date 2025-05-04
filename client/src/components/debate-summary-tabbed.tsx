@@ -23,6 +23,22 @@ export default function DebateSummaryTabbed({
   partyShortName,
   topic
 }: DebateSummaryProps) {
+  // Debug the summary structure
+  console.log("DebateSummaryTabbed received summary:", summary);
+  
+  // Ensure summary has all required properties
+  const validSummary = summary && (
+    Array.isArray(summary.partyArguments) || 
+    Array.isArray(summary.citizenArguments) ||
+    Array.isArray(summary.keyPoints) ||
+    summary.stakeholderImpact ||
+    summary.policyConsequences ||
+    summary.conclusion
+  );
+  
+  if (!validSummary) {
+    console.log("Summary appears to be invalid or incomplete:", summary);
+  }
   const { toast } = useToast();
   
   // Handle regenerating a summary if it failed
