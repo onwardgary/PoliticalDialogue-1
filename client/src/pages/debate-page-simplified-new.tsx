@@ -617,25 +617,27 @@ export default function DebatePage() {
   
   // Monitor debate state to update when completed
   useEffect(() => {
-    if (!debate) return;
-    
+    // Always run the logic, but wrap debate-dependent code in a condition
     // Only update the UI state if it's currently loading
     if (ui.status === 'loading') {
       // Set UI state to chat mode when debate data is loaded
       setUIWithLogging({ status: 'chat' });
     }
     
-    // If debate is completed and has a summary but we're not already in an animation
-    // or summary state, it means we loaded a page with an existing completed debate
-    if (debate.completed && debate.summary && ui.status === 'chat') {
-      // Keep track of the summary path for potential navigation
-      const summaryPath = secureId 
-        ? `/summary/s/${secureId}` 
-        : `/summary/${debate.id}`;
-      
-      // We could update the button state here or add a "View Summary" button
-      // but we'll just leave it in chat mode for now, as the navigation is
-      // handled by handleEndDebate based on the debate.completed state
+    // Only run debate-dependent code if debate exists
+    if (debate) {
+      // If debate is completed and has a summary but we're not already in an animation
+      // or summary state, it means we loaded a page with an existing completed debate
+      if (debate.completed && debate.summary && ui.status === 'chat') {
+        // Keep track of the summary path for potential navigation
+        const summaryPath = secureId 
+          ? `/summary/s/${secureId}` 
+          : `/summary/${debate.id}`;
+        
+        // We could update the button state here or add a "View Summary" button
+        // but we'll just leave it in chat mode for now, as the navigation is
+        // handled by handleEndDebate based on the debate.completed state
+      }
     }
   }, [debate, secureId, ui.status]);
   
@@ -704,16 +706,19 @@ export default function DebatePage() {
     
   // Debug logging for message status - helpful to find why input remains disabled
   useEffect(() => {
-    console.log("DISABLED STATE CHECK:", {
-      sending: messageStatus.sending,
-      polling: messageStatus.polling,
-      finalRoundReached: messageStatus.finalRoundReached,
-      lastMessageIsUser: debate?.messages && debate.messages.length > 0 && 
+    // Only log if we have a debate object to prevent null errors
+    if (debate) {
+      console.log("DISABLED STATE CHECK:", {
+        sending: messageStatus.sending,
+        polling: messageStatus.polling,
+        finalRoundReached: messageStatus.finalRoundReached,
+        lastMessageIsUser: debate.messages.length > 0 && 
                           debate.messages[debate.messages.length - 1].role === 'user',
-      animatingOrSummaryReady: ui.status === 'animating' || ui.status === 'summaryReady',
-      uiState: ui.status
-    });
-  }, [messageStatus, debate?.messages, ui.status]);
+        animatingOrSummaryReady: ui.status === 'animating' || ui.status === 'summaryReady',
+        uiState: ui.status
+      });
+    }
+  }, [messageStatus, debate, ui.status]);
   
   return (
     <div id="debate-container" className="min-h-screen flex flex-col md:flex-row">
