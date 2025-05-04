@@ -38,6 +38,10 @@ export default function DebatePageFixed() {
   const [isUserTyping, setIsUserTyping] = useState(false);
   const [summaryUrl, setSummaryUrl] = useState<string | null>(null);
   
+  // Create persistent refs for intervals and timeouts
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const safetyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   // Safety timer for API operations - auto-recover from stuck states
   useEffect(() => {
     let safetyTimer: number | undefined;
@@ -55,6 +59,25 @@ export default function DebatePageFixed() {
   }, [localMessages, messageStatus.sending, messageStatus.polling]);
   
   // Monitor for assistant messages to reset polling state (removed to avoid race conditions)
+  
+  // Clean up polling and timers when component unmounts
+  useEffect(() => {
+    return () => {
+      console.log("CLEANUP: User navigated away, stopping all polling activities");
+      // Clear any intervals and timeouts
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+      if (safetyTimeoutRef.current) {
+        clearTimeout(safetyTimeoutRef.current);
+        safetyTimeoutRef.current = null;
+      }
+      
+      // Reset state to avoid any lingering effects if the component is remounted
+      setMessageStatus({ sending: false, polling: false, finalRoundReached: false });
+    };
+  }, []);
   
   // Fetch debate data
   const { data: debate, isLoading: isLoadingDebate } = useQuery({
@@ -214,31 +237,76 @@ export default function DebatePageFixed() {
       // Debate is ending and summary is being generated
       queryClient.invalidateQueries({ queryKey: [apiEndpoint] });
       
+      // Clear any existing timers first
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+      
+      if (safetyTimeoutRef.current) {
+        clearTimeout(safetyTimeoutRef.current);
+        safetyTimeoutRef.current = null;
+      }
+      
       // Poll for summary completion
-      const pollInterval = setInterval(async () => {
-        const checkRes = await fetch(`/api/debates/s/${secureId}`);
-        const checkData = await checkRes.json();
-        
-        if (checkData.complete && checkData.summary) {
-          clearInterval(pollInterval);
+      pollIntervalRef.current = setInterval(async () => {
+        try {
+          const checkRes = await fetch(`/api/debates/s/${secureId}`);
+          const checkData = await checkRes.json();
           
-          // Set the summary URL for redirection
-          const summaryRoute = `/debate/${secureId}/summary`;
-          setSummaryUrl(summaryRoute);
-          
-          // Update UI state to show summary ready notification
-          setUiState("summaryReady");
+          if (checkData.complete && checkData.summary) {
+            // Clear the interval
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
+              pollIntervalRef.current = null;
+            }
+            
+            // Clear the safety timeout
+            if (safetyTimeoutRef.current) {
+              clearTimeout(safetyTimeoutRef.current);
+              safetyTimeoutRef.current = null;
+            }
+            
+            // Set the summary URL for redirection
+            const summaryRoute = `/debate/${secureId}/summary`;
+            setSummaryUrl(summaryRoute);
+            
+            // Update UI state to show summary ready notification
+            setUiState("summaryReady");
+          }
+        } catch (error) {
+          console.error("Error checking summary status:", error);
         }
       }, 3000);
       
       // Safety timeout after 2 minutes
-      setTimeout(() => {
-        clearInterval(pollInterval);
+      safetyTimeoutRef.current = setTimeout(() => {
+        // Clear the interval
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
+        
         // If still in animating state, show error or go to summary anyway
         if (uiState === "animating") {
           setUiState("summaryReady");
         }
       }, 120000);
+      
+      // Add cleanup to the component unmount effect
+      return () => {
+        // Clear interval if component unmounts during summary generation
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
+        
+        // Clear timeout if component unmounts during summary generation
+        if (safetyTimeoutRef.current) {
+          clearTimeout(safetyTimeoutRef.current);
+          safetyTimeoutRef.current = null;
+        }
+      };
       
     } catch (error) {
       console.error("Error ending debate:", error);
