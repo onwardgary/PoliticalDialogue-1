@@ -49,9 +49,10 @@ export default function DebatePageSimplified() {
     ? `/api/debates/s/${secureId}/messages`
     : `/api/debates/${id}/messages`;
     
+  // Changed from 'complete' to 'end' - that's the endpoint that actually generates summaries
   const endDebateEndpoint = secureId
-    ? `/api/debates/s/${secureId}/complete`
-    : `/api/debates/${id}/complete`;
+    ? `/api/debates/s/${secureId}/end`
+    : `/api/debates/${id}/end`;
     
   // Cleanup on unmount
   useEffect(() => {
