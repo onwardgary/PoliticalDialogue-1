@@ -726,9 +726,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Vote on a debate - secure ID version
   app.post("/api/debates/s/:secureId/vote", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
+    // No authentication required for voting in simplified version
     
     const bodySchema = z.object({
       votedFor: z.enum(["party", "citizen"]),
@@ -748,9 +746,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Can only vote on completed debates" });
       }
       
-      // Check if user has already voted
+      // Since we don't have authentication, we'll create a dummy user ID
+      // based on IP address or a unique session identifier for basic tracking
+      const anonymousUserId = req.ip ? `anon-${req.ip}` : `anon-${Date.now()}`;
+      
+      // Check if this anonymous user already voted
       const existingVotes = await storage.getVotesForDebate(debate.id);
-      const userVote = existingVotes.find(vote => vote.userId === req.user.id);
+      const userVote = existingVotes.find(vote => vote.userId === anonymousUserId);
       
       if (userVote) {
         return res.status(400).json({ message: "You have already voted on this debate" });
@@ -758,7 +760,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Record vote
       const vote = await storage.createVote({
-        userId: req.user.id,
+        userId: anonymousUserId,
         debateId: debate.id,
         votedFor,
       });
