@@ -658,16 +658,18 @@ export default function DebatePage() {
                 viewState === 'generating' as ViewState
                   ? 'generating'
                 
-                // PRIORITY 2: When waiting for the bot to respond
+                // PRIORITY 2: When at maximum allowed rounds (moved up in priority)
+                // This ensures "Maximum rounds reached" shows immediately when user hits the limit
+                : (messageStatus.finalRoundReached || 
+                  debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 6))
+                    ? 'finalRound'
+                
+                // PRIORITY 3: When waiting for the bot to respond (moved down in priority)
+                // Now this only shows if we're not at max rounds
                 : (messageStatus.sending || messageStatus.polling ||
                    (debate?.messages && debate.messages.length > 0 && 
                     debate.messages[debate.messages.length - 1].role === 'user'))
                     ? 'waiting'
-                
-                // PRIORITY 3: When at maximum allowed rounds (either by server data or immediate local state)
-                : (messageStatus.finalRoundReached || 
-                  debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 6))
-                    ? 'finalRound'
                 
                 // PRIORITY 4: Default state
                 : 'maxRounds'
