@@ -44,6 +44,10 @@ export default function DebatePage() {
   // This helps avoid stale state references in event handlers and callbacks
   const localMessagesRef = useRef<Message[]>([]);
   
+  // Add a ref to track the polling interval
+  // This allows us to clear the interval on unmount or when we're done polling
+  const pollingRef = useRef<number>();
+  
   // Use a clear view state to control what's rendered
   // Using a string literal type to represent the different view states
   type ViewState = 'loading' | 'chat' | 'generating' | 'summary-ready' | 'summary';
@@ -56,6 +60,12 @@ export default function DebatePage() {
   useEffect(() => {
     return () => {
       isMounted.current = false;
+      
+      // Clear any polling interval on unmount
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = undefined;
+      }
     };
   }, []);
   
@@ -291,7 +301,14 @@ export default function DebatePage() {
       let currentDelay = 1000;
       let hasReceivedResponse = false;
       
-      const pollInterval = setInterval(() => {
+      // Clear any existing polling interval first
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = undefined;
+      }
+      
+      // Store the interval ID in the ref
+      pollingRef.current = window.setInterval(() => {
         pollCount++;
         
         if (pollCount <= 30 && !hasReceivedResponse) {
@@ -356,7 +373,10 @@ export default function DebatePage() {
               }
               
               // Stop polling since we received a response
-              clearInterval(pollInterval);
+              if (pollingRef.current) {
+                clearInterval(pollingRef.current);
+                pollingRef.current = undefined;
+              }
             }
           })
           .catch(error => {
@@ -383,14 +403,14 @@ export default function DebatePage() {
               variant: "destructive",
             });
           }
-          clearInterval(pollInterval);
+          
+          // Clean up interval
+          if (pollingRef.current) {
+            clearInterval(pollingRef.current);
+            pollingRef.current = undefined;
+          }
         }
       }, 1000);
-      
-      // Return a cleanup function that clears the interval if unmounted
-      return () => {
-        clearInterval(pollInterval);
-      };
     },
     onError: (error) => {
       // Reset state on error
@@ -603,11 +623,17 @@ export default function DebatePage() {
       // Reset message status when component unmounts
       setMessageStatus(prev => ({ ...prev, sending: false, polling: false }));
       
+      // Clean up any lingering polling intervals
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = undefined;
+      }
+      
       // Reset animation tracking to prevent blank screens due to stale state
       window.currentAnimationId = undefined;
       
       // Extra logging to help troubleshoot prod issues
-      console.log("DEBATE PAGE UNMOUNTED: Cleaned up animation state");
+      console.log("DEBATE PAGE UNMOUNTED: Cleaned up animation state and polling intervals");
     };
   }, []);
   
