@@ -78,7 +78,7 @@ function MobileSidebar() {
             </div>
           </div>
         ) : (
-          <p className="text-sm text-neutral-500 mt-1">Political Debate Platform</p>
+          <p className="text-sm text-neutral-500 mt-1">A Place for Civic Engagement</p>
         )}
       </div>
       

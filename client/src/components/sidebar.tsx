@@ -40,7 +40,7 @@ export default function Sidebar() {
         <h1 className="text-2xl font-bold text-primary flex items-center">
           <MessageSquare className="mr-2 h-6 w-6" /> Suara.sg
         </h1>
-        <p className="text-sm text-neutral-500 mt-1">Political Debate Platform</p>
+        <p className="text-sm text-neutral-500 mt-1">A Place for Civic Engagement</p>
       </div>
       
       <nav className="flex-1 p-4">
