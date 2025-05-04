@@ -331,7 +331,11 @@ export default function DebatePage() {
               const latestAIMessage = fetchedData.messages[fetchedData.messages.length - 1];
               
               // IMPORTANT: First, immediately stop the polling state to prevent duplicate typing indicators
-              setMessageStatus(prev => ({ ...prev, polling: false }));
+              // Add a small delay to ensure the state update happens after the current event loop
+              setTimeout(() => {
+                setMessageStatus(prev => ({ ...prev, polling: false }));
+                console.log("RESET POLLING STATE: Explicitly resetting polling state to enable text input");
+              }, 10);
               
               // Then check if we already have this message to prevent duplicates
               // We'll use a combined approach: remove typing indicator and carefully add the new message in a single update
@@ -391,8 +395,11 @@ export default function DebatePage() {
             // Clear the typing indicator since we stopped polling
             setLocalMessages(prev => prev.filter(msg => !msg.id.startsWith('typing-')));
             
-            // Reset the polling state
-            setMessageStatus(prev => ({ ...prev, polling: false }));
+            // Reset the polling state with a small delay to ensure the state update happens properly
+            setTimeout(() => {
+              setMessageStatus(prev => ({ ...prev, polling: false }));
+              console.log("RESET POLLING STATE: Explicitly resetting polling state due to max attempts");
+            }, 10);
             
             // Show error toast
             toast({
@@ -411,8 +418,11 @@ export default function DebatePage() {
       }, 1000);
     },
     onError: (error) => {
-      // Reset state on error
-      setMessageStatus(prev => ({ ...prev, sending: false, polling: false }));
+      // Reset state on error with a small delay to ensure proper state updates
+      setTimeout(() => {
+        setMessageStatus(prev => ({ ...prev, sending: false, polling: false }));
+        console.log("RESET POLLING STATE: Explicitly resetting polling state after error");
+      }, 10);
       
       // Show error toast
       toast({
@@ -611,8 +621,15 @@ export default function DebatePage() {
   
   // Global cleanup effect
   useEffect(() => {
-    // Reset polling state and counters on mount to ensure clean state
-    setMessageStatus(prev => ({ ...prev, polling: false }));
+    // Set isMounted flag
+    isMounted.current = true;
+    
+    // Reset polling state and counters on mount with a small delay to ensure clean state
+    setTimeout(() => {
+      setMessageStatus(prev => ({ ...prev, polling: false, sending: false }));
+      console.log("RESET POLLING STATE: Resetting states on component mount");
+    }, 10);
+    
     attemptsRef.current = 0;
     
     // Clear any typing indicators that might be lingering from previous sessions
