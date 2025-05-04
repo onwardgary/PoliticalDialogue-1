@@ -34,6 +34,8 @@ export default function ChatInterface({
   maxRounds = 6,
   isGeneratingSummary = false
 }: ChatInterfaceProps) {
+  // Debug party name received by ChatInterface
+  console.log("PARTY DEBUG - ChatInterface received:", { partyShortName });
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
   

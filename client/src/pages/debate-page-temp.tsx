@@ -517,6 +517,14 @@ export default function DebatePageSimplified() {
     }
   };
   
+  // Add a debug output for party data right before rendering
+  console.log("IMPORTANT DEBUG - Party data being passed to ChatInterface:", {
+    partyEndpoint,
+    partyId: debate?.partyId,
+    party,
+    partyShortName: party?.shortName
+  });
+  
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
       <Sidebar />
