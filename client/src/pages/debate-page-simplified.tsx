@@ -465,47 +465,76 @@ export default function DebatePage() {
       }
     },
     onSuccess: (data) => {
+      // Ensure we have valid data before proceeding
+      console.log("End debate successful, got data:", data);
+
+      // Update the query cache with the new debate data
+      // This is critical to ensure the summary page has data when it loads
+      if (!data.simulated) {
+        queryClient.setQueryData([apiEndpoint], data);
+      }
+      
+      // Store the summary path for later use
+      const summaryPath = secureId 
+        ? `/summary/s/${secureId}` 
+        : `/summary/${debate?.id}`;
+        
       // Simulate the steps of generating a summary (with longer, more visible transitions)
-      const simulateSteps = () => {
-        setTimeout(() => {
-          setSummaryGenerationStep(2);
-          setTimeout(() => {
-            setSummaryGenerationStep(3);
-            setTimeout(() => {
-              setSummaryGenerationStep(4);
-              setTimeout(() => {
-                // Only update cache if data is not simulated
-                if (!data.simulated) {
-                  queryClient.setQueryData([apiEndpoint], data);
-                }
-                
-                // Show success toast
-                toast({
-                  title: "Debate summary generated",
-                  description: "Your debate has been analyzed and summarized.",
-                });
-                
-                // Ensure we've shown all steps of the animation first
-                setTimeout(() => {
-                  // Final check to make sure we're still in generating state before redirecting
-                  if (viewState === 'generating') {
-                    console.log("All animation steps completed, now redirecting to summary page");
-                    
-                    // Redirect to the summary page
-                    const summaryPath = secureId 
-                      ? `/summary/s/${secureId}` 
-                      : `/summary/${debate?.id}`;
-                    setLocation(summaryPath);
-                  } else {
-                    console.log("Warning: View state changed during animation, not redirecting");
-                  }
-                }, 1000); // Added more delay to ensure all animations are visible
-              }, 1500); // 1.5 seconds for each step
-            }, 1500); // 1.5 seconds for each step
-          }, 1500); // 1.5 seconds for each step
-        }, 1500); // 1.5 seconds for each step
+      const simulateSteps = async () => {
+        // Step 1 is already set before the mutation starts
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        setSummaryGenerationStep(2);
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        setSummaryGenerationStep(3);
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        setSummaryGenerationStep(4);
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Show success toast
+        toast({
+          title: "Debate summary generated",
+          description: "Your debate has been analyzed and summarized.",
+        });
+        
+        // Fetch the complete debate data one last time before redirecting
+        // This ensures the data is in the cache
+        try {
+          console.log("Pre-fetching debate data before navigation");
+          const response = await fetch(apiEndpoint, {
+            headers: {
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
+            }
+          });
+          
+          if (response.ok) {
+            const freshData = await response.json();
+            // Update the cache with the freshest data
+            queryClient.setQueryData([apiEndpoint], freshData);
+            console.log("Pre-fetch successful, cache updated with fresh data");
+          }
+        } catch (error) {
+          console.warn("Pre-fetch failed, proceeding with navigation anyway:", error);
+        }
+        
+        // Add a small final delay to ensure cache updates have propagated
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Final check to make sure we're still in generating state before redirecting
+        if (viewState === 'generating') {
+          console.log("All animation steps completed, now redirecting to summary page");
+          
+          // Redirect to the summary page
+          setLocation(summaryPath);
+        } else {
+          console.log("Warning: View state changed during animation, not redirecting");
+        }
       };
       
+      // Start the async simulation process
       simulateSteps();
     },
     onError: (error) => {

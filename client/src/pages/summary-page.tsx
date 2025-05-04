@@ -76,31 +76,69 @@ export default function SummaryPage() {
   // Fetch debate data with automatic polling if summary is not available
   const { 
     data: debate, 
-    isLoading: isLoadingDebate, 
+    isLoading: isLoadingDebate,
+    error,
     refetch
   } = useQuery({
     queryKey: [apiEndpoint],
     queryFn: async () => {
       console.log("Fetching debate summary from:", apiEndpoint);
-      const response = await fetch(apiEndpoint, {
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+      
+      // Add a retry mechanism for initial load
+      let attempts = 0;
+      const maxAttempts = 3;
+      
+      while (attempts < maxAttempts) {
+        try {
+          const response = await fetch(apiEndpoint, {
+            headers: {
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
+            }
+          });
+          
+          if (!response.ok) {
+            console.log(`Attempt ${attempts + 1}/${maxAttempts} failed with status ${response.status}`);
+            attempts++;
+            if (attempts >= maxAttempts) {
+              throw new Error(`Failed to fetch debate after ${maxAttempts} attempts`);
+            }
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            continue;
+          }
+          
+          const data = await response.json();
+          console.log("Successfully fetched debate data:", data);
+          return data;
+        } catch (err) {
+          console.error(`Attempt ${attempts + 1}/${maxAttempts} error:`, err);
+          attempts++;
+          if (attempts >= maxAttempts) {
+            throw err;
+          }
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
-      });
-      if (!response.ok) {
-        throw new Error("Failed to fetch debate");
       }
-      return response.json();
+      
+      throw new Error("Failed to fetch debate after exhausting retries");
     },
     refetchOnWindowFocus: false,
     refetchInterval: (data: any) => {
       // If we have a completed debate with a summary, stop polling
-      // We're using an explicit 'any' type to handle the debate data structure
-      if (data && data.summary) return false;
-      // Otherwise, poll every 5 seconds instead of 2 to reduce server load
-      return 5000;
+      if (data && data.summary) {
+        console.log("Summary found, stopping polling");
+        return false;
+      }
+      
+      // If debate is still being processed, poll frequently
+      console.log("Summary not found yet, continuing to poll");
+      return 2000; // Poll every 2 seconds while waiting for summary
     },
+    // Add retry logic
+    retry: 3,
+    retryDelay: 1000,
     // Add stale time to prevent unnecessary refetches
     staleTime: 10000
   });
