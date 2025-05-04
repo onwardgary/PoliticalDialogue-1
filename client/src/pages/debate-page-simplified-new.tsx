@@ -29,9 +29,7 @@ export default function DebatePage() {
   const { toast } = useToast();
   const [isUserTyping, setIsUserTyping] = useState(false);
   
-  // Animation states
-  const [isAnimationOpen, setIsAnimationOpen] = useState(false);
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  // Animation state is now managed by the UIState machine
   
   // Track component mounting status
   const isMounted = useRef(true);
@@ -52,13 +50,15 @@ export default function DebatePage() {
   // This centralizes the polling logic within React Query's refetchInterval
   const attemptsRef = useRef<number>(0);
   
-  // Use a clear view state to control what's rendered
-  // Using a string literal type to represent the different view states
-  type ViewState = 'loading' | 'chat' | 'generating' | 'summary-ready' | 'summary';
-  const [viewState, setViewState] = useState<ViewState>('loading');
+  // Define a union type for UI state management using the state machine pattern
+  type UIState = 
+    | { status: 'loading' }
+    | { status: 'chat' }
+    | { status: 'animating' }
+    | { status: 'summaryReady'; url: string };
   
-  // State to store the summary URL for delayed navigation
-  const [summaryUrl, setSummaryUrl] = useState<string | null>(null);
+  // Initialize the UI state
+  const [ui, setUI] = useState<UIState>({ status: 'loading' });
   
   // Cleanup on unmount
   useEffect(() => {
@@ -79,11 +79,11 @@ export default function DebatePage() {
     localMessagesRef.current = localMessages;
   }, [localMessages]);
   
-  // Custom setter for viewState that includes logging
-  const setViewStateWithLogging = (newState: ViewState) => {
-    console.log(`Changing view state from ${viewState} to ${newState}`);
+  // Helper to set UI state with logging
+  const setUIWithLogging = (newState: UIState) => {
+    console.log(`Changing UI state from ${ui.status} to ${newState.status}`);
     if (isMounted.current) {
-      setViewState(newState);
+      setUI(newState);
     }
   };
   
@@ -426,8 +426,8 @@ export default function DebatePage() {
     mutationFn: async () => {
       console.log("Button clicked: Starting summary generation");
       
-      // Show the animation immediately 
-      setIsAnimationOpen(true);
+      // Show the animation immediately by setting state to 'animating'
+      setUIWithLogging({ status: 'animating' });
       
       try {
         // Make the API call directly
@@ -443,8 +443,6 @@ export default function DebatePage() {
         const summaryPath = secureId 
           ? `/summary/s/${secureId}` 
           : `/summary/${debate?.id}`;
-            
-        setSummaryUrl(summaryPath);
         
         // Wait 3 seconds to give the illusion of processing (animation effect)
         await new Promise(resolve => setTimeout(resolve, 3000));
@@ -459,15 +457,15 @@ export default function DebatePage() {
     onSuccess: (data) => {
       console.log("End debate mutation completed successfully");
       
-      // After 3 seconds, hide the animation and show the notification
+      // After a short delay, switch to summary ready state with the URL
       setTimeout(() => {
-        setIsAnimationOpen(false);
-        setIsNotificationOpen(true);
+        setUIWithLogging({ status: 'summaryReady', url: data.path });
       }, 500);
     },
     onError: (error) => {
       console.error("Error in endDebateMutation:", error);
-      setIsAnimationOpen(false);
+      // Return to chat state on error
+      setUIWithLogging({ status: 'chat' });
       
       toast({
         title: "Error",
@@ -582,29 +580,25 @@ export default function DebatePage() {
   useEffect(() => {
     if (!debate) return;
     
-    if (debate.completed && debate.summary) {
-      // Store the summary URL for later navigation
+    // Only update the UI state if it's currently loading
+    if (ui.status === 'loading') {
+      // Set UI state to chat mode when debate data is loaded
+      setUIWithLogging({ status: 'chat' });
+    }
+    
+    // If debate is completed and has a summary but we're not already in an animation
+    // or summary state, it means we loaded a page with an existing completed debate
+    if (debate.completed && debate.summary && ui.status === 'chat') {
+      // Keep track of the summary path for potential navigation
       const summaryPath = secureId 
         ? `/summary/s/${secureId}` 
         : `/summary/${debate.id}`;
       
-      // Set the summary URL if it's not already set
-      if (!summaryUrl) {
-        setSummaryUrl(summaryPath);
-      }
-      
-      // If animation is not currently showing, set to chat view
-      if (!isAnimationOpen && !isNotificationOpen) {
-        setViewStateWithLogging('chat');
-      }
-    } else {
-      // ONLY change to chat view if we're not currently animating
-      // This prevents the race condition where this effect resets the view during summary generation
-      if (!isAnimationOpen && !isNotificationOpen) {
-        setViewStateWithLogging('chat');
-      }
+      // We could update the button state here or add a "View Summary" button
+      // but we'll just leave it in chat mode for now, as the navigation is
+      // handled by handleEndDebate based on the debate.completed state
     }
-  }, [debate, secureId, summaryUrl, isAnimationOpen, isNotificationOpen]);
+  }, [debate, secureId, ui.status]);
   
   // Global cleanup effect
   useEffect(() => {
