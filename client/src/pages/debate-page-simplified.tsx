@@ -14,6 +14,33 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { InfoIcon, XIcon, CheckCircle2, Scale, MedalIcon, BrainCircuit } from "lucide-react";
 
+// Component to display the summary notification when it's ready
+function SummaryReadyNotification({ 
+  onViewSummary 
+}: { 
+  onViewSummary: () => void 
+}) {
+  return (
+    <div className="fixed bottom-24 left-0 right-0 flex justify-center z-50 mb-4 px-4">
+      <div className="bg-primary text-white p-4 rounded-lg shadow-lg max-w-md w-full flex items-center justify-between">
+        <div className="flex items-center">
+          <CheckCircle2 className="h-5 w-5 mr-3 text-white" />
+          <div>
+            <p className="font-medium">Summary Ready!</p>
+            <p className="text-xs opacity-90">Your debate has been analyzed and summarized.</p>
+          </div>
+        </div>
+        <button 
+          onClick={onViewSummary}
+          className="bg-white text-primary px-3 py-1.5 rounded-md text-sm font-medium hover:bg-opacity-90 transition-colors"
+        >
+          View Summary
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // Component to display summary generation progress
 function SummaryGenerationLoader({ step }: { step: number }) {
   const steps = [
@@ -121,8 +148,11 @@ export default function DebatePage() {
   
   // Use a clear view state to control what's rendered
   // Using a string literal type to represent the different view states
-  type ViewState = 'loading' | 'chat' | 'generating' | 'summary';
+  type ViewState = 'loading' | 'chat' | 'generating' | 'summary-ready' | 'summary';
   const [viewState, setViewState] = useState<ViewState>('loading');
+  
+  // State to store the summary URL for delayed navigation
+  const [summaryUrl, setSummaryUrl] = useState<string | null>(null);
   
   // Custom setter for viewState that includes logging
   const setViewStateWithLogging = (newState: ViewState) => {
@@ -679,15 +709,27 @@ export default function DebatePage() {
     sendMessageMutation.mutate(content);
   };
   
-  // Handle ending debate and generating summary
-  const handleEndDebate = () => {
-    // If debate is already completed, just redirect to the summary page
-    if (debate?.completed && debate?.summary) {
-      console.log("Debate already completed, redirecting to summary page");
+  // Navigate to the summary page
+  const handleViewSummary = () => {
+    if (summaryUrl) {
+      console.log(`Navigating to summary page: ${summaryUrl}`);
+      setLocation(summaryUrl);
+    } else {
+      // Fallback in case summaryUrl is not set
       const summaryPath = secureId 
         ? `/summary/s/${secureId}` 
         : `/summary/${debate.id}`;
+      console.log(`Navigating to summary page (fallback): ${summaryPath}`);
       setLocation(summaryPath);
+    }
+  };
+
+  // Handle ending debate and generating summary
+  const handleEndDebate = () => {
+    // If debate is already completed, just navigate to the summary
+    if (debate?.completed && debate?.summary) {
+      console.log("Debate already completed, showing summary");
+      handleViewSummary();
       return;
     }
     
@@ -695,7 +737,7 @@ export default function DebatePage() {
     endDebateMutation.mutate();
   };
   
-  // Monitor debate state to set appropriate view and redirect to summary page if completed
+  // Monitor debate state to set appropriate view and show notification when summary is ready
   useEffect(() => {
     if (!debate) return;
     
@@ -703,22 +745,34 @@ export default function DebatePage() {
     const isAnimating = summaryGenerationStep !== null;
     
     if (debate.completed && debate.summary) {
-      // Only redirect if we're not already in the summary generation view or animating
-      // This prevents the race condition where this effect might redirect before animation finishes
-      if (viewState !== 'generating' && !isAnimating) {
-        // Redirect to the summary page
-        const summaryPath = secureId 
-          ? `/summary/s/${secureId}` 
-          : `/summary/${debate.id}`;
-        
-        console.log(`Completed debate detected: Redirecting from ${viewState} to summary page ${summaryPath}`);
-        
-        // Add a small delay before redirecting to make transitions smoother
+      // Store the summary URL for later navigation
+      const summaryPath = secureId 
+        ? `/summary/s/${secureId}` 
+        : `/summary/${debate.id}`;
+      
+      // Set the summary URL if it's not already set
+      if (!summaryUrl) {
+        setSummaryUrl(summaryPath);
+      }
+      
+      // Only show summary notification if we're:
+      // 1. Not already in the generating view 
+      // 2. Not animating
+      // 3. Not already showing the summary-ready notification
+      if (viewState !== 'generating' && !isAnimating && viewState !== 'summary-ready') {
+        // If we've finished the animation, change to summary-ready state
+        if (summaryGenerationStep === 4 || (viewState === 'chat' && !summaryGenerationStep)) {
+          console.log(`Summary ready! Setting viewState to 'summary-ready' with path: ${summaryPath}`);
+          setViewStateWithLogging('summary-ready');
+        }
+      } else if (viewState === 'generating' && summaryGenerationStep === 4) {
+        // When we hit step 4 in the animation, wait 1 second then show summary-ready notification
         setTimeout(() => {
-          setLocation(summaryPath);
-        }, 100);
+          console.log("Animation complete, showing summary ready notification");
+          setViewStateWithLogging('summary-ready');
+        }, 1000);
       } else {
-        console.log("Completed debate detected BUT not redirecting because animation is in progress");
+        console.log("Completed debate detected BUT not showing notification yet due to ongoing animation");
       }
     } else if (viewState !== 'generating' && !isAnimating) {
       // ONLY change to chat view if we're not currently generating a summary or animating
@@ -728,7 +782,7 @@ export default function DebatePage() {
     } else {
       console.log("Debate not completed BUT not changing view because animation is in progress");
     }
-  }, [debate, secureId, setLocation, viewState, summaryGenerationStep]);
+  }, [debate, secureId, viewState, summaryGenerationStep, summaryUrl]);
   
   // Global cleanup effect to ensure polling state is reset if component unmounts
   // or if there's any other unexpected issue
