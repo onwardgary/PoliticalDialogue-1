@@ -21,10 +21,23 @@ export default function HomePage() {
         <MobileHeader />
         
         <header className="bg-white border-b border-black px-6 py-10 md:py-16">
-          <h1 className="text-3xl md:text-4xl font-bold text-black mb-2">Welcome to Suara.sg</h1>
-          <p className="text-black text-lg md:w-3/4 lg:w-2/3">
-            Step into a new era of civic dialogue. Here, you can challenge ideas, test your reasoning, and engage in meaningful debates with AI-powered fanbots that reflect diverse political perspectives. These bots aren't affiliated with any party—they're here to help you sharpen your views and find your voice.
-          </p>
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div className="md:w-3/4">
+              <h1 className="text-3xl md:text-4xl font-bold text-black mb-2">Welcome to Suara.sg</h1>
+              <p className="text-black text-lg">
+                Step into a new era of civic dialogue. Here, you can challenge ideas, test your reasoning, and engage in meaningful debates with AI-powered fanbots that reflect diverse political perspectives. These bots aren't affiliated with any party—they're here to help you sharpen your views and find your voice.
+              </p>
+            </div>
+            <div className="bg-neutral-50 p-4 border border-neutral-200 rounded-md md:w-1/4 min-w-[220px]">
+              <h3 className="text-lg font-semibold italic mb-1">Suara <span className="text-sm font-normal">(noun)</span></h3>
+              <p className="text-sm text-neutral-600 mb-1"><span className="font-mono">/ˈsu.a.ra/</span> — Malay</p>
+              <ol className="list-decimal pl-5 text-sm space-y-1 text-neutral-700">
+                <li>Voice. A means of expression.</li>
+                <li>Sound. The audible presence of thought.</li>
+                <li>Vote. A choice that shapes the future.</li>
+              </ol>
+            </div>
+          </div>
         </header>
         
         {/* Party Selection Section */}
