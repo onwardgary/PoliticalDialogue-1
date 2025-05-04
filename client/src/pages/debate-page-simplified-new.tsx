@@ -48,6 +48,10 @@ export default function DebatePage() {
   // This allows us to clear the interval on unmount or when we're done polling
   const pollingRef = useRef<number>();
   
+  // Add a ref to track polling attempts for React Query
+  // This centralizes the polling logic within React Query's refetchInterval
+  const attemptsRef = useRef<number>(0);
+  
   // Use a clear view state to control what's rendered
   // Using a string literal type to represent the different view states
   type ViewState = 'loading' | 'chat' | 'generating' | 'summary-ready' | 'summary';
@@ -100,15 +104,17 @@ export default function DebatePage() {
     ? `/api/debates/s/${secureId}/end` 
     : `/api/debates/${id}/end`;
   
-  // Add state to track polling behavior
-  const [pollingAttempts, setPollingAttempts] = useState(0);
+  // Constant for maximum polling attempts
   const MAX_POLLING_ATTEMPTS = 30; // About 60 seconds of polling at varying intervals
   
   // Fetch debate data
   const { data: debate, isLoading: isLoadingDebate } = useQuery({
     queryKey: [apiEndpoint],
     queryFn: async () => {
-      console.log(`Fetching debate data from: ${apiEndpoint} (attempt ${pollingAttempts + 1})`);
+      // Use the ref for attempt counting
+      const currentAttempt = attemptsRef.current + 1;
+      console.log(`Fetching debate data from: ${apiEndpoint} (attempt ${currentAttempt}/${MAX_POLLING_ATTEMPTS})`);
+      
       const response = await fetch(apiEndpoint, {
         headers: {
           'Cache-Control': 'no-cache',
@@ -141,11 +147,12 @@ export default function DebatePage() {
     },
     refetchOnWindowFocus: true,
     refetchInterval: (data: any) => {
-      // DO NOT increment polling attempts counter inside the refetchInterval callback!
-      // This causes an infinite React render cycle
+      // Centralize polling logic here with ref-based counter
+      // It's safe to increment the ref counter here as it won't trigger re-renders
+      attemptsRef.current = attemptsRef.current + 1;
       
       // If we've reached max attempts, stop polling
-      if (pollingAttempts >= MAX_POLLING_ATTEMPTS) {
+      if (attemptsRef.current >= MAX_POLLING_ATTEMPTS) {
         console.log(`Maximum polling attempts (${MAX_POLLING_ATTEMPTS}) reached, stopping automatic polling`);
         return false;
       }
@@ -153,6 +160,8 @@ export default function DebatePage() {
       // If debate is completed, stop polling
       if (data?.completed) {
         console.log("Debate is completed, stopping polling");
+        // Reset the attempts counter for next time
+        attemptsRef.current = 0;
         return false;
       }
       
@@ -161,7 +170,7 @@ export default function DebatePage() {
       
       // More frequent polling when waiting for AI response
       if (lastMessage?.role === 'user') {
-        console.log("Waiting for bot response, polling every 1 second");
+        console.log(`Waiting for bot response, polling every 1 second (attempt ${attemptsRef.current}/${MAX_POLLING_ATTEMPTS})`);
         return 1000;
       }
       
@@ -171,14 +180,14 @@ export default function DebatePage() {
       
       // Regular polling for active conversations (within the last minute)
       if (timeSinceLastMessage < 60000) {
-        console.log("Active conversation, polling every 3 seconds");
+        console.log(`Active conversation, polling every 3 seconds (attempt ${attemptsRef.current}/${MAX_POLLING_ATTEMPTS})`);
         return 3000;
       }
       
       // Gradually reduce polling frequency for inactive conversations
       // Use exponential backoff: 10s, 15s, 22.5s, etc. up to 60s
-      const backoffTime = Math.min(10000 * Math.pow(1.5, Math.floor(pollingAttempts / 5)), 60000);
-      console.log(`Inactive conversation, polling with backoff: ${backoffTime}ms`);
+      const backoffTime = Math.min(10000 * Math.pow(1.5, Math.floor(attemptsRef.current / 5)), 60000);
+      console.log(`Inactive conversation, polling with backoff: ${backoffTime}ms (attempt ${attemptsRef.current}/${MAX_POLLING_ATTEMPTS})`);
       return backoffTime;
     },
     enabled: !!(id || secureId) && !messageStatus.sending,
@@ -187,19 +196,6 @@ export default function DebatePage() {
     // Add garbage collection time
     gcTime: 5 * 60 * 1000, // 5 minutes
   });
-  
-  // Use effect to safely increment polling counter
-  useEffect(() => {
-    // Only increment when debate exists and not completed
-    if (debate && !debate.completed) {
-      // Use a timer to control polling attempts increments
-      const timer = setTimeout(() => {
-        setPollingAttempts(prev => Math.min(prev + 1, MAX_POLLING_ATTEMPTS));
-      }, 3000); // Every 3 seconds increment the counter safely
-      
-      return () => clearTimeout(timer);
-    }
-  }, [debate, debate?.completed]);
 
   // Fetch party data
   const { data: party, isLoading: isLoadingParty } = useQuery({
@@ -612,8 +608,9 @@ export default function DebatePage() {
   
   // Global cleanup effect
   useEffect(() => {
-    // Reset polling state on mount to ensure clean state
+    // Reset polling state and counters on mount to ensure clean state
     setMessageStatus(prev => ({ ...prev, polling: false }));
+    attemptsRef.current = 0;
     
     // Clear any typing indicators that might be lingering from previous sessions
     setLocalMessages(prev => prev.filter(msg => !msg.id.startsWith('typing-')));
@@ -628,6 +625,9 @@ export default function DebatePage() {
         clearInterval(pollingRef.current);
         pollingRef.current = undefined;
       }
+      
+      // Reset polling attempts counter on unmount
+      attemptsRef.current = 0;
       
       // Reset animation tracking to prevent blank screens due to stale state
       window.currentAnimationId = undefined;
