@@ -704,9 +704,9 @@ export default function DebatePage() {
     debate.messages.filter((msg: Message) => msg.role === 'user').length < (debate.maxRounds || 3) && 
     (debate.messages.length === 0 || debate.messages[debate.messages.length - 1].role !== 'user');
     
-  // Debug logging for message status - helpful to find why input remains disabled
-  useEffect(() => {
-    // Only log if we have a debate object to prevent null errors
+  // Debug logging without using a hook to prevent hooks ordering issues
+  // Create a debug log function that we can call directly
+  const logDebugState = () => {
     if (debate) {
       console.log("DISABLED STATE CHECK:", {
         sending: messageStatus.sending,
@@ -718,7 +718,7 @@ export default function DebatePage() {
         uiState: ui.status
       });
     }
-  }, [messageStatus, debate, ui.status]);
+  };
   
   return (
     <div id="debate-container" className="min-h-screen flex flex-col md:flex-row">

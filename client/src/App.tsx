@@ -7,6 +7,7 @@ import NotFound from "./pages/not-found";
 import HomePage from "./pages/home-page";
 import AuthPage from "./pages/auth-page";
 import DebatePage from "./pages/debate-page-simplified-new";
+import DebatePageTemp from "./pages/debate-page-temp"; // Using temp page to fix hooks issue
 import DebatePageRedux from "./pages/debate-page-redux"; // New Redux implementation
 import SummaryPage from "./pages/summary-page";
 import ProfilePage from "./pages/profile-page";
@@ -14,9 +15,8 @@ import AdminKnowledgePage from "./pages/admin-knowledge-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
-  // Using the simplified implementation by default for reliability
-  const useReduxVersion = false; // Reverting to simplified implementation that works correctly
-  const DebateComponent = useReduxVersion ? DebatePageRedux : DebatePage;
+  // Using the temp implementation to fix hooks issues
+  const DebateComponent = DebatePageTemp;
   
   return (
     <Switch>
@@ -42,9 +42,11 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       */}
 
-      {/* For testing Redux directly */}
+      {/* For testing other debate page versions */}
       <Route path="/debate-redux/:id([0-9]+)" component={DebatePageRedux} />
       <Route path="/debate-redux/s/:secureId" component={DebatePageRedux} />
+      <Route path="/debate-original/:id([0-9]+)" component={DebatePage} />
+      <Route path="/debate-original/s/:secureId" component={DebatePage} />
       
       <Route component={NotFound} />
     </Switch>
