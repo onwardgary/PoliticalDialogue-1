@@ -54,15 +54,26 @@ export default function DebatePageSimplified() {
     ? `/api/debates/s/${secureId}/end`
     : `/api/debates/${id}/end`;
     
-  // Cleanup on unmount
+  // Cleanup on unmount with safety checks
   useEffect(() => {
     return () => {
+      // Mark component as unmounted first
       isMounted.current = false;
+      
+      // Reset state as a safety measure
+      setMessageStatus({
+        sending: false,
+        polling: false, 
+        finalRoundReached: false
+      });
+      
+      // Clear any active polling
       if (pollingRef.current) {
         clearInterval(pollingRef.current);
         pollingRef.current = undefined;
       }
-      console.log("DEBATE PAGE UNMOUNTED: Cleaned up");
+      
+      console.log("DEBATE PAGE UNMOUNTED: Cleaned up with safety measures");
     };
   }, []);
   
@@ -152,11 +163,47 @@ export default function DebatePageSimplified() {
         return [...messagesWithUpdatedUser, typingIndicatorMessage];
       });
       
-      // Start polling for response (simplified)
+      // Start polling for response (enhanced with better error handling and timeout)
+      let pollingAttempts = 0;
+      const MAX_POLLING_ATTEMPTS = 30; // 30 seconds max polling time
+      
       pollingRef.current = window.setInterval(() => {
+        // Safety check: if component unmounted, don't continue
+        if (!isMounted.current) {
+          if (pollingRef.current) {
+            clearInterval(pollingRef.current);
+            pollingRef.current = undefined;
+          }
+          return;
+        }
+        
+        // Count attempts and stop if too many
+        pollingAttempts++;
+        if (pollingAttempts > MAX_POLLING_ATTEMPTS) {
+          console.log("Max polling attempts reached, stopping poll and resetting status");
+          setMessageStatus(prev => ({ ...prev, polling: false, sending: false }));
+          if (pollingRef.current) {
+            clearInterval(pollingRef.current);
+            pollingRef.current = undefined;
+          }
+          toast({
+            title: "Message response timed out",
+            description: "Please try refreshing the page if the interface is unresponsive",
+          });
+          return;
+        }
+        
         fetch(apiEndpoint)
-          .then(response => response.json())
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`Server responded with ${response.status}`);
+            }
+            return response.json();
+          })
           .then(data => {
+            // Check if we're still mounted
+            if (!isMounted.current) return;
+            
             const currentMessageCount = data?.messages?.length || 0;
             const currentMessages = localMessagesRef.current;
             const realLocalMessages = currentMessages.filter(msg => !msg.id.startsWith('typing-')).length;
@@ -165,8 +212,8 @@ export default function DebatePageSimplified() {
               // We got a new message
               const latestAIMessage = data.messages[data.messages.length - 1];
               
-              // Stop polling and update state
-              setMessageStatus(prev => ({ ...prev, polling: false }));
+              // Stop polling and update state (ensure state is fully reset)
+              setMessageStatus(prev => ({ ...prev, polling: false, sending: false }));
               
               // Update messages
               setLocalMessages(prev => {
@@ -195,10 +242,20 @@ export default function DebatePageSimplified() {
                 clearInterval(pollingRef.current);
                 pollingRef.current = undefined;
               }
+              
+              console.log("Message received, polling stopped, input should be enabled");
             }
           })
           .catch(error => {
             console.error("Error polling:", error);
+            // On error, also make sure we reset status
+            if (pollingAttempts > 5) { // Allow a few errors before giving up
+              setMessageStatus(prev => ({ ...prev, polling: false, sending: false }));
+              if (pollingRef.current) {
+                clearInterval(pollingRef.current);
+                pollingRef.current = undefined;
+              }
+            }
           });
       }, 1000);
     },
@@ -283,8 +340,11 @@ export default function DebatePageSimplified() {
     }
   });
   
-  // Handle sending message
+  // Handle sending message with additional safety measures
   const handleSendMessage = (message: string) => {
+    // First, remove any old typing indicators to prevent state issues
+    setLocalMessages(prev => prev.filter(msg => !msg.id.startsWith('typing-')));
+    
     // Add temporary user message
     const tempUserMessage: Message = {
       id: `user-temp-${Date.now()}`,
@@ -293,11 +353,32 @@ export default function DebatePageSimplified() {
       timestamp: Date.now()
     };
     
+    // Reset message status first to ensure clean starting state
+    setMessageStatus(prev => ({ 
+      ...prev, 
+      sending: true, 
+      polling: false // Explicitly turn polling off before starting new message flow
+    }));
+    
     // Update local messages
     setLocalMessages(prev => [...prev, tempUserMessage]);
     
     // Send to server
     sendMessageMutation.mutate(message);
+    
+    // Add additional state check in case mutation fails
+    setTimeout(() => {
+      if (isMounted.current) {
+        setMessageStatus(prev => {
+          // If we're still in 'sending' state after 15 seconds, something went wrong
+          if (prev.sending && !prev.polling) {
+            console.log("Message sending timed out, resetting state");
+            return { ...prev, sending: false, polling: false };
+          }
+          return prev;
+        });
+      }
+    }, 15000);
   };
   
   // Handle ending debate
