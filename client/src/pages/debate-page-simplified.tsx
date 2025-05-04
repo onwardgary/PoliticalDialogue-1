@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import SummaryAnimationOverlay, { SummaryReadyNotification } from "@/components/animation/summary-animation-overlay";
 
-// Declare global window property for animation tracking
+// Declare window property for animation tracking
 declare global {
   interface Window {
     currentAnimationId?: string;
@@ -21,68 +22,9 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { InfoIcon, XIcon, CheckCircle2, Scale, MedalIcon, BrainCircuit } from "lucide-react";
 
-// Component to display the summary notification when it's ready
-function SummaryReadyNotification({ 
-  onViewSummary 
-}: { 
-  onViewSummary: () => void 
-}) {
-  return (
-    <div className="fixed bottom-24 left-0 right-0 flex justify-center z-50 mb-4 px-4">
-      <div className="bg-primary text-white p-4 rounded-lg shadow-lg max-w-md w-full flex items-center justify-between">
-        <div className="flex items-center">
-          <CheckCircle2 className="h-5 w-5 mr-3 text-white" />
-          <div>
-            <p className="font-medium">Summary Ready!</p>
-            <p className="text-xs opacity-90">Your debate has been analyzed and summarized.</p>
-          </div>
-        </div>
-        <button 
-          onClick={onViewSummary}
-          className="bg-white text-primary px-3 py-1.5 rounded-md text-sm font-medium hover:bg-opacity-90 transition-colors"
-        >
-          View Summary
-        </button>
-      </div>
-    </div>
-  );
-}
+// Using imported SummaryReadyNotification instead
 
-// Component to display the summary loading notification
-function SummaryGenerationLoader({ step }: { step: number }) {
-  const steps = [
-    { id: 1, name: "Analyzing Arguments", icon: BrainCircuit },
-    { id: 2, name: "Evaluating Logic", icon: Scale },
-    { id: 3, name: "Determining Outcome", icon: MedalIcon },
-    { id: 4, name: "Creating Summary", icon: CheckCircle2 },
-  ];
-  
-  // Find the current step
-  const currentStep = steps.find(s => s.id === step) || steps[0];
-  const Icon = currentStep.icon;
-  
-  return (
-    <div className="fixed bottom-24 left-0 right-0 flex justify-center z-50 mb-4 px-4">
-      <div className="bg-gray-900 text-white p-4 rounded-lg shadow-lg max-w-md w-full border border-gray-700">
-        <div className="flex items-center">
-          <div className="rounded-full p-2 mr-3 bg-white/10 animate-pulse">
-            <Icon className="h-5 w-5 text-white" />
-          </div>
-          <div className="flex-1">
-            <p className="font-medium text-white">{currentStep.name}</p>
-            <div className="mt-2">
-              <Progress value={(step / steps.length) * 100} className="h-2 bg-gray-800" />
-            </div>
-            <p className="text-xs text-gray-300 mt-1">
-              Step {step} of {steps.length}: Generating debate summary
-            </p>
-          </div>
-          <Loader2 className="h-5 w-5 animate-spin text-white ml-3" />
-        </div>
-      </div>
-    </div>
-  );
-}
+// No longer needed - using portal-based animation overlay component
 
 export default function DebatePage() {
   // Extract parameters from the URL - could be either regular ID or secure ID
@@ -93,7 +35,8 @@ export default function DebatePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isUserTyping, setIsUserTyping] = useState(false);
-  const [summaryGenerationStep, setSummaryGenerationStep] = useState<number | null>(null);
+  const [isAnimationOpen, setIsAnimationOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   
   // Add a local cache of messages for immediate updates
   // This bypasses React Query's asynchronous cache updates
