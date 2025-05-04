@@ -746,36 +746,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Can only vote on completed debates" });
       }
       
-      // Since we don't have authentication, we'll create a dummy user ID
-      // based on IP address or a unique session identifier for basic tracking
-      const anonymousUserId = req.ip ? `anon-${req.ip}` : `anon-${Date.now()}`;
+      // Get or create an anonymous user for voting
+      const anonymousUser = await storage.getOrCreateAnonymousUser();
       
-      // Generate a numeric ID from the string for database compatibility
-      // Using a simple hash function for demonstration
-      const stringToNumberId = (str: string) => {
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-          const char = str.charCodeAt(i);
-          hash = ((hash << 5) - hash) + char;
-          hash = hash & hash; // Convert to 32bit integer
-        }
-        // Ensure it's positive and within safe integer range
-        return Math.abs(hash) % Number.MAX_SAFE_INTEGER;
-      };
-      
-      const numericUserId = stringToNumberId(anonymousUserId);
-      
-      // Check if this anonymous user already voted
+      // Check if this user already voted on this debate
       const existingVotes = await storage.getVotesForDebate(debate.id);
-      const userVote = existingVotes.find(vote => vote.userId === numericUserId);
+      const userVote = existingVotes.find(vote => vote.userId === anonymousUser.id);
       
       if (userVote) {
         return res.status(400).json({ message: "You have already voted on this debate" });
       }
       
-      // Record vote
+      // Record vote using the anonymous user's ID
       const vote = await storage.createVote({
-        userId: numericUserId,
+        userId: anonymousUser.id,
         debateId: debate.id,
         votedFor,
       });

@@ -78,6 +78,37 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+  
+  // Get or create anonymous user for unauthenticated operations
+  async getOrCreateAnonymousUser(): Promise<User> {
+    try {
+      // Try to find the anonymous user
+      const [anonymousUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.username, 'anonymous'));
+      
+      if (anonymousUser) {
+        return anonymousUser;
+      }
+      
+      // If not found, create the anonymous user
+      const [newAnonymousUser] = await db
+        .insert(users)
+        .values({
+          username: 'anonymous',
+          email: 'anonymous@example.com',
+          password: 'not_usable_password',
+          isAdmin: false
+        })
+        .returning();
+      
+      return newAnonymousUser;
+    } catch (error) {
+      console.error("Error in getOrCreateAnonymousUser:", error);
+      throw error;
+    }
+  }
 
   // Party methods
   async getParties(): Promise<Party[]> {
