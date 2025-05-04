@@ -79,11 +79,13 @@ export default function DebatePage() {
     localMessagesRef.current = localMessages;
   }, [localMessages]);
   
-  // Helper to set UI state with logging
+  // Helper to set UI state with logging using functional update to ensure latest state
   const setUIWithLogging = (newState: UIState) => {
-    console.log(`Changing UI state from ${ui.status} to ${newState.status}`);
     if (isMounted.current) {
-      setUI(newState);
+      setUI(prevState => {
+        console.log(`Changing UI state from ${prevState.status} to ${newState.status}`);
+        return newState;
+      });
     }
   };
   
@@ -134,13 +136,13 @@ export default function DebatePage() {
         `completed: ${data.completed}, messages: ${data.messages?.length || 0}`
       );
       
-      // Update local messages unless debate is completed
+      // Update local messages unless debate is completed - using functional update
       if (data.messages) {
-        if (!data.completed) {
-          setLocalMessages(data.messages);
-        } else {
-          setLocalMessages([]);
-        }
+        setLocalMessages(_prev => {
+          // If debate is completed, we clear local messages since the UI will show 
+          // from the debate state directly. Otherwise, use the fetched messages.
+          return !data.completed ? data.messages : [];
+        });
       }
       
       return data;
@@ -240,13 +242,35 @@ export default function DebatePage() {
       
       // Update local state with confirmed message
       setLocalMessages(prev => {
-        const updatedMessages = prev.map((msg: Message) => {
+        // First remove any existing typing indicators to prevent duplicates
+        const messagesWithoutTyping = prev.filter(msg => !msg.id.startsWith('typing-'));
+        
+        // Then update user temp messages with confirmed message
+        const messagesWithUpdatedUser = messagesWithoutTyping.map((msg: Message) => {
           if (msg.id.startsWith('user-temp-')) {
             return data.userMessage;
           }
           return msg;
         });
-        return updatedMessages;
+        
+        // Add a temporary typing indicator message with a truly unique ID
+        // Use multiple sources of randomness for absolute uniqueness
+        const timestamp = Date.now();
+        const randomPart1 = Math.random().toString(36).substring(2, 10);
+        const randomPart2 = Math.random().toString(36).substring(2, 10);
+        const randomNumber = Math.floor(Math.random() * 100000000);
+        // Combine all these elements to create a very unique ID that cannot possibly collide
+        const uniqueTypingId = `typing-${timestamp}-${randomPart1}-${randomPart2}-${randomNumber}`;
+        
+        const typingIndicatorMessage: Message = {
+          id: uniqueTypingId,
+          role: 'assistant',
+          content: '...',
+          timestamp: timestamp
+        };
+        
+        // Return messages with updated user message and new typing indicator
+        return [...messagesWithUpdatedUser, typingIndicatorMessage];
       });
       
       // Update React Query cache
@@ -266,28 +290,6 @@ export default function DebatePage() {
           updatedAt: new Date().toISOString(),
         };
       });
-      
-      // First, remove any existing typing indicators to prevent duplicates
-      setLocalMessages(prev => prev.filter(msg => !msg.id.startsWith('typing-')));
-      
-      // Add a temporary typing indicator message with a truly unique ID
-      // Use multiple sources of randomness for absolute uniqueness
-      const timestamp = Date.now();
-      const randomPart1 = Math.random().toString(36).substring(2, 10);
-      const randomPart2 = Math.random().toString(36).substring(2, 10);
-      const randomNumber = Math.floor(Math.random() * 100000000);
-      // Combine all these elements to create a very unique ID that cannot possibly collide
-      const uniqueTypingId = `typing-${timestamp}-${randomPart1}-${randomPart2}-${randomNumber}`;
-      
-      const typingIndicatorMessage: Message = {
-        id: uniqueTypingId,
-        role: 'assistant',
-        content: '...',
-        timestamp: timestamp
-      };
-      
-      // Add it to the local messages
-      setLocalMessages(prev => [...prev, typingIndicatorMessage]);
       
       // Explicitly set polling state to true when we start polling
       setMessageStatus(prev => ({ ...prev, polling: true }));
@@ -434,10 +436,15 @@ export default function DebatePage() {
         const response = await apiRequest("POST", endDebateEndpoint);
         const data = await response.json();
         
-        // Update the query cache with the new debate data
-        if (data) {
-          queryClient.setQueryData([apiEndpoint], data);
-        }
+        // Update the query cache with the new debate data using functional update
+        queryClient.setQueryData([apiEndpoint], (oldData: any) => {
+          if (!oldData) return data;
+          return {
+            ...oldData,
+            ...data,
+            updatedAt: new Date().toISOString()
+          };
+        });
         
         // Prepare the summary path
         const summaryPath = secureId 
@@ -458,6 +465,7 @@ export default function DebatePage() {
       console.log("End debate mutation completed successfully");
       
       // After a short delay, switch to summary ready state with the URL
+      // Using setTimeout but with functional update inside it
       setTimeout(() => {
         setUIWithLogging({ status: 'summaryReady', url: data.path });
       }, 500);
