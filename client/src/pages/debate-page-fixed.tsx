@@ -66,15 +66,44 @@ export default function DebatePageFixed() {
       
       // Save messages to local state
       if (data.messages) {
-        setLocalMessages(data.messages);
+        const previousMessageCount = localMessages.length;
+        const newMessageCount = data.messages.length;
         
-        // If the last message is from assistant, reset polling state
-        if (data.messages.length > 0 && data.messages[data.messages.length - 1].role === 'assistant') {
-          console.log("FETCH RESET: Assistant response fetched, resetting polling state");
-          setMessageStatus(prev => ({
-            ...prev,
-            polling: false
-          }));
+        // Only update if the messages array has changed
+        if (newMessageCount !== previousMessageCount) {
+          setLocalMessages(data.messages);
+          
+          // If the last message is from assistant, reset polling state
+          // But only if we're currently in polling state to avoid unnecessary updates
+          if (data.messages.length > 0 && 
+              data.messages[data.messages.length - 1].role === 'assistant' && 
+              messageStatus.polling) {
+            console.log("FETCH RESET: Assistant response detected, resetting polling state");
+            setMessageStatus(prev => ({
+              ...prev,
+              polling: false
+            }));
+          }
+        } else {
+          // Just compare the last message to see if it's changed
+          const lastOldMessage = previousMessageCount > 0 ? localMessages[previousMessageCount - 1] : null;
+          const lastNewMessage = data.messages[newMessageCount - 1];
+          
+          if (lastOldMessage && lastNewMessage && 
+              (lastOldMessage.id !== lastNewMessage.id || 
+               lastOldMessage.content !== lastNewMessage.content)) {
+            
+            setLocalMessages(data.messages);
+            
+            // If new last message is from assistant and we're polling, reset polling state
+            if (lastNewMessage.role === 'assistant' && messageStatus.polling) {
+              console.log("FETCH RESET: Assistant response updated, resetting polling state");
+              setMessageStatus(prev => ({
+                ...prev,
+                polling: false
+              }));
+            }
+          }
         }
       }
       
@@ -85,7 +114,8 @@ export default function DebatePageFixed() {
       
       return data;
     },
-    refetchInterval: 10000, // Every 10 seconds
+    // Only poll when needed (when messageStatus.polling is true)
+    refetchInterval: messageStatus.polling ? 5000 : false, // Only poll when waiting for response
   });
   
   // Fetch party data
