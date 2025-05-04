@@ -44,7 +44,7 @@ export default function HomePage() {
         <section className="p-6 md:p-8">
           <div className="mb-8">
             <h2 className="text-xl font-semibold mb-2">Select an Unofficial Fanbot to Debate With</h2>
-            <p className="text-black">These are <span className="font-bold">unofficial fanbots</span> (not endorsed by actual parties) that present perspectives aligned with different political positions</p>
+            <p className="text-black">We're starting with PAP and WP fanbots (not endorsed by actual parties) as they represent the two largest parties in Parliament.</p>
           </div>
           
           {isLoadingParties ? (
