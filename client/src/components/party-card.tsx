@@ -77,16 +77,8 @@ export default function PartyCard({ party }: { party: Party }) {
   };
   
   const getPartyColor = () => {
-    switch (party.shortName) {
-      case "PAP":
-        return "bg-blue-100 text-blue-700 border-blue-300";
-      case "WP":
-        return "bg-blue-50 text-blue-800 border-blue-300";
-      case "PSP":
-        return "bg-red-100 text-red-700 border-red-300";
-      default:
-        return "bg-neutral-100 text-neutral-700 border-neutral-300";
-    }
+    // All parties will have black and white styling
+    return "bg-black text-white border-black";
   };
   
   return (
