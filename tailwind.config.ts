@@ -98,6 +98,14 @@ export default {
             transform: "translateY(100%)",
             opacity: "0",
           },
+        },
+        "fadeIn": {
+          from: {
+            opacity: "0",
+          },
+          to: {
+            opacity: "1",
+          },
         }
       },
       animation: {
@@ -105,6 +113,8 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
         "slide-up": "slide-up 0.3s ease-out",
         "slide-down": "slide-down 0.3s ease-out",
+        "bounce-slow": "bounce 2s infinite",
+        "fadeIn": "fadeIn 0.3s ease-in-out",
       },
     },
   },
