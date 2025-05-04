@@ -73,6 +73,11 @@ export default function DebatePage() {
   const apiEndpoint = secureId 
     ? `/api/debates/s/${secureId}` 
     : `/api/debates/${id}`;
+
+  // Also define the end debate endpoint
+  const endDebateEndpoint = secureId 
+    ? `/api/debates/s/${secureId}/end` 
+    : `/api/debates/${id}/end`;
   
   // Add state to track polling behavior
   const [pollingAttempts, setPollingAttempts] = useState(0);
@@ -385,11 +390,6 @@ export default function DebatePage() {
       });
     },
   });
-  
-  // End debate endpoint
-  const endDebateEndpoint = secureId
-    ? `/api/debates/s/${secureId}/end`
-    : `/api/debates/${id}/end`;
   
   // End debate mutation - simplified to work with portal animation
   const endDebateMutation = useMutation({
