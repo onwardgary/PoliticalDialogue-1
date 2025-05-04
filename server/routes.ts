@@ -750,9 +750,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // based on IP address or a unique session identifier for basic tracking
       const anonymousUserId = req.ip ? `anon-${req.ip}` : `anon-${Date.now()}`;
       
+      // Generate a numeric ID from the string for database compatibility
+      // Using a simple hash function for demonstration
+      const stringToNumberId = (str: string) => {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+          const char = str.charCodeAt(i);
+          hash = ((hash << 5) - hash) + char;
+          hash = hash & hash; // Convert to 32bit integer
+        }
+        // Ensure it's positive and within safe integer range
+        return Math.abs(hash) % Number.MAX_SAFE_INTEGER;
+      };
+      
+      const numericUserId = stringToNumberId(anonymousUserId);
+      
       // Check if this anonymous user already voted
       const existingVotes = await storage.getVotesForDebate(debate.id);
-      const userVote = existingVotes.find(vote => vote.userId === anonymousUserId);
+      const userVote = existingVotes.find(vote => vote.userId === numericUserId);
       
       if (userVote) {
         return res.status(400).json({ message: "You have already voted on this debate" });
@@ -760,7 +775,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Record vote
       const vote = await storage.createVote({
-        userId: anonymousUserId,
+        userId: numericUserId,
         debateId: debate.id,
         votedFor,
       });

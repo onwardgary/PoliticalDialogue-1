@@ -4,7 +4,8 @@ import { DebateSummary as DebateSummaryType } from "@shared/schema";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Check } from "lucide-react";
+import { useState } from "react";
 
 type DebateSummaryProps = {
   debateId: string;
@@ -114,18 +115,25 @@ export default function DebateSummary({
     );
   }
   
+  // State to track which option user voted for
+  const [userVote, setUserVote] = useState<"party" | "citizen" | null>(null);
+  
   const voteMutation = useMutation({
     mutationFn: async (vote: { votedFor: "party" | "citizen" }) => {
       const res = await apiRequest("POST", `/api/debates/s/${debateId}/vote`, vote);
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      // Set the user's vote when successful
+      setUserVote(variables.votedFor);
       toast({
         title: "Vote recorded",
         description: "Thank you for your vote!",
       });
     },
     onError: (error: Error) => {
+      // Reset the user's vote on error
+      setUserVote(null);
       toast({
         title: "Error",
         description: `Could not record vote: ${error.message}`,
@@ -135,6 +143,8 @@ export default function DebateSummary({
   });
   
   const handleVote = (votedFor: "party" | "citizen") => {
+    // Set the vote immediately for instant feedback
+    setUserVote(votedFor);
     voteMutation.mutate({ votedFor });
   };
   
@@ -324,31 +334,60 @@ export default function DebateSummary({
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <Button
               onClick={() => handleVote("party")}
-              variant="outline"
-              className="w-full sm:flex-1 p-3 hover:bg-blue-50 hover:border-primary"
+              variant={userVote === "party" ? "default" : "outline"}
+              className={`w-full sm:flex-1 p-3 ${
+                userVote === "party" 
+                  ? "bg-primary text-white" 
+                  : "hover:bg-blue-50 hover:border-primary"
+              }`}
               disabled={voteMutation.isPending}
             >
               <div className="flex items-center">
-                <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center mr-2">
-                  <span className="text-white font-bold text-xs">P</span>
+                <div className={`w-6 h-6 ${userVote === "party" ? "bg-white" : "bg-primary"} rounded-full flex items-center justify-center mr-2`}>
+                  <span className={`${userVote === "party" ? "text-primary" : "text-white"} font-bold text-xs`}>P</span>
                 </div>
                 <span className="font-medium">{partyShortName} Bot</span>
+                {userVote === "party" && (
+                  <Check className="ml-2 h-4 w-4" />
+                )}
               </div>
             </Button>
             <Button
               onClick={() => handleVote("citizen")}
-              variant="outline"
-              className="w-full sm:flex-1 p-3 hover:bg-orange-50 hover:border-secondary"
+              variant={userVote === "citizen" ? "default" : "outline"}
+              className={`w-full sm:flex-1 p-3 ${
+                userVote === "citizen" 
+                  ? "bg-orange-500 text-white" 
+                  : "hover:bg-orange-50 hover:border-secondary"
+              }`}
               disabled={voteMutation.isPending}
             >
               <div className="flex items-center">
-                <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center mr-2">
-                  <span className="text-white font-bold text-xs">C</span>
+                <div className={`w-6 h-6 ${userVote === "citizen" ? "bg-white" : "bg-orange-500"} rounded-full flex items-center justify-center mr-2`}>
+                  <span className={`${userVote === "citizen" ? "text-orange-500" : "text-white"} font-bold text-xs`}>C</span>
                 </div>
                 <span className="font-medium">Citizen (You)</span>
+                {userVote === "citizen" && (
+                  <Check className="ml-2 h-4 w-4" />
+                )}
               </div>
             </Button>
           </div>
+          
+          {voteMutation.isPending && (
+            <div className="mt-3 flex justify-center items-center text-neutral-500">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <span className="text-sm">Recording your vote...</span>
+            </div>
+          )}
+          
+          {userVote && !voteMutation.isPending && (
+            <div className="mt-3 flex justify-center items-center text-green-600">
+              <Check className="mr-2 h-4 w-4" />
+              <span className="text-sm">Your vote has been recorded</span>
+            </div>
+          )}
+          
           <p className="text-xs text-neutral-500 mt-2 text-center">Your vote contributes to the aggregate public opinion</p>
         </div>
       </CardContent>
