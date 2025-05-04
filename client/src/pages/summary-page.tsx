@@ -137,8 +137,8 @@ export default function SummaryPage() {
     },
     refetchOnWindowFocus: false,
     refetchInterval: (data: any) => {
-      // Increment polling attempts counter
-      setPollingAttempts(prev => prev + 1);
+      // DO NOT increment polling attempts counter inside the refetchInterval callback!
+      // This causes an infinite React render cycle
       
       // Check if we should stop polling due to max attempts reached
       if (pollingAttempts >= MAX_POLLING_ATTEMPTS) {
@@ -172,6 +172,19 @@ export default function SummaryPage() {
     // Use longer cache time for debates with summaries
     gcTime: 5 * 60 * 1000 // 5 minutes
   });
+  // Use effect to safely increment polling counter
+  useEffect(() => {
+    // Only increment when debate exists but has no summary
+    if (debate && !debate.summary) {
+      // Use a timer to control polling attempts increments
+      const timer = setTimeout(() => {
+        setPollingAttempts(prev => Math.min(prev + 1, MAX_POLLING_ATTEMPTS));
+      }, 2000); // Every 2 seconds increment the counter safely
+      
+      return () => clearTimeout(timer);
+    }
+  }, [debate, debate?.summary]);
+  
   // Fetch party data
   const { data: partyData, isLoading: isLoadingParty } = useQuery({
     queryKey: ["/api/parties", debate?.partyId],

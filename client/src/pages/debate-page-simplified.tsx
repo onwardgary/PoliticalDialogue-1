@@ -183,8 +183,8 @@ export default function DebatePage() {
     },
     refetchOnWindowFocus: true,
     refetchInterval: (data: any) => {
-      // Increment polling attempt counter
-      setPollingAttempts(prev => prev + 1);
+      // DO NOT increment polling attempts counter inside the refetchInterval callback!
+      // This causes an infinite React render cycle
       
       // If we've reached max attempts, stop polling
       if (pollingAttempts >= MAX_POLLING_ATTEMPTS) {
@@ -230,6 +230,19 @@ export default function DebatePage() {
     gcTime: 5 * 60 * 1000, // 5 minutes
   });
   
+  // Use effect to safely increment polling counter
+  useEffect(() => {
+    // Only increment when debate exists and not completed
+    if (debate && !debate.completed) {
+      // Use a timer to control polling attempts increments
+      const timer = setTimeout(() => {
+        setPollingAttempts(prev => Math.min(prev + 1, MAX_POLLING_ATTEMPTS));
+      }, 3000); // Every 3 seconds increment the counter safely
+      
+      return () => clearTimeout(timer);
+    }
+  }, [debate, debate?.completed]);
+
   // Fetch party data
   const { data: party, isLoading: isLoadingParty } = useQuery({
     queryKey: ["/api/parties", debate?.partyId],
