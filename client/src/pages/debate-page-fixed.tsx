@@ -231,8 +231,16 @@ export default function DebatePageFixed() {
     }
     
     try {
-      // Update UI state to show animation
-      setUiState("animating");
+      // CHANGE: Immediately show summary ready UI instead of animation
+      // Skip animation state and go directly to summary ready
+      // setUiState("animating");
+      
+      // Set the summary URL for redirection right away
+      const summaryRoute = secureId ? `/summary/s/${secureId}` : `/summary/${debate?.id}`;
+      setSummaryUrl(summaryRoute);
+      
+      // Show summary ready UI immediately
+      setUiState("summaryReady");
       
       // Check if we should use secureId or regular id
       const endpoint = secureId 
@@ -254,19 +262,16 @@ export default function DebatePageFixed() {
             errorMessage.includes("already completed") || 
             errorMessage.includes("already ended")) {
           
-          console.log("Debate was already completed, skipping to summary view");
-          // Go directly to summary page since it already exists
-          const summaryRoute = secureId ? `/summary/s/${secureId}` : `/summary/${debate.id}`;
-          setSummaryUrl(summaryRoute);
-          setUiState("summaryReady");
-          return; // Exit the function early since we're redirecting
+          console.log("Debate was already completed, summary view already showing");
+          // We're already showing the summary UI, so no need to change anything
+          return;
         } else {
-          // For other errors, throw normally
-          throw new Error(`Failed to end debate: ${errorMessage}`);
+          // Log the error but don't change UI since we're already showing summary ready
+          console.error(`Failed to end debate: ${errorMessage}`);
         }
       }
       
-      // Debate is ending and summary is being generated
+      // Debate is ending and summary is being generated in the background
       queryClient.invalidateQueries({ queryKey: [apiEndpoint] });
       
       // Clear any existing timers first
@@ -280,10 +285,11 @@ export default function DebatePageFixed() {
         safetyTimeoutRef.current = null;
       }
       
-      // Poll for summary completion 
+      // Still poll in the background to ensure summary is generated
+      // but we don't need to update the UI since it's already showing summary ready
       pollIntervalRef.current = setInterval(async () => {
         try {
-          console.log("Polling for summary completion...");
+          console.log("Background polling for summary completion...");
           const checkRes = await fetch(`/api/debates/s/${secureId}`);
           
           if (!checkRes.ok) {
@@ -292,20 +298,19 @@ export default function DebatePageFixed() {
           }
           
           const checkData = await checkRes.json();
-          console.log("Poll result:", { 
+          console.log("Background poll result:", { 
             complete: checkData.complete, 
-            hasSummary: Boolean(checkData.summary),
-            currentUIState: uiState
+            hasSummary: Boolean(checkData.summary)
           });
           
           if (checkData.complete && checkData.summary) {
-            console.log("Summary detected! Transitioning to ready state");
+            console.log("Summary finished generating in the background");
             
-            // Clear the interval
+            // Clear the interval since summary is done
             if (pollIntervalRef.current) {
               clearInterval(pollIntervalRef.current);
               pollIntervalRef.current = null;
-              console.log("Cleared poll interval");
+              console.log("Cleared background poll interval");
             }
             
             // Clear the safety timeout
@@ -314,20 +319,11 @@ export default function DebatePageFixed() {
               safetyTimeoutRef.current = null;
               console.log("Cleared safety timeout");
             }
-            
-            // Set the summary URL for redirection
-            const summaryRoute = secureId ? `/summary/s/${secureId}` : `/summary/${debate?.id}`;
-            setSummaryUrl(summaryRoute);
-            
-            // Force UI state update to show summary ready notification
-            setUiState("summaryReady");
-          } else if (checkData.complete && !checkData.summary) {
-            console.log("Debate is marked complete but no summary yet");
           }
         } catch (error) {
           console.error("Error checking summary status:", error);
         }
-      }, 3000);
+      }, 5000); // Less frequent polling since it's just in the background
       
       // Safety timeout after 2 minutes
       safetyTimeoutRef.current = setTimeout(() => {
@@ -335,12 +331,10 @@ export default function DebatePageFixed() {
         if (pollIntervalRef.current) {
           clearInterval(pollIntervalRef.current);
           pollIntervalRef.current = null;
+          console.log("Cleared poll interval after timeout");
         }
         
-        // If still in animating state, show error or go to summary anyway
-        if (uiState === "animating") {
-          setUiState("summaryReady");
-        }
+        // We're already showing summary ready UI, so no need to update state
       }, 120000);
       
       // Add cleanup to the component unmount effect
