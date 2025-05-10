@@ -47,14 +47,24 @@ export default function ChatInterface({
   // Each round is one user message (assistant responses don't count toward the round number)
   const currentRound = Math.min(userMessages.length, maxRounds);
   
-  // Compute whether to show summary generation prompt
-  const showSummaryPrompt = 
-    currentRound >= maxRounds && // Changed from === to >= to make sure it shows even if we exceed rounds
-    !isLoading && 
-    !isGeneratingSummary &&
-    // Only show after bot has responded to last user message
+  // Compute whether to show summary generation prompt - with optimistic UI
+  // We'll show the prompt more aggressively to avoid latency in production
+  const lastMessageIsAssistant = 
     filteredMessages.length > 0 && 
     filteredMessages[filteredMessages.length - 1].role === 'assistant';
+    
+  // Optimistic approach - show the prompt as soon as possible
+  // when max rounds are reached and we're not actively loading a message
+  const showSummaryPrompt = 
+    (currentRound >= maxRounds) && // Max rounds reached
+    !isGeneratingSummary && // Not already generating summary
+    (
+      // Either not loading and last message is from assistant (normal case)
+      (!isLoading && lastMessageIsAssistant) ||
+      // OR we're at exactly max rounds, the last message was from assistant,
+      // and we haven't yet shown the "end debate" button
+      (currentRound === maxRounds && lastMessageIsAssistant)
+    );
     
   // Debug why summary prompt isn't showing
   console.log("SUMMARY PROMPT CHECK:", {
@@ -63,6 +73,7 @@ export default function ChatInterface({
     maxRounds,
     isLoading,
     isGeneratingSummary,
+    lastMessageIsAssistant,
     lastMessageRole: filteredMessages.length > 0 ? filteredMessages[filteredMessages.length - 1].role : "none"
   });
 

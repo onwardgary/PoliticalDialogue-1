@@ -170,8 +170,23 @@ export default function DebatePageFixed() {
     // Update local state with the user message
     setLocalMessages(prev => [...prev, newMessage]);
     
-    // Update message status
-    setMessageStatus(prev => ({ ...prev, sending: true }));
+    // Count user messages to check if this is the last round
+    const userMessageCount = [...localMessages, newMessage].filter(m => m.role === 'user').length;
+    const isMaxRoundReached = userMessageCount >= (debate?.maxRounds || 3);
+    
+    // Update message status - with optimistic final round flag
+    setMessageStatus(prev => ({ 
+      ...prev, 
+      sending: true,
+      // Optimistically set finalRoundReached if this message completes the max rounds
+      finalRoundReached: isMaxRoundReached || prev.finalRoundReached
+    }));
+    
+    console.log("ROUND CHECK:", {
+      userMessageCount,
+      maxRounds: debate?.maxRounds || 3,
+      isMaxRoundReached
+    });
     
     try {
       // Check if we should use secureId or regular id
@@ -197,11 +212,21 @@ export default function DebatePageFixed() {
           // This prevents race conditions when responses are very fast
           if (prev.sending) {
             console.log("TIMEOUT: Setting polling state after sending completed");
-            return { ...prev, sending: false, polling: true };
+            return { 
+              ...prev, 
+              sending: false, 
+              polling: true,
+              // Preserve the finalRoundReached state
+              finalRoundReached: isMaxRoundReached || prev.finalRoundReached 
+            };
           } else {
             // Message was already received, don't enable polling
             console.log("TIMEOUT: Message already received, not enabling polling");
-            return prev;
+            return {
+              ...prev,
+              // But still update the finalRoundReached state
+              finalRoundReached: isMaxRoundReached || prev.finalRoundReached
+            };
           }
         });
         
