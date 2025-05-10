@@ -52,25 +52,24 @@ export default function ChatInterface({
   const lastMessageIsAssistant = 
     filteredMessages.length > 0 && 
     filteredMessages[filteredMessages.length - 1].role === 'assistant';
-    
-  // Optimistic approach - show the prompt as soon as possible
-  // when max rounds are reached and we're not actively loading a message
+  
+  // Get user message count to check if final round is reached
+  const userMessageCount = filteredMessages.filter(msg => msg.role === 'user').length;
+  const isFinalRoundReached = userMessageCount >= maxRounds;
+  
+  // Super optimistic approach - show the prompt with minimal conditions
+  // This will make the button appear much faster in production
   const showSummaryPrompt = 
-    (currentRound >= maxRounds) && // Max rounds reached
-    !isGeneratingSummary && // Not already generating summary
-    (
-      // Either not loading and last message is from assistant (normal case)
-      (!isLoading && lastMessageIsAssistant) ||
-      // OR we're at exactly max rounds, the last message was from assistant,
-      // and we haven't yet shown the "end debate" button
-      (currentRound === maxRounds && lastMessageIsAssistant)
-    );
+    isFinalRoundReached && // Final round is reached based on user message count
+    !isGeneratingSummary && // Not generating summary yet
+    lastMessageIsAssistant; // Last message is from assistant (so we don't show button before bot responds)
     
   // Debug why summary prompt isn't showing
   console.log("SUMMARY PROMPT CHECK:", {
     showSummaryPrompt,
-    currentRound,
+    userMessageCount,
     maxRounds,
+    isFinalRoundReached,
     isLoading,
     isGeneratingSummary,
     lastMessageIsAssistant,
@@ -267,7 +266,7 @@ export default function ChatInterface({
                 <Button 
                   variant="default"
                   size="sm"
-                  className="justify-start gap-2"
+                  className="justify-start gap-2 bg-amber-500 hover:bg-amber-600 text-white shadow-md animate-pulse"
                   onClick={(e) => {
                     // Prevent any default behavior and event bubbling
                     e.preventDefault();
@@ -304,7 +303,7 @@ export default function ChatInterface({
                 <Button 
                   variant="default"
                   size="sm"
-                  className="justify-start gap-2"
+                  className="justify-start gap-2 bg-amber-500 hover:bg-amber-600 text-white shadow-md animate-pulse"
                   onClick={(e) => {
                     // Prevent any default behavior and event bubbling
                     e.preventDefault();
