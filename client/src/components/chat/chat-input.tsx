@@ -27,7 +27,33 @@ export default function ChatInput({
   const [message, setMessage] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const wasDisabledRef = useRef<boolean>(disabled);
   const MAX_CHARS = 560; // Doubled character limit for users
+  
+  // Immediately log state changes for debugging
+  useEffect(() => {
+    console.log("INPUT STATE CHANGE:", { 
+      disabled, 
+      disabledReason, 
+      isLoading,
+      textareaFocused: document.activeElement === textareaRef.current
+    });
+    
+    // If the input was disabled and is now enabled, try to focus it
+    // This helps with the perceived latency when re-enabling the input
+    if (wasDisabledRef.current && !disabled) {
+      // Short timeout to ensure DOM is ready
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+          console.log("Auto-focused textarea after re-enabling");
+        }
+      }, 50);
+    }
+    
+    // Update the ref for next comparison
+    wasDisabledRef.current = disabled;
+  }, [disabled, disabledReason, isLoading]);
   
   // Handle sending the message
   const handleSubmit = (e: FormEvent) => {

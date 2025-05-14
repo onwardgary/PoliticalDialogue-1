@@ -465,7 +465,9 @@ export default function DebatePageFixed() {
               messageStatus.sending || 
               messageStatus.polling ||
               messageStatus.finalRoundReached ||
-              (debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 3)) ||
+              // Use an optimistic check for user message count that doesn't need to wait for API
+              ((localMessages.filter(msg => msg.role === 'user').length) >= (debate?.maxRounds || 3)) ||
+              // Waiting for bot response
               (localMessages.length > 0 && localMessages[localMessages.length - 1].role === 'user') ||
               uiState === "animating" || 
               uiState === "summaryReady"
@@ -473,11 +475,13 @@ export default function DebatePageFixed() {
             disabledReason={
               uiState === "animating" ? 'generating' :
               uiState === "summaryReady" ? 'summaryReady' :
+              // Optimistic check for final round status - using local state
               (messageStatus.finalRoundReached || 
-               debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 3)) ? 'finalRound' :
+               (localMessages.filter(msg => msg.role === 'user').length >= (debate?.maxRounds || 3))) ? 'finalRound' :
+              // Waiting for bot response
               (messageStatus.sending || 
                messageStatus.polling ||
-              (localMessages.length > 0 && localMessages[localMessages.length - 1].role === 'user')) ? 'waiting' :
+               (localMessages.length > 0 && localMessages[localMessages.length - 1].role === 'user')) ? 'waiting' :
               'maxRounds'
             }
           />
