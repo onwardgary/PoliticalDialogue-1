@@ -121,7 +121,7 @@ export default function ChatInput({
             placeholder={
               disabled 
                 ? disabledReason === 'waiting'
-                  ? "Waiting for Unofficial Fanbot response..." 
+                  ? "Waiting for response and for you to finish reading..." 
                   : disabledReason === 'finalRound'
                     ? "Maximum rounds reached. Debate complete."
                     : disabledReason === 'generating'
@@ -169,7 +169,7 @@ export default function ChatInput({
             {disabled && disabledReason === 'waiting' ? (
               <div className="text-xs text-amber-500 flex items-center">
                 <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse mr-1.5"></span>
-                Waiting for response...
+                Please wait for response...
               </div>
             ) : (
               <Button 
@@ -194,7 +194,7 @@ export default function ChatInput({
           ) : disabled ? (
             <span className="text-primary-foreground/60">
               {disabledReason === 'waiting'
-                ? "Fanbot is typing..."
+                ? "Please wait..."
                 : disabledReason === 'finalRound'
                   ? "Debate Complete"
                   : disabledReason === 'generating'
