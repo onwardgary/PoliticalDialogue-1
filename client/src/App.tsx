@@ -12,7 +12,7 @@ import DebatePageFixed from "./pages/debate-page-fixed"; // Fixed version with p
 import DebatePageRedux from "./pages/debate-page-redux"; // New Redux implementation
 import SummaryPage from "./pages/summary-page";
 import ProfilePage from "./pages/profile-page";
-import AdminKnowledgePage from "./pages/admin-knowledge-page";
+import AdminKnowledgePage from "./pages/admin-knowledge-page-new";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {

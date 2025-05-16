@@ -235,18 +235,18 @@ export default function AdminKnowledgePage() {
     <div className="min-h-screen flex flex-col">
       <TopNavbar />
       <div className="container mx-auto p-6 flex-1">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Knowledge Base Management</h1>
-          <p className="text-neutral-500">
-            Manage party policy information and background knowledge for the AI
-          </p>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Knowledge Base Management</h1>
+            <p className="text-neutral-500">
+              Manage party policy information and background knowledge for the AI
+            </p>
+          </div>
+          <Button onClick={() => handleOpenDialog()} className="flex items-center">
+            <PlusCircle className="w-4 h-4 mr-2" />
+            Add New Entry
+          </Button>
         </div>
-        <Button onClick={() => handleOpenDialog()} className="flex items-center">
-          <PlusCircle className="w-4 h-4 mr-2" />
-          Add New Entry
-        </Button>
-      </div>
 
       <Card className="mb-8">
         <CardHeader>
