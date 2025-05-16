@@ -3,8 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
-import Sidebar from "@/components/sidebar";
-import { MobileHeader, MobileNavigation } from "@/components/mobile-nav";
+import TopNavbar from "@/components/top-navbar";
 import DebateSummaryTabbed from "@/components/debate-summary-tabbed";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -342,10 +341,9 @@ export default function SummaryPage() {
   if (!hasSummary) {
     console.log("Summary is missing or invalid in the render check:", debate.summary);
     return (
-      <div className="min-h-screen flex flex-col md:flex-row">
-        <Sidebar />
+      <div className="min-h-screen flex flex-col">
+        <TopNavbar />
         <main className="flex-1">
-          <MobileHeader />
           <div className="p-6">
             <div className="rounded-lg border bg-white shadow-sm">
               <div className="p-6">
@@ -387,11 +385,10 @@ export default function SummaryPage() {
   const topic = debate.topic || "Political Discussion";
   
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      <Sidebar />
+    <div className="min-h-screen flex flex-col">
+      <TopNavbar />
       
       <main className="flex-1">
-        <MobileHeader />
         
         <header className="bg-white border-b border-neutral-200 p-4">
           <div className="flex items-center justify-between">
@@ -468,7 +465,6 @@ export default function SummaryPage() {
           />
         </div>
         
-        <MobileNavigation />
       </main>
     </div>
   );
