@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { KnowledgeBase, Party, insertKnowledgeBaseSchema } from "@shared/schema";
 import { z } from "zod";
+import TopNavbar from "@/components/top-navbar";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PlusCircle, Edit, Trash2, X, Check, Database } from "lucide-react";
@@ -231,7 +232,9 @@ export default function AdminKnowledgePage() {
   };
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="min-h-screen flex flex-col">
+      <TopNavbar />
+      <div className="container mx-auto p-6 flex-1">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold mb-2">Knowledge Base Management</h1>
