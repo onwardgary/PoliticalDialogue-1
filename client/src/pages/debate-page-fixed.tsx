@@ -3,8 +3,7 @@ import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { nanoid } from 'nanoid';
-import Sidebar from "@/components/sidebar";
-import { MobileHeader, MobileNavigation } from "@/components/mobile-nav";
+import TopNavbar from "@/components/top-navbar";
 import ChatInterface from "@/components/chat/chat-interface-new";
 import ChatInput from "@/components/chat/chat-input";
 import { Message } from "@shared/schema";
@@ -431,11 +430,10 @@ export default function DebatePageFixed() {
   console.log("FINAL PARTY SHORT NAME:", safePartyShortName);
   
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      <Sidebar />
+    <div className="min-h-screen flex flex-col">
+      <TopNavbar />
       
       <main className="flex-1 flex flex-col h-screen">
-        <MobileHeader />
         
         {/* Only render the chat interface when party data is loaded */}
         {isLoadingParty ? (
@@ -578,7 +576,6 @@ export default function DebatePageFixed() {
           </div>
         )}
         
-        <MobileNavigation />
       </main>
     </div>
   );

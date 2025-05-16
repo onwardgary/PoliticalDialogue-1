@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import PartyCard from "@/components/party-card";
-import Sidebar from "@/components/sidebar";
-import { MobileHeader } from "@/components/mobile-nav";
+import TopNavbar from "@/components/top-navbar";
 import { Button } from "@/components/ui/button";
 import { Loader2, MessageSquare } from "lucide-react";
 import { Party } from "@/components/party-card";
@@ -14,11 +13,10 @@ export default function HomePage() {
   });
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      <Sidebar />
+    <div className="min-h-screen flex flex-col">
+      <TopNavbar />
       
       <main className="flex-1 flex flex-col h-screen">
-        <MobileHeader />
         
         <header className="bg-white border-b border-black px-6 py-10 md:py-16">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
