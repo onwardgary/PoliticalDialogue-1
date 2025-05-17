@@ -49,7 +49,7 @@ export default function DebateTutorialOverlay() {
       description: (
         <div className="space-y-2">
           <p>
-            Each debate consists of <strong>3 rounds</strong> where you can present your arguments 
+            Each debate consists of either <strong>3 or 6 rounds</strong> where you can present your arguments 
             and respond to the party bot's position.
           </p>
           <p>
@@ -57,7 +57,7 @@ export default function DebateTutorialOverlay() {
             the most thoughtful responses.
           </p>
           <p>
-            After 3 rounds, you'll have the option to end the debate and generate a summary.
+            After completing your rounds, you'll have the option to end the debate and generate a summary.
           </p>
         </div>
       ),
