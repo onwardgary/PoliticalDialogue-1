@@ -693,7 +693,7 @@ export default function DebatePage() {
     // Only show extension options when user has sent their last message AND bot has responded
     if (
       currentRound === maxRounds && 
-      maxRounds < 8 && 
+      maxRounds < 6 && 
       !isExtendingRounds && 
       !isLastMessageFromUser && // Only show after bot has responded to last user message
       !messageStatus.sending && // Make sure bot isn't still generating a response

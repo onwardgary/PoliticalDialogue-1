@@ -212,7 +212,7 @@ export default function ChatInterface({
           </div>
         )}
         
-        {/* Prompt for debate completion - show for both 3 and 6 rounds */}
+        {/* Debate completion prompt (for both 3 and 6 rounds) */}
         {showSummaryPrompt && (
           <div className="flex w-full mb-4 animate-fadeIn">
             <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
@@ -240,35 +240,6 @@ export default function ChatInterface({
                 >
                   <Check className="h-4 w-4" />
                   <span>End debate and generate summary</span>
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* No additional UI needed for max rounds */}
-            <div className="bg-white p-4 rounded-lg rounded-tl-none shadow-sm max-w-[85%]">
-              <p className="text-sm font-medium mb-2">You've completed all {maxRounds} rounds of your debate!</p>
-              <p className="text-sm text-gray-600 mb-3">This is the maximum number of rounds. Would you like to generate a summary of your debate now?</p>
-              
-              <div className="flex flex-col space-y-2">
-                {/* Generate summary button */}
-                <Button 
-                  variant="default"
-                  size="sm"
-                  className="justify-start gap-2"
-                  onClick={() => {
-                    setTimeout(() => {
-                      if (onEndDebate) {
-                        console.log("Ending debate and generating summary (max rounds)");
-                        onEndDebate();
-                      }
-                    }, 100);
-                  }}
-                  disabled={isGeneratingSummary}
-                >
-                  <Check className="h-4 w-4" />
-                  <span>Generate debate summary</span>
                 </Button>
               </div>
             </div>
