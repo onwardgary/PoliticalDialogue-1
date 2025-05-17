@@ -433,6 +433,8 @@ export default function DebatePageFixed() {
   return (
     <div className="min-h-screen flex flex-col">
       <TopNavbar />
+      {/* Tutorial overlay for new debates */}
+      <DebateTutorialOverlay />
       
       <main className="flex-1 flex flex-col h-screen">
         
