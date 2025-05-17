@@ -708,7 +708,7 @@ export default function DebatePage() {
       // - Extension is in progress
       // - or we're at max rounds already (8)
       // - or a new message was added after showing options
-      (isExtendingRounds || maxRounds >= 8 || (debate.messages.length > 0 && showInlineExtensionOptions && lastMessage?.role === 'user')) && 
+      (isExtendingRounds || maxRounds >= 6 || (debate.messages.length > 0 && showInlineExtensionOptions && lastMessage?.role === 'user')) && 
       showInlineExtensionOptions
     ) {
       console.log(`Hiding inline extension options: isExtendingRounds=${isExtendingRounds}, maxRounds=${maxRounds}`);

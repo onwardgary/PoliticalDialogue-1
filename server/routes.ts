@@ -625,8 +625,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const secureId = req.params.secureId;
       console.log(`Extending debate ${secureId} to ${maxRounds} rounds`);
       
-      if (!maxRounds || ![3, 6, 8].includes(maxRounds)) {
-        return res.status(400).json({ message: "Invalid maxRounds value. Must be 3, 6, or 8." });
+      if (!maxRounds || ![3, 6].includes(maxRounds)) {
+        return res.status(400).json({ message: "Invalid maxRounds value. Must be 3 or 6." });
       }
       
       const debate = await storage.getDebateBySecureId(secureId);

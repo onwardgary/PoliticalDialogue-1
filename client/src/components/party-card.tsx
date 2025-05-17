@@ -145,12 +145,6 @@ export default function PartyCard({ party }: { party: Party }) {
                       <span>6 Rounds (Standard)</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="8">
-                    <div className="flex items-center">
-                      <Clock3 className="h-4 w-4 mr-2" />
-                      <span>8 Rounds (Extended)</span>
-                    </div>
-                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
