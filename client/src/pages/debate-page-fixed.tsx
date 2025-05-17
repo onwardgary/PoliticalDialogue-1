@@ -6,6 +6,7 @@ import { nanoid } from 'nanoid';
 import TopNavbar from "@/components/top-navbar";
 import ChatInterface from "@/components/chat/chat-interface-new";
 import ChatInput from "@/components/chat/chat-input";
+import DebateTutorialOverlay from "@/components/tutorial/debate-tutorial-overlay";
 import { Message } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Check as CheckIcon, Loader2 } from "lucide-react";
