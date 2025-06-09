@@ -171,14 +171,14 @@ export default function DebateSummaryTabbed({
         <h3 className="text-xl font-semibold mb-4">Your Debate Summary</h3>
         
         <Tabs defaultValue="arguments" className="w-full">
-          {/* Mobile-optimized tab layout with shorter labels and proper scrolling */}
+          {/* Mobile-optimized tab layout with proper scrolling */}
           <div className="overflow-x-auto pb-2 mb-2 -mx-2 px-2">
             <TabsList className="inline-flex min-w-max h-10 items-center justify-start rounded-md bg-muted p-1 text-muted-foreground">
-              <TabsTrigger value="arguments" className="px-2 py-1.5 text-xs sm:text-sm whitespace-nowrap">Args</TabsTrigger>
-              <TabsTrigger value="key-points" className="px-2 py-1.5 text-xs sm:text-sm whitespace-nowrap">Points</TabsTrigger>
-              <TabsTrigger value="stakeholders" className="px-2 py-1.5 text-xs sm:text-sm whitespace-nowrap">Groups</TabsTrigger>
-              <TabsTrigger value="consequences" className="px-2 py-1.5 text-xs sm:text-sm whitespace-nowrap">Effects</TabsTrigger>
-              <TabsTrigger value="conclusion" className="px-2 py-1.5 text-xs sm:text-sm whitespace-nowrap">Result</TabsTrigger>
+              <TabsTrigger value="arguments" className="px-2 py-1.5 text-xs sm:text-sm whitespace-nowrap">Arguments</TabsTrigger>
+              <TabsTrigger value="key-points" className="px-2 py-1.5 text-xs sm:text-sm whitespace-nowrap">Key Points</TabsTrigger>
+              <TabsTrigger value="stakeholders" className="px-2 py-1.5 text-xs sm:text-sm whitespace-nowrap">Stakeholders</TabsTrigger>
+              <TabsTrigger value="consequences" className="px-2 py-1.5 text-xs sm:text-sm whitespace-nowrap">Consequences</TabsTrigger>
+              <TabsTrigger value="conclusion" className="px-2 py-1.5 text-xs sm:text-sm whitespace-nowrap">Conclusion</TabsTrigger>
             </TabsList>
           </div>
           
