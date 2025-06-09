@@ -48,7 +48,6 @@ export const debates = pgTable("debates", {
   messages: json("messages").$type<Message[]>().notNull(),
   summary: json("summary").$type<DebateSummary>(),
   completed: boolean("completed").default(false),
-  maxRounds: integer("max_rounds").default(6), // Default to 6 rounds if not specified
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -96,28 +95,6 @@ export type DebateSummary = {
     partyPosition: string;
     citizenPosition: string;
   }[];
-  // Happy & Sad stakeholders for each side
-  stakeholderImpact?: {
-    party: {
-      happy: string[];  // Groups who would be happy with party policies
-      sad: string[];    // Groups who would be sad with party policies
-    };
-    citizen: {
-      happy: string[];  // Groups who would be happy with citizen policies
-      sad: string[];    // Groups who would be sad with citizen policies
-    };
-  };
-  // Consequences of policies
-  policyConsequences?: {
-    party: {
-      positive: string[];  // Positive consequences of party policies
-      negative: string[];  // Negative consequences of party policies
-    };
-    citizen: {
-      positive: string[];  // Positive consequences of citizen policies
-      negative: string[];  // Negative consequences of citizen policies
-    };
-  };
   // Final deliberation with 5-pillar assessment
   conclusion?: {
     outcome: "party" | "citizen";

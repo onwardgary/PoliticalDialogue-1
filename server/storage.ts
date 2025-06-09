@@ -26,7 +26,6 @@ export interface IStorage {
   getUserDebates(userId: number): Promise<Debate[]>;
   getAllDebates(): Promise<Debate[]>;
   updateDebateMessages(id: number, messages: Message[]): Promise<Debate>;
-  updateDebateMaxRounds(id: number, maxRounds: number): Promise<Debate>;
   completeDebate(id: number, summary: DebateSummary): Promise<Debate>;
   
   // Vote methods
@@ -215,22 +214,6 @@ export class MemStorage implements IStorage {
     return updatedDebate;
   }
   
-  async updateDebateMaxRounds(id: number, maxRounds: number): Promise<Debate> {
-    const debate = this.debates.get(id);
-    if (!debate) {
-      throw new Error("Debate not found");
-    }
-    
-    const updatedDebate: Debate = {
-      ...debate,
-      maxRounds,
-      updatedAt: new Date()
-    };
-    
-    this.debates.set(id, updatedDebate);
-    return updatedDebate;
-  }
-
   async completeDebate(id: number, summary: DebateSummary): Promise<Debate> {
     const debate = this.debates.get(id);
     if (!debate) {

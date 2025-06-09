@@ -4,7 +4,6 @@ import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { nanoid } from "nanoid";
 import { createPartySystemMessage, generatePartyResponse, generateDebateSummary, generateAggregateSummary } from "./openai";
-import { registerDebateActivity } from "./debateTimeout";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -55,16 +54,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const bodySchema = z.object({
       partyId: z.number(),
       topic: z.string().optional(),
-      // We still accept the mode parameter but always use debate mode as requested
       mode: z.enum(["debate", "discuss"]).optional().default("debate"),
-      // Add maxRounds parameter for debate length
-      maxRounds: z.number().int().min(1).max(20).optional().default(6),
     });
     
     try {
-      const { partyId, topic, maxRounds } = bodySchema.parse(req.body);
-      // Always use debate mode regardless of input parameter
-      const mode = "debate";
+      const { partyId, topic, mode } = bodySchema.parse(req.body);
       
       const party = await storage.getParty(partyId);
       if (!party) {
@@ -74,13 +68,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create system message
       const systemMessage = createPartySystemMessage(party.shortName);
       
-      // Create welcome message - always use debate mode
+      // Create welcome message - adjust based on mode
       let welcomeMessage = {
         id: nanoid(),
         role: "assistant" as const,
-        content: `Hello! I'm the ${party.name} Unofficial Fanbot. I'm NOT officially endorsed by ${party.name}, but I present perspectives aligned with their positions. Let's debate policy positions. Challenge me on any policy area, and we'll engage in a point-by-point debate with clear positions. What would you like to debate today?`,
+        content: "",
         timestamp: Date.now(),
       };
+      
+      if (mode === "debate") {
+        welcomeMessage.content = `Hello! I'm the ${party.name} Bot, representing the positions of the ${party.name}. Let's debate policy positions. Challenge me on any policy area, and we'll engage in a point-by-point debate with clear positions. What would you like to debate today?`;
+      } else { // discuss mode
+        welcomeMessage.content = `Hello! I'm the ${party.name} Bot, representing the positions of the ${party.name}. I'm here to help you learn about our policy positions and provide recommendations for further learning. What policy area would you like to understand better?`;
+      }
       
       // Create new debate with secure ID
       const debate = await storage.createDebate({
@@ -89,12 +89,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         topic: topic || null,
         messages: [systemMessage, welcomeMessage],
         secureId: nanoid(), // Generate a secure ID for the debate
-        completed: false,
-        maxRounds
+        completed: false
       });
-      
-      // Register initial debate activity
-      registerDebateActivity(debate.id);
       
       // Return debate with welcome message only (no system message)
       res.status(201).json({
@@ -103,7 +99,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         partyId: debate.partyId,
         topic: debate.topic,
         mode: mode,
-        maxRounds: debate.maxRounds,
         messages: [welcomeMessage], // Only send the welcome message, not the system message
         createdAt: debate.createdAt,
       });
@@ -161,24 +156,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Filter out system messages
       const filteredMessages = debate.messages.filter(msg => msg.role !== "system");
       
-      // Apply caching based on debate state
-      if (debate.completed) {
-        // Completed debates with summary won't change, safe to cache longer
-        if (debate.summary) {
-          // Set longer cache for debates with summaries (these are completely done)
-          res.set('Cache-Control', 'public, max-age=3600'); // 1 hour cache
-          res.set('ETag', `W/"debate-${debate.id}-${debate.updatedAt}"`);
-        } else {
-          // Completed debates waiting for summary still might change
-          res.set('Cache-Control', 'public, max-age=10'); // Short cache, check again soon
-        }
-      } else {
-        // Active debates shouldn't be cached
-        res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-        res.set('Pragma', 'no-cache');
-        res.set('Expires', '0');
-      }
-      
       res.json({
         ...debate,
         messages: filteredMessages,
@@ -209,24 +186,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Filter out system messages
       const filteredMessages = debate.messages.filter(msg => msg.role !== "system");
-      
-      // Apply caching based on debate state
-      if (debate.completed) {
-        // Completed debates with summary won't change, safe to cache longer
-        if (debate.summary) {
-          // Set longer cache for debates with summaries (these are completely done)
-          res.set('Cache-Control', 'public, max-age=3600'); // 1 hour cache
-          res.set('ETag', `W/"debate-${debate.secureId}-${debate.updatedAt}"`);
-        } else {
-          // Completed debates waiting for summary still might change
-          res.set('Cache-Control', 'public, max-age=10'); // Short cache, check again soon
-        }
-      } else {
-        // Active debates shouldn't be cached
-        res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-        res.set('Pragma', 'no-cache');
-        res.set('Expires', '0');
-      }
       
       res.json({
         ...debate,
@@ -309,59 +268,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // This ensures the user message is saved right away
       await storage.updateDebateMessages(debateId, updatedMessages);
       
-      // Register debate activity to reset inactivity timeout
-      registerDebateActivity(debateId);
+      // Begin an asynchronous process to generate and save the AI response
+      // Don't await this - we'll respond to the client immediately
+      (async () => {
+        try {
+          console.log(`Generating AI response for debate ${debateId}...`);
+          // Generate AI response with a timeout
+          const assistantResponse = await generatePartyResponse(updatedMessages);
+          
+          console.log(`Got AI response, creating assistant message for debate ${debateId}`);
+          // Add assistant message with searchEnabled flag
+          const assistantMessage = {
+            id: nanoid(),
+            role: "assistant" as const,
+            content: assistantResponse.content,
+            timestamp: Date.now(),
+            searchEnabled: assistantResponse.searchEnabled
+          };
+          
+          const finalMessages = [...updatedMessages, assistantMessage];
+          
+          // Update debate with assistant message
+          await storage.updateDebateMessages(debateId, finalMessages);
+          console.log(`Updated debate ${debateId} with AI response`);
+        } catch (openAiError) {
+          console.error(`OpenAI API error for debate ${debateId}:`, openAiError);
+          
+          // Create a fallback message when OpenAI fails
+          const fallbackMessage = {
+            id: nanoid(),
+            role: "assistant" as const,
+            content: "I'm sorry, I'm having trouble connecting to our AI service. Please try again in a moment.",
+            timestamp: Date.now(),
+          };
+          
+          const fallbackMessages = [...updatedMessages, fallbackMessage];
+          await storage.updateDebateMessages(debateId, fallbackMessages);
+          console.log(`Updated debate ${debateId} with fallback message due to API error`);
+        }
+      })().catch(err => console.error(`Unhandled error in AI response generation for debate ${debateId}:`, err));
       
-      // Generate and save the AI response synchronously
-      try {
-        console.log(`Generating AI response for debate ${debateId}...`);
-        // Generate AI response with a timeout
-        const assistantResponse = await generatePartyResponse(updatedMessages);
-        
-        console.log(`Got AI response, creating assistant message for debate ${debateId}`);
-        // Add assistant message with searchEnabled flag
-        const assistantMessage = {
-          id: nanoid(),
-          role: "assistant" as const,
-          content: assistantResponse.content,
-          timestamp: Date.now(),
-          searchEnabled: assistantResponse.searchEnabled
-        };
-        
-        const finalMessages = [...updatedMessages, assistantMessage];
-        
-        // Update debate with assistant message
-        const updatedDebate = await storage.updateDebateMessages(debateId, finalMessages);
-        console.log(`Updated debate ${debateId} with AI response`);
-        
-        // Respond with both user message and bot message
-        res.status(201).json({
-          userMessage,
-          botMessage: assistantMessage,
-          debate: updatedDebate
-        });
-      } catch (openAiError) {
-        console.error(`OpenAI API error for debate ${debateId}:`, openAiError);
-        
-        // Create a fallback message when OpenAI fails
-        const fallbackMessage = {
-          id: nanoid(),
-          role: "assistant" as const,
-          content: "I'm sorry, I'm having trouble connecting to our AI service. Please try again in a moment.",
-          timestamp: Date.now(),
-        };
-        
-        const fallbackMessages = [...updatedMessages, fallbackMessage];
-        const updatedDebate = await storage.updateDebateMessages(debateId, fallbackMessages);
-        console.log(`Updated debate ${debateId} with fallback message due to API error`);
-        
-        // Respond with both user message and fallback bot message
-        res.status(201).json({
-          userMessage,
-          botMessage: fallbackMessage,
-          debate: updatedDebate
-        });
-      }
+      // Respond to the client immediately with just the user message
+      // This reduces latency since we don't wait for the AI response
+      res.status(201).json({
+        userMessage,
+        // No assistantMessage here; the client will get it via polling or socket update
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid message content", errors: error.errors });
@@ -415,59 +367,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // This ensures the user message is saved right away
       await storage.updateDebateMessages(debate.id, updatedMessages);
       
-      // Register debate activity to reset inactivity timeout
-      registerDebateActivity(debate.id);
+      // Begin an asynchronous process to generate and save the AI response
+      // Don't await this - we'll respond to the client immediately
+      (async () => {
+        try {
+          console.log(`Generating AI response for debate ${debate.id} (${secureId})...`);
+          // Generate AI response with a timeout
+          const assistantResponse = await generatePartyResponse(updatedMessages);
+          
+          console.log(`Got AI response, creating assistant message for debate ${debate.id} (${secureId})`);
+          // Add assistant message with searchEnabled flag
+          const assistantMessage = {
+            id: nanoid(),
+            role: "assistant" as const,
+            content: assistantResponse.content,
+            timestamp: Date.now(),
+            searchEnabled: assistantResponse.searchEnabled
+          };
+          
+          const finalMessages = [...updatedMessages, assistantMessage];
+          
+          // Update debate with assistant message
+          await storage.updateDebateMessages(debate.id, finalMessages);
+          console.log(`Updated debate ${debate.id} (${secureId}) with AI response`);
+        } catch (openAiError) {
+          console.error(`OpenAI API error for debate ${debate.id} (${secureId}):`, openAiError);
+          
+          // Create a fallback message when OpenAI fails
+          const fallbackMessage = {
+            id: nanoid(),
+            role: "assistant" as const,
+            content: "I'm sorry, I'm having trouble connecting to our AI service. Please try again in a moment.",
+            timestamp: Date.now(),
+          };
+          
+          const fallbackMessages = [...updatedMessages, fallbackMessage];
+          await storage.updateDebateMessages(debate.id, fallbackMessages);
+          console.log(`Updated debate ${debate.id} (${secureId}) with fallback message due to API error`);
+        }
+      })().catch(err => console.error(`Unhandled error in AI response generation for debate ${debate.id} (${secureId}):`, err));
       
-      // Generate and save the AI response synchronously
-      try {
-        console.log(`Generating AI response for debate ${debate.id} (${secureId})...`);
-        // Generate AI response with a timeout
-        const assistantResponse = await generatePartyResponse(updatedMessages);
-        
-        console.log(`Got AI response, creating assistant message for debate ${debate.id} (${secureId})`);
-        // Add assistant message with searchEnabled flag
-        const assistantMessage = {
-          id: nanoid(),
-          role: "assistant" as const,
-          content: assistantResponse.content,
-          timestamp: Date.now(),
-          searchEnabled: assistantResponse.searchEnabled
-        };
-        
-        const finalMessages = [...updatedMessages, assistantMessage];
-        
-        // Update debate with assistant message
-        const updatedDebate = await storage.updateDebateMessages(debate.id, finalMessages);
-        console.log(`Updated debate ${debate.id} (${secureId}) with AI response`);
-        
-        // Respond with both user message and bot message
-        res.status(201).json({
-          userMessage,
-          botMessage: assistantMessage,
-          debate: updatedDebate
-        });
-      } catch (openAiError) {
-        console.error(`OpenAI API error for debate ${debate.id} (${secureId}):`, openAiError);
-        
-        // Create a fallback message when OpenAI fails
-        const fallbackMessage = {
-          id: nanoid(),
-          role: "assistant" as const,
-          content: "I'm sorry, I'm having trouble connecting to our AI service. Please try again in a moment.",
-          timestamp: Date.now(),
-        };
-        
-        const fallbackMessages = [...updatedMessages, fallbackMessage];
-        const updatedDebate = await storage.updateDebateMessages(debate.id, fallbackMessages);
-        console.log(`Updated debate ${debate.id} (${secureId}) with fallback message due to API error`);
-        
-        // Respond with both user message and fallback bot message
-        res.status(201).json({
-          userMessage,
-          botMessage: fallbackMessage,
-          debate: updatedDebate
-        });
-      }
+      // Respond to the client immediately with just the user message
+      // This reduces latency since we don't wait for the AI response
+      res.status(201).json({
+        userMessage,
+        // No assistantMessage here; the client will get it via polling or socket update
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid message content", errors: error.errors });
@@ -573,11 +518,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Generating summary for debate ${debate.id} (${secureId})...`);
       
       try {
-        // Always use debate mode as per user request
-        const mode = 'debate';
+        // Extract mode from request body or query params (default to 'debate' if not provided)
+        const mode = req.body.mode || req.query.mode || 'debate';
         console.log(`Generating summary for debate ${debate.id} (${secureId}) in ${mode} mode`);
         
-        // Generate summary with debate mode
+        // Generate summary with mode parameter
         const summary = await generateDebateSummary(debate.messages, mode);
         
         console.log(`Got summary, completing debate ${debate.id} (${secureId})`);
@@ -615,59 +560,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Extend debate rounds - allows changing the max rounds of a debate
-  app.patch("/api/debates/s/:secureId/extend", async (req, res) => {
-    // For demo purposes, we're allowing anyone to extend debates
-    const isGuest = !req.isAuthenticated();
-    
-    try {
-      const { maxRounds } = req.body;
-      const secureId = req.params.secureId;
-      console.log(`Extending debate ${secureId} to ${maxRounds} rounds`);
-      
-      if (!maxRounds || ![3, 6].includes(maxRounds)) {
-        return res.status(400).json({ message: "Invalid maxRounds value. Must be 3 or 6." });
-      }
-      
-      const debate = await storage.getDebateBySecureId(secureId);
-      
-      if (!debate) {
-        return res.status(404).json({ message: "Debate not found" });
-      }
-      
-      // Only check authorization if user is authenticated and not the owner
-      if (!isGuest && debate.userId !== req.user.id) {
-        return res.status(403).json({ message: "Not authorized to access this debate" });
-      }
-      
-      if (debate.completed) {
-        return res.status(400).json({ message: "Cannot extend a completed debate" });
-      }
-      
-      // Only allow extending to a higher number of rounds
-      const currentMaxRounds = debate.maxRounds || 3; // Default to 3 if null
-      if (maxRounds <= currentMaxRounds) {
-        return res.status(400).json({ message: "New maxRounds must be greater than the current value" });
-      }
-      
-      // Update the maxRounds field
-      console.log(`Updating maxRounds for debate ${debate.id} (${secureId}) from ${currentMaxRounds} to ${maxRounds}`);
-      const updatedDebate = await storage.updateDebateMaxRounds(debate.id, maxRounds);
-      
-      // Register debate activity to reset inactivity timeout
-      registerDebateActivity(debate.id);
-      
-      res.status(200).json({ 
-        success: true, 
-        maxRounds: updatedDebate.maxRounds,
-        message: `Debate extended to ${maxRounds} rounds` 
-      });
-    } catch (error) {
-      console.error("Error extending debate:", error);
-      res.status(500).json({ message: "Failed to extend debate rounds" });
-    }
-  });
-  
   // Regenerate a debate summary with secure ID
   app.post("/api/debates/s/:secureId/regenerate-summary", async (req, res) => {
     // For demo purposes, we're allowing anyone to regenerate summaries
@@ -695,11 +587,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Generating new summary for debate ${debate.id} (${secureId})...`);
       
       try {
-        // Always use debate mode as per user request
-        const mode = 'debate';
+        // Extract mode from request body or query params (default to 'debate' if not provided)
+        const mode = req.body.mode || req.query.mode || 'debate';
         console.log(`Regenerating summary for debate ${debate.id} (${secureId}) in ${mode} mode`);
         
-        // Generate summary with debate mode
+        // Generate summary with mode parameter
         const summary = await generateDebateSummary(debate.messages, mode);
         
         console.log(`Got new summary, updating debate ${debate.id} (${secureId})`);
@@ -708,14 +600,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Return summary
         res.json({ summary });
-      } catch (error: unknown) {
-        const openAiError = error as Error;
+      } catch (openAiError) {
         console.error(`OpenAI API error for regenerating debate summary ${debate.id} (${secureId}):`, openAiError);
         
         // Return error so the user can try again
         res.status(500).json({ 
           message: "Failed to regenerate summary. Please try again.",
-          error: openAiError?.message || "Unknown OpenAI API error"
+          error: openAiError.message
         });
       }
     } catch (error) {
@@ -775,7 +666,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Vote on a debate - secure ID version
   app.post("/api/debates/s/:secureId/vote", async (req, res) => {
-    // No authentication required for voting in simplified version
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
     
     const bodySchema = z.object({
       votedFor: z.enum(["party", "citizen"]),
@@ -795,20 +688,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Can only vote on completed debates" });
       }
       
-      // Get or create an anonymous user for voting
-      const anonymousUser = await storage.getOrCreateAnonymousUser();
-      
-      // Check if this user already voted on this debate
+      // Check if user has already voted
       const existingVotes = await storage.getVotesForDebate(debate.id);
-      const userVote = existingVotes.find(vote => vote.userId === anonymousUser.id);
+      const userVote = existingVotes.find(vote => vote.userId === req.user.id);
       
       if (userVote) {
         return res.status(400).json({ message: "You have already voted on this debate" });
       }
       
-      // Record vote using the anonymous user's ID
+      // Record vote
       const vote = await storage.createVote({
-        userId: anonymousUser.id,
+        userId: req.user.id,
         debateId: debate.id,
         votedFor,
       });
@@ -823,7 +713,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Trending API endpoints have been removed to simplify the application
+  // Get trending topics/debates for all parties
+  app.get("/api/trending/:period", async (req, res) => {
+    try {
+      const period = req.params.period || "weekly";
+      const limit = parseInt(req.query.limit as string || "20");
+      
+      const trending = await storage.getTrendingTopics(period, limit);
+      
+      res.json(trending);
+    } catch (error) {
+      console.error("Error fetching trending topics:", error);
+      res.status(500).json({ message: "Failed to fetch trending topics" });
+    }
+  });
+  
+  // Get trending topics/debates for a specific party
+  app.get("/api/trending/:period/:partyId", async (req, res) => {
+    try {
+      const period = req.params.period || "weekly";
+      const partyId = parseInt(req.params.partyId);
+      
+      const party = await storage.getParty(partyId);
+      if (!party) {
+        return res.status(404).json({ message: "Party not found" });
+      }
+      
+      const trending = await storage.getAggregateSummariesByParty(partyId, period);
+      
+      res.json(trending);
+    } catch (error) {
+      console.error("Error fetching party trending topics:", error);
+      res.status(500).json({ message: "Failed to fetch trending topics for this party" });
+    }
+  });
   
   // Admin endpoints for knowledge base management
   
