@@ -209,35 +209,17 @@ export default function DebatePageFixed() {
       
       if (!res.ok) throw new Error("Failed to send message");
       
-      // Start polling for response after a short delay to ensure we don't
-      // have a race condition with the response coming back too quickly
-      setTimeout(() => {
-        setMessageStatus(prev => {
-          // Only set polling to true if we're still in sending state
-          // This prevents race conditions when responses are very fast
-          if (prev.sending) {
-            console.log("TIMEOUT: Setting polling state after sending completed");
-            return { 
-              ...prev, 
-              sending: false, 
-              polling: true,
-              // Preserve the finalRoundReached state
-              finalRoundReached: isMaxRoundReached || prev.finalRoundReached 
-            };
-          } else {
-            // Message was already received, don't enable polling
-            console.log("TIMEOUT: Message already received, not enabling polling");
-            return {
-              ...prev,
-              // But still update the finalRoundReached state
-              finalRoundReached: isMaxRoundReached || prev.finalRoundReached
-            };
-          }
-        });
-        
-        // Force an immediate refetch to start getting the assistant response
-        queryClient.invalidateQueries({ queryKey: [apiEndpoint] });
-      }, 100); // Short delay to prevent race conditions
+      // Optimistic UI: Immediately reset sending state and enable input
+      console.log("OPTIMISTIC: Message sent successfully, input re-enabled immediately");
+      setMessageStatus(prev => ({
+        ...prev,
+        sending: false,
+        polling: false, // Don't start polling - keeps input enabled
+        finalRoundReached: isMaxRoundReached || prev.finalRoundReached
+      }));
+      
+      // Force an immediate refetch to get the assistant response (background operation)
+      queryClient.invalidateQueries({ queryKey: [apiEndpoint] });
       
     } catch (error) {
       console.error("Error sending message:", error);
