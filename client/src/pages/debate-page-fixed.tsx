@@ -155,9 +155,14 @@ export default function DebatePageFixed() {
     enabled: !!partyEndpoint,
   });
   
-  // Handle sending messages
+  // Handle sending messages with optimistic UI protection
   const handleSendMessage = async (content: string) => {
-    if (messageStatus.sending || messageStatus.polling) return;
+    // With optimistic UI, we only prevent sending if truly necessary
+    if (messageStatus.sending) return; // Still sending previous message
+    
+    // Check if max rounds already reached optimistically
+    const currentUserMessages = localMessages.filter(m => m.role === 'user').length;
+    if (currentUserMessages >= (debate?.maxRounds || 3)) return;
     
     // Create a new user message
     const newMessage: Message = {
@@ -463,15 +468,15 @@ export default function DebatePageFixed() {
             isLoading={messageStatus.sending || messageStatus.polling || uiState === "animating"}
             onTypingStateChange={setIsUserTyping}
             disabled={
-              messageStatus.sending || 
-              messageStatus.polling ||
+              // Only disable for genuine blocking conditions with optimistic UI
               messageStatus.finalRoundReached ||
-              // Use an optimistic check for user message count that doesn't need to wait for API
+              // Use optimistic check for max rounds
               ((localMessages.filter(msg => msg.role === 'user').length) >= (debate?.maxRounds || 3)) ||
-              // Waiting for bot response
-              (localMessages.length > 0 && localMessages[localMessages.length - 1].role === 'user') ||
+              // Only disable during summary generation or when summary is ready
               uiState === "animating" || 
               uiState === "summaryReady"
+              // Removed: messageStatus.sending, messageStatus.polling, waiting for bot response
+              // This implements optimistic UI - input stays enabled while bot responds
             }
             disabledReason={
               uiState === "animating" ? 'generating' :
@@ -479,10 +484,7 @@ export default function DebatePageFixed() {
               // Optimistic check for final round status - using local state
               (messageStatus.finalRoundReached || 
                (localMessages.filter(msg => msg.role === 'user').length >= (debate?.maxRounds || 3))) ? 'finalRound' :
-              // Waiting for bot response
-              (messageStatus.sending || 
-               messageStatus.polling ||
-               (localMessages.length > 0 && localMessages[localMessages.length - 1].role === 'user')) ? 'waiting' :
+              // With optimistic UI, we don't show "waiting" state - input stays enabled
               'maxRounds'
             }
           />

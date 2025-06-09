@@ -120,16 +120,16 @@ export default function ChatInput({
             ref={textareaRef}
             placeholder={
               disabled 
-                ? disabledReason === 'waiting'
-                  ? "Waiting for response and for you to finish reading..." 
-                  : disabledReason === 'finalRound'
+                ? disabledReason === 'finalRound'
                     ? "Maximum rounds reached. Debate complete."
                     : disabledReason === 'generating'
                       ? "Generating debate summary..."
                       : disabledReason === 'summaryReady'
                         ? "Debate summary is ready to view!"
                         : "Maximum rounds reached. End debate to continue."
-                : "Type your message... (Ctrl+Enter to send)"
+                : isLoading 
+                  ? "Bot is responding... (you can type while waiting)"
+                  : "Type your message... (Ctrl+Enter to send)"
             }
             className={`w-full resize-none pr-10 min-h-[45px] md:min-h-[60px] focus:outline-none focus:ring-1 focus:ring-primary ${disabled ? 'bg-neutral-100 text-neutral-500' : ''}`}
             value={message}
