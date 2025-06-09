@@ -2,13 +2,17 @@ import { useRef, useEffect, useState } from "react";
 import MessageBubble from "./message-bubble";
 import { Message } from "@shared/schema";
 import { Button } from "@/components/ui/button";
+import { Check } from "lucide-react";
 
 type ChatInterfaceProps = {
   messages: Message[];
   isLoading: boolean;
   onSendMessage?: (message: string) => void;
+  onEndDebate?: () => void;
   partyShortName?: string;
   userTyping?: boolean;
+  maxRounds?: number;
+  isGeneratingSummary?: boolean;
 };
 
 // Suggested topics to help start the conversation
@@ -20,9 +24,37 @@ const SUGGESTED_TOPICS = [
   { topic: "Public transport", prompt: "What are your plans to improve public transportation?" },
 ];
 
-export default function ChatInterface({ messages, isLoading, onSendMessage, partyShortName = "BOT", userTyping = false }: ChatInterfaceProps) {
+export default function ChatInterface({ 
+  messages, 
+  isLoading, 
+  onSendMessage, 
+  onEndDebate, 
+  partyShortName = "BOT", 
+  userTyping = false, 
+  maxRounds = 6,
+  isGeneratingSummary = false
+}: ChatInterfaceProps) {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  
+  // Filter out system messages
+  const filteredMessages = messages.filter(msg => msg.role !== "system");
+  
+  // Calculate the current round based on user messages
+  const userMessages = filteredMessages.filter(msg => msg.role === "user");
+  // Each round is one user message (assistant responses don't count toward the round number)
+  const currentRound = Math.min(userMessages.length, maxRounds);
+  
+  // Compute whether to show summary generation prompt
+  const showSummaryPrompt = 
+    currentRound === maxRounds && 
+    !isLoading && 
+    !isGeneratingSummary &&
+    // Only show after bot has responded to last user message
+    filteredMessages.length > 0 && 
+    // Make sure last message is from assistant AND it's not a temporary typing indicator
+    filteredMessages[filteredMessages.length - 1].role === 'assistant' &&
+    !filteredMessages[filteredMessages.length - 1].id.startsWith('typing-');
 
   // Auto-scroll to bottom when messages change or typing indicators appear - optimized for responsiveness
   useEffect(() => {
@@ -77,9 +109,6 @@ export default function ChatInterface({ messages, isLoading, onSendMessage, part
     }
   };
 
-  // Filter out system messages
-  const filteredMessages = messages.filter(msg => msg.role !== "system");
-  
   // Handle suggestion click
   const handleSuggestionClick = (prompt: string) => {
     if (onSendMessage) {
@@ -91,98 +120,174 @@ export default function ChatInterface({ messages, isLoading, onSendMessage, part
   const showSuggestions = filteredMessages.length <= 1 && !isLoading;
 
   return (
-    <div 
-      ref={chatContainerRef}
-      className="chat-container bg-neutral-50 overflow-y-auto p-4 md:p-6 flex flex-col space-y-4"
-      style={{ height: "calc(100vh - 180px - env(safe-area-inset-bottom, 0px))" }}
-    >
-      {/* System welcome message */}
-      <div className="flex justify-center mb-4">
-        <div className="bg-neutral-100 rounded-2xl px-4 py-3 text-sm text-neutral-700 max-w-md text-center shadow-sm">
-          <p>Start a conversation with the {partyShortName} bot. You can discuss any policy position or political topic relevant to Singapore.</p>
-        </div>
-      </div>
-
-      {/* Suggested topics */}
-      {showSuggestions && onSendMessage && (
-        <div className="flex flex-col items-center mb-4 space-y-3">
-          <p className="text-xs text-neutral-500 font-medium">SUGGESTED TOPICS</p>
-          <div className="flex flex-wrap justify-center gap-2">
-            {SUGGESTED_TOPICS.map((item, index) => (
-              <Button
-                key={index}
-                variant="outline"
-                size="sm"
-                className="text-sm bg-white hover:bg-neutral-100 border-neutral-200 text-neutral-700"
-                onClick={() => handleSuggestionClick(item.prompt)}
-              >
-                {item.topic}
-              </Button>
-            ))}
+    <>
+      <div 
+        ref={chatContainerRef}
+        className="chat-container bg-neutral-50 overflow-y-auto p-4 md:p-6 flex flex-col space-y-4"
+        style={{ height: "calc(100vh - 180px - env(safe-area-inset-bottom, 0px))" }}
+      >
+        {/* System welcome message */}
+        <div className="flex justify-center mb-4">
+          <div className="bg-neutral-100 rounded-2xl px-4 py-3 text-sm text-neutral-700 max-w-md text-center shadow-sm">
+            <p>Start a conversation with the {partyShortName} Unofficial Fanbot. You can discuss any policy position or political topic relevant to Singapore.</p>
+            
+            {/* Round indicator */}
+            <div className="mt-2 flex items-center justify-center space-x-1">
+              <span className="text-xs text-neutral-500">Round {currentRound} of {maxRounds}</span>
+              <div className="ml-2 bg-neutral-200 h-1.5 rounded-full w-24 overflow-hidden">
+                <div 
+                  className="bg-primary h-full rounded-full transition-all duration-300 ease-in-out" 
+                  style={{ width: `${(currentRound / maxRounds) * 100}%` }}
+                />
+              </div>
+            </div>
           </div>
         </div>
-      )}
 
-      {/* Chat messages */}
-      {filteredMessages.map((message, index) => {
-        // Check if this message should be grouped with the previous one (same sender)
-        const previousMessage = index > 0 ? filteredMessages[index - 1] : null;
-        const isGrouped = previousMessage && previousMessage.role === message.role ? true : false;
+        {/* Suggested topics */}
+        {showSuggestions && onSendMessage && (
+          <div className="flex flex-col items-center mb-4 space-y-3">
+            <p className="text-xs text-neutral-500 font-medium">SUGGESTED TOPICS</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {SUGGESTED_TOPICS.map((item, index) => (
+                <Button
+                  key={index}
+                  variant="outline"
+                  size="sm"
+                  className="text-sm bg-white hover:bg-neutral-100 border-neutral-200 text-neutral-700"
+                  onClick={() => handleSuggestionClick(item.prompt)}
+                >
+                  {item.topic}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Chat messages */}
+        {filteredMessages.map((message, index) => {
+          // Check if this message should be grouped with the previous one (same sender)
+          const previousMessage = index > 0 ? filteredMessages[index - 1] : null;
+          const isGrouped = previousMessage && previousMessage.role === message.role ? true : false;
+          
+          return (
+            <MessageBubble 
+              key={message.id} 
+              message={message}
+              partyShortName={partyShortName}
+              isGrouped={isGrouped}
+            />
+          );
+        })}
+
+        {/* Bot typing indicator */}
+        {isLoading && (
+          <div className="flex mb-4 animate-fadeIn">
+            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center mr-2 flex-shrink-0">
+              <span className="text-white font-bold text-xs">{partyShortName}</span>
+            </div>
+            <div className="bg-white p-3 rounded-lg rounded-tl-none shadow-sm flex items-center h-10">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-neutral-300 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-neutral-300 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                <div className="w-2 h-2 bg-neutral-300 rounded-full animate-bounce" style={{ animationDelay: "0.4s" }}></div>
+              </div>
+            </div>
+          </div>
+        )}
         
-        return (
-          <MessageBubble 
-            key={message.id} 
-            message={message}
-            partyShortName={partyShortName}
-            isGrouped={isGrouped}
-          />
-        );
-      })}
-
-      {/* Bot typing indicator */}
-      {isLoading && (
-        <div className="flex mb-4 animate-fadeIn">
-          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center mr-2 flex-shrink-0">
-            <span className="text-white font-bold text-xs">{partyShortName}</span>
-          </div>
-          <div className="bg-white p-3 rounded-lg rounded-tl-none shadow-sm flex items-center h-10">
-            <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-neutral-300 rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-neutral-300 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
-              <div className="w-2 h-2 bg-neutral-300 rounded-full animate-bounce" style={{ animationDelay: "0.4s" }}></div>
+        {/* User typing indicator */}
+        {userTyping && (
+          <div className="flex mb-4 animate-fadeIn justify-end">
+            <div className="bg-primary/10 p-3 rounded-lg rounded-tr-none shadow-sm flex items-center h-10">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "0.4s" }}></div>
+              </div>
+            </div>
+            <div className="w-8 h-8 bg-primary/90 rounded-full flex items-center justify-center ml-2 flex-shrink-0">
+              <span className="text-white font-bold text-xs">YOU</span>
             </div>
           </div>
-        </div>
-      )}
-      
-      {/* User typing indicator */}
-      {userTyping && (
-        <div className="flex mb-4 animate-fadeIn justify-end">
-          <div className="bg-primary/10 p-3 rounded-lg rounded-tr-none shadow-sm flex items-center h-10">
-            <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
-              <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "0.4s" }}></div>
+        )}
+        
+        {/* Prompt for debate completion - show for both 3 and 6 rounds */}
+        {showSummaryPrompt && (
+          <div className="flex w-full mb-4 animate-fadeIn">
+            <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
+              <span className="text-white font-bold text-xs">SYS</span>
+            </div>
+            <div className="bg-white p-4 rounded-lg rounded-tl-none shadow-sm max-w-[85%]">
+              <p className="text-sm font-medium mb-2">You've completed all {maxRounds} rounds of your debate.</p>
+              <p className="text-sm text-gray-600 mb-3">You can now generate a summary of your debate to see who made the stronger arguments.</p>
+              
+              <div className="flex flex-col space-y-2">
+                {/* End debate option */}
+                <Button 
+                  variant="default"
+                  size="sm"
+                  className="justify-start gap-2"
+                  onClick={() => {
+                    setTimeout(() => {
+                      if (onEndDebate) {
+                        console.log("Ending debate and generating summary");
+                        onEndDebate();
+                      }
+                    }, 100);
+                  }}
+                  disabled={isGeneratingSummary}
+                >
+                  <Check className="h-4 w-4" />
+                  <span>End debate and generate summary</span>
+                </Button>
+              </div>
             </div>
           </div>
-          <div className="w-8 h-8 bg-primary/90 rounded-full flex items-center justify-center ml-2 flex-shrink-0">
-            <span className="text-white font-bold text-xs">YOU</span>
+        )}
+        
+        {/* No additional UI needed for max rounds */}
+            <div className="bg-white p-4 rounded-lg rounded-tl-none shadow-sm max-w-[85%]">
+              <p className="text-sm font-medium mb-2">You've completed all {maxRounds} rounds of your debate!</p>
+              <p className="text-sm text-gray-600 mb-3">This is the maximum number of rounds. Would you like to generate a summary of your debate now?</p>
+              
+              <div className="flex flex-col space-y-2">
+                {/* Generate summary button */}
+                <Button 
+                  variant="default"
+                  size="sm"
+                  className="justify-start gap-2"
+                  onClick={() => {
+                    setTimeout(() => {
+                      if (onEndDebate) {
+                        console.log("Ending debate and generating summary (max rounds)");
+                        onEndDebate();
+                      }
+                    }, 100);
+                  }}
+                  disabled={isGeneratingSummary}
+                >
+                  <Check className="h-4 w-4" />
+                  <span>Generate debate summary</span>
+                </Button>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
-      
-      {/* Scroll to bottom button */}
-      {showScrollButton && (
-        <div className="sticky bottom-4 w-full flex justify-center pointer-events-none">
-          <Button 
-            size="sm"
-            onClick={scrollToBottom}
-            className="bg-primary text-white rounded-full shadow-md pointer-events-auto animate-bounce-slow opacity-90 hover:opacity-100"
-          >
-            ↓ New message
-          </Button>
-        </div>
-      )}
-    </div>
+        )}
+        
+        {/* Scroll to bottom button */}
+        {showScrollButton && (
+          <div className="sticky bottom-4 w-full flex justify-center pointer-events-none">
+            <Button 
+              size="sm"
+              onClick={scrollToBottom}
+              className="bg-primary text-white rounded-full shadow-md pointer-events-auto animate-bounce-slow opacity-90 hover:opacity-100"
+            >
+              ↓ New message
+            </Button>
+          </div>
+        )}
+      </div>
+    </>
   );
 }

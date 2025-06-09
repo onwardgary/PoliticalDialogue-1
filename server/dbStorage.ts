@@ -78,6 +78,37 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+  
+  // Get or create anonymous user for unauthenticated operations
+  async getOrCreateAnonymousUser(): Promise<User> {
+    try {
+      // Try to find the anonymous user
+      const [anonymousUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.username, 'anonymous'));
+      
+      if (anonymousUser) {
+        return anonymousUser;
+      }
+      
+      // If not found, create the anonymous user
+      const [newAnonymousUser] = await db
+        .insert(users)
+        .values({
+          username: 'anonymous',
+          email: 'anonymous@example.com',
+          password: 'not_usable_password',
+          isAdmin: false
+        })
+        .returning();
+      
+      return newAnonymousUser;
+    } catch (error) {
+      console.error("Error in getOrCreateAnonymousUser:", error);
+      throw error;
+    }
+  }
 
   // Party methods
   async getParties(): Promise<Party[]> {
@@ -184,6 +215,28 @@ export class DatabaseStorage implements IStorage {
       return updatedDebate;
     } catch (error) {
       console.error("Error in updateDebateMessages:", error);
+      throw error;
+    }
+  }
+
+  async updateDebateMaxRounds(id: number, maxRounds: number): Promise<Debate> {
+    try {
+      const [updatedDebate] = await db
+        .update(debates)
+        .set({ 
+          maxRounds, 
+          updatedAt: new Date() 
+        })
+        .where(eq(debates.id, id))
+        .returning();
+      
+      if (!updatedDebate) {
+        throw new Error("Debate not found");
+      }
+      
+      return updatedDebate;
+    } catch (error) {
+      console.error("Error in updateDebateMaxRounds:", error);
       throw error;
     }
   }

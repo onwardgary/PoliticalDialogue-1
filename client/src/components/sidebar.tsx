@@ -40,60 +40,13 @@ export default function Sidebar() {
         <h1 className="text-2xl font-bold text-primary flex items-center">
           <MessageSquare className="mr-2 h-6 w-6" /> Suara.sg
         </h1>
-        <p className="text-sm text-neutral-500 mt-1">Political Debate Platform</p>
+        <p className="text-sm text-neutral-500 mt-1">A Place for Civic Engagement</p>
       </div>
       
-      <nav className="flex-1 p-4">
-        <ul className="space-y-2">
-          <li>
-            <Link href="/">
-              <div className={`flex items-center p-2 rounded-lg font-medium ${location === '/' ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
-                <Home className="w-5 h-5 mr-3" />
-                <span>Home</span>
-              </div>
-            </Link>
-          </li>
-          {/* Trending page temporarily hidden
-          <li>
-            <Link href="/trending">
-              <div className={`flex items-center p-2 rounded-lg font-medium ${location.startsWith('/trending') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
-                <TrendingUp className="w-5 h-5 mr-3" />
-                <span>Trending</span>
-              </div>
-            </Link>
-          </li>
-          */}
-          
-          {/* Statistics menu item hidden per user request 
-          <li>
-            <Link href="/statistics">
-              <div className={`flex items-center p-2 rounded-lg font-medium ${location.startsWith('/statistics') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
-                <BarChart className="w-5 h-5 mr-3" />
-                <span>Statistics</span>
-              </div>
-            </Link>
-          </li>
-          */}
-          
-          {/* User specific menu items - temporarily hidden 
-          {user && (
-            <>
-              <li>
-                <Link href="/profile">
-                  <div className={`flex items-center p-2 rounded-lg font-medium ${location.startsWith('/profile') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
-                    <UserCircle className="w-5 h-5 mr-3" />
-                    <span>My Profile</span>
-                  </div>
-                </Link>
-              </li>
-              
-              <Separator className="my-4" />
-            </>
-          )}
-          */}
-          
-          {/* Admin menu items */}
-          {isAdmin && (
+      {/* Admin menu - only visible to admins */}
+      {isAdmin && (
+        <nav className="flex-1 p-4">
+          <ul className="space-y-2">
             <li>
               <Link href="/admin/knowledge">
                 <div className={`flex items-center p-2 rounded-lg font-medium ${location.startsWith('/admin') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
@@ -102,9 +55,12 @@ export default function Sidebar() {
                 </div>
               </Link>
             </li>
-          )}
-        </ul>
-      </nav>
+          </ul>
+        </nav>
+      )}
+      
+      {/* Empty flex-1 div to push footer to bottom when no nav */}
+      {!isAdmin && <div className="flex-1"></div>}
       
       <div className="p-4 border-t border-neutral-200">
         {/* User info and login/register temporarily hidden
@@ -146,9 +102,7 @@ export default function Sidebar() {
         )}
         */}
         
-        <div className="flex items-center justify-center mt-4">
-          <p className="text-xs text-neutral-500">Powered by OpenAI's GPT-4o</p>
-        </div>
+        {/* Removed "Powered by" text as requested */}
       </div>
     </aside>
   );

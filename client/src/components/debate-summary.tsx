@@ -4,7 +4,9 @@ import { DebateSummary as DebateSummaryType } from "@shared/schema";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Check } from "lucide-react";
+import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type DebateSummaryProps = {
   debateId: string;
@@ -26,16 +28,8 @@ export default function DebateSummary({
   // Handle regenerating a summary if it failed
   const regenerateMutation = useMutation({
     mutationFn: async () => {
-      // Determine the mode based on the debate topic
-      let mode = "debate"; // Default mode
-      
-      if (topic) {
-        // If topic contains "discussion" or "recommendations", use "discuss" mode
-        if (topic.toLowerCase().includes("discussion") || 
-            topic.toLowerCase().includes("recommendations")) {
-          mode = "discuss";
-        }
-      }
+      // Always use debate mode regardless of topic name
+      const mode = "debate";
       
       console.log(`Regenerating summary with mode: ${mode}`);
       
@@ -122,18 +116,25 @@ export default function DebateSummary({
     );
   }
   
+  // State to track which option user voted for
+  const [userVote, setUserVote] = useState<"party" | "citizen" | null>(null);
+  
   const voteMutation = useMutation({
     mutationFn: async (vote: { votedFor: "party" | "citizen" }) => {
       const res = await apiRequest("POST", `/api/debates/s/${debateId}/vote`, vote);
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      // Set the user's vote when successful
+      setUserVote(variables.votedFor);
       toast({
         title: "Vote recorded",
         description: "Thank you for your vote!",
       });
     },
     onError: (error: Error) => {
+      // Reset the user's vote on error
+      setUserVote(null);
       toast({
         title: "Error",
         description: `Could not record vote: ${error.message}`,
@@ -143,6 +144,8 @@ export default function DebateSummary({
   });
   
   const handleVote = (votedFor: "party" | "citizen") => {
+    // Set the vote immediately for instant feedback
+    setUserVote(votedFor);
     voteMutation.mutate({ votedFor });
   };
   
@@ -171,8 +174,8 @@ export default function DebateSummary({
           </div>
           
           <div>
-            <h4 className="text-md font-medium text-secondary mb-3 flex items-center">
-              <div className="w-6 h-6 bg-secondary rounded-full flex items-center justify-center mr-2">
+            <h4 className="text-md font-medium text-neutral-800 mb-3 flex items-center">
+              <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center mr-2">
                 <span className="text-white font-bold text-xs">C</span>
               </div>
               Your Arguments
@@ -210,16 +213,204 @@ export default function DebateSummary({
                     </div>
                     <div className="p-3">
                       <div className="flex items-center mb-2">
-                        <div className="w-5 h-5 bg-secondary rounded-full flex items-center justify-center mr-2">
+                        <div className="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center mr-2">
                           <span className="text-white font-bold text-xs">C</span>
                         </div>
-                        <span className="text-sm font-medium text-secondary">Your Position</span>
+                        <span className="text-sm font-medium text-neutral-800">Your Position</span>
                       </div>
                       <p className="text-sm text-neutral-700">{point.citizenPosition}</p>
                     </div>
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Stakeholder Impact - Who will be happy/sad */}
+        {summary.stakeholderImpact && (
+          <div className="mt-6 border-t border-neutral-200 pt-4">
+            <h4 className="text-md font-semibold mb-4">Stakeholder Impact Analysis</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Party Impact */}
+              <div className="border border-neutral-200 rounded-lg overflow-hidden">
+                <div className="bg-neutral-50 p-3 border-b border-neutral-200">
+                  <div className="flex items-center">
+                    <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center mr-2">
+                      <span className="text-white font-bold text-xs">P</span>
+                    </div>
+                    <h5 className="font-medium text-neutral-800">{partyShortName} Policy Impact</h5>
+                  </div>
+                </div>
+                <div className="p-4">
+                  {/* Happy Groups */}
+                  <div className="mb-4">
+                    <div className="flex items-center mb-2">
+                      <div className="w-5 h-5 bg-green-100 border border-green-200 rounded-full flex items-center justify-center mr-2">
+                        <span className="text-green-600 font-bold text-xs">+</span>
+                      </div>
+                      <span className="text-sm font-medium text-green-700">Who would be happy</span>
+                    </div>
+                    <ul className="space-y-1 pl-7">
+                      {summary.stakeholderImpact.party.happy.map((group, index) => (
+                        <li key={index} className="text-sm text-neutral-700 list-disc">{group}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  {/* Sad Groups */}
+                  <div>
+                    <div className="flex items-center mb-2">
+                      <div className="w-5 h-5 bg-red-100 border border-red-200 rounded-full flex items-center justify-center mr-2">
+                        <span className="text-red-600 font-bold text-xs">-</span>
+                      </div>
+                      <span className="text-sm font-medium text-red-700">Who would be unhappy</span>
+                    </div>
+                    <ul className="space-y-1 pl-7">
+                      {summary.stakeholderImpact.party.sad.map((group, index) => (
+                        <li key={index} className="text-sm text-neutral-700 list-disc">{group}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Citizen Impact */}
+              <div className="border border-neutral-200 rounded-lg overflow-hidden">
+                <div className="bg-neutral-50 p-3 border-b border-neutral-200">
+                  <div className="flex items-center">
+                    <div className="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center mr-2">
+                      <span className="text-white font-bold text-xs">C</span>
+                    </div>
+                    <h5 className="font-medium text-neutral-800">Your Policy Impact</h5>
+                  </div>
+                </div>
+                <div className="p-4">
+                  {/* Happy Groups */}
+                  <div className="mb-4">
+                    <div className="flex items-center mb-2">
+                      <div className="w-5 h-5 bg-green-100 border border-green-200 rounded-full flex items-center justify-center mr-2">
+                        <span className="text-green-600 font-bold text-xs">+</span>
+                      </div>
+                      <span className="text-sm font-medium text-green-700">Who would be happy</span>
+                    </div>
+                    <ul className="space-y-1 pl-7">
+                      {summary.stakeholderImpact.citizen.happy.map((group, index) => (
+                        <li key={index} className="text-sm text-neutral-700 list-disc">{group}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  {/* Sad Groups */}
+                  <div>
+                    <div className="flex items-center mb-2">
+                      <div className="w-5 h-5 bg-red-100 border border-red-200 rounded-full flex items-center justify-center mr-2">
+                        <span className="text-red-600 font-bold text-xs">-</span>
+                      </div>
+                      <span className="text-sm font-medium text-red-700">Who would be unhappy</span>
+                    </div>
+                    <ul className="space-y-1 pl-7">
+                      {summary.stakeholderImpact.citizen.sad.map((group, index) => (
+                        <li key={index} className="text-sm text-neutral-700 list-disc">{group}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Policy Consequences - Good/Bad Outcomes */}
+        {summary.policyConsequences && (
+          <div className="mt-6 border-t border-neutral-200 pt-4">
+            <h4 className="text-md font-semibold mb-4">Policy Consequences</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Party Consequences */}
+              <div className="border border-neutral-200 rounded-lg overflow-hidden">
+                <div className="bg-neutral-50 p-3 border-b border-neutral-200">
+                  <div className="flex items-center">
+                    <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center mr-2">
+                      <span className="text-white font-bold text-xs">P</span>
+                    </div>
+                    <h5 className="font-medium text-neutral-800">{partyShortName} Policy Consequences</h5>
+                  </div>
+                </div>
+                <div className="p-4">
+                  {/* Positive Consequences */}
+                  <div className="mb-4">
+                    <div className="flex items-center mb-2">
+                      <div className="w-5 h-5 bg-green-100 border border-green-200 rounded-full flex items-center justify-center mr-2">
+                        <span className="text-green-600 font-bold text-xs">✓</span>
+                      </div>
+                      <span className="text-sm font-medium text-green-700">Positive Outcomes</span>
+                    </div>
+                    <ul className="space-y-1 pl-7">
+                      {summary.policyConsequences.party.positive.map((consequence, index) => (
+                        <li key={index} className="text-sm text-neutral-700 list-disc">{consequence}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  {/* Negative Consequences */}
+                  <div>
+                    <div className="flex items-center mb-2">
+                      <div className="w-5 h-5 bg-red-100 border border-red-200 rounded-full flex items-center justify-center mr-2">
+                        <span className="text-red-600 font-bold text-xs">✗</span>
+                      </div>
+                      <span className="text-sm font-medium text-red-700">Negative Outcomes</span>
+                    </div>
+                    <ul className="space-y-1 pl-7">
+                      {summary.policyConsequences.party.negative.map((consequence, index) => (
+                        <li key={index} className="text-sm text-neutral-700 list-disc">{consequence}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Citizen Consequences */}
+              <div className="border border-neutral-200 rounded-lg overflow-hidden">
+                <div className="bg-neutral-50 p-3 border-b border-neutral-200">
+                  <div className="flex items-center">
+                    <div className="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center mr-2">
+                      <span className="text-white font-bold text-xs">C</span>
+                    </div>
+                    <h5 className="font-medium text-neutral-800">Your Policy Consequences</h5>
+                  </div>
+                </div>
+                <div className="p-4">
+                  {/* Positive Consequences */}
+                  <div className="mb-4">
+                    <div className="flex items-center mb-2">
+                      <div className="w-5 h-5 bg-green-100 border border-green-200 rounded-full flex items-center justify-center mr-2">
+                        <span className="text-green-600 font-bold text-xs">✓</span>
+                      </div>
+                      <span className="text-sm font-medium text-green-700">Positive Outcomes</span>
+                    </div>
+                    <ul className="space-y-1 pl-7">
+                      {summary.policyConsequences.citizen.positive.map((consequence, index) => (
+                        <li key={index} className="text-sm text-neutral-700 list-disc">{consequence}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  {/* Negative Consequences */}
+                  <div>
+                    <div className="flex items-center mb-2">
+                      <div className="w-5 h-5 bg-red-100 border border-red-200 rounded-full flex items-center justify-center mr-2">
+                        <span className="text-red-600 font-bold text-xs">✗</span>
+                      </div>
+                      <span className="text-sm font-medium text-red-700">Negative Outcomes</span>
+                    </div>
+                    <ul className="space-y-1 pl-7">
+                      {summary.policyConsequences.citizen.negative.map((consequence, index) => (
+                        <li key={index} className="text-sm text-neutral-700 list-disc">{consequence}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -332,31 +523,60 @@ export default function DebateSummary({
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <Button
               onClick={() => handleVote("party")}
-              variant="outline"
-              className="w-full sm:flex-1 p-3 hover:bg-blue-50 hover:border-primary"
+              variant={userVote === "party" ? "default" : "outline"}
+              className={`w-full sm:flex-1 p-3 ${
+                userVote === "party" 
+                  ? "bg-primary text-white" 
+                  : "hover:bg-blue-50 hover:border-primary"
+              }`}
               disabled={voteMutation.isPending}
             >
               <div className="flex items-center">
-                <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center mr-2">
-                  <span className="text-white font-bold text-xs">P</span>
+                <div className={`w-6 h-6 ${userVote === "party" ? "bg-white" : "bg-primary"} rounded-full flex items-center justify-center mr-2`}>
+                  <span className={`${userVote === "party" ? "text-primary" : "text-white"} font-bold text-xs`}>P</span>
                 </div>
                 <span className="font-medium">{partyShortName} Bot</span>
+                {userVote === "party" && (
+                  <Check className="ml-2 h-4 w-4" />
+                )}
               </div>
             </Button>
             <Button
               onClick={() => handleVote("citizen")}
-              variant="outline"
-              className="w-full sm:flex-1 p-3 hover:bg-orange-50 hover:border-secondary"
+              variant={userVote === "citizen" ? "default" : "outline"}
+              className={`w-full sm:flex-1 p-3 ${
+                userVote === "citizen" 
+                  ? "bg-orange-500 text-white" 
+                  : "hover:bg-orange-50 hover:border-secondary"
+              }`}
               disabled={voteMutation.isPending}
             >
               <div className="flex items-center">
-                <div className="w-6 h-6 bg-secondary rounded-full flex items-center justify-center mr-2">
-                  <span className="text-white font-bold text-xs">C</span>
+                <div className={`w-6 h-6 ${userVote === "citizen" ? "bg-white" : "bg-orange-500"} rounded-full flex items-center justify-center mr-2`}>
+                  <span className={`${userVote === "citizen" ? "text-orange-500" : "text-white"} font-bold text-xs`}>C</span>
                 </div>
                 <span className="font-medium">Citizen (You)</span>
+                {userVote === "citizen" && (
+                  <Check className="ml-2 h-4 w-4" />
+                )}
               </div>
             </Button>
           </div>
+          
+          {voteMutation.isPending && (
+            <div className="mt-3 flex justify-center items-center text-neutral-500">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <span className="text-sm">Recording your vote...</span>
+            </div>
+          )}
+          
+          {userVote && !voteMutation.isPending && (
+            <div className="mt-3 flex justify-center items-center text-green-600">
+              <Check className="mr-2 h-4 w-4" />
+              <span className="text-sm">Your vote has been recorded</span>
+            </div>
+          )}
+          
           <p className="text-xs text-neutral-500 mt-2 text-center">Your vote contributes to the aggregate public opinion</p>
         </div>
       </CardContent>

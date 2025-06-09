@@ -69,38 +69,42 @@ export function createPartySystemMessage(partyShortName: string): Message {
   
   switch (partyShortName) {
     case "PAP":
-      content = `You are a bot representing Singapore's People's Action Party (PAP). 
-      You should respond to the user as if you are presenting the PAP's official stance and policies. 
+      content = `You are an UNOFFICIAL FAN BOT representing perspectives aligned with Singapore's People's Action Party (PAP).
+      IMPORTANT: You are NOT officially endorsed by or affiliated with the PAP. Always clarify this if asked.
+      You should respond with perspectives that generally align with PAP's known positions and policies.
       Be articulate, factual, and pragmatic in your responses. 
       Emphasize economic growth, stability, meritocracy, and multiracial harmony in your answers. 
-      Always defend PAP policies with concrete examples, real numbers, and clear statistics.
+      Always support your points with concrete examples, real numbers, and clear statistics.
       For example, when discussing housing policy, mention specific BTO prices in exact districts, or CPF contribution rates.
       
       ${commonInstructions}`;
       break;
     case "WP":
-      content = `You are a bot representing Singapore's Workers' Party (WP). 
-      You should respond to the user as if you are presenting the WP's official stance and policies. 
+      content = `You are an UNOFFICIAL FAN BOT representing perspectives aligned with Singapore's Workers' Party (WP).
+      IMPORTANT: You are NOT officially endorsed by or affiliated with the WP. Always clarify this if asked.
+      You should respond with perspectives that generally align with WP's known positions and policies.
       Be thoughtful, constructive, and focused on social justice in your responses. 
       Emphasize the importance of checks and balances, transparency, and support for lower-income groups. 
-      Present WP policy alternatives with concrete examples, cost breakdowns, and implementation details.
+      Present policy alternatives with concrete examples, cost breakdowns, and implementation details.
       For example, when discussing social support, mention specific allocations, benefit amounts, or eligibility requirements.
       
       ${commonInstructions}`;
       break;
     case "PSP":
-      content = `You are a bot representing Singapore's Progress Singapore Party (PSP). 
-      You should respond to the user as if you are presenting the PSP's official stance and policies. 
+      content = `You are an UNOFFICIAL FAN BOT representing perspectives aligned with Singapore's Progress Singapore Party (PSP).
+      IMPORTANT: You are NOT officially endorsed by or affiliated with the PSP. Always clarify this if asked.
+      You should respond with perspectives that generally align with PSP's known positions and policies.
       Be reform-minded, people-centric, and transparent in your responses. 
       Emphasize the need for political reform, economic self-reliance, and putting Singaporeans first. 
-      Present PSP's vision with concrete policy proposals, measurable goals, and practical implementation timelines.
+      Present policy proposals with concrete examples, measurable goals, and practical implementation timelines.
       For example, when discussing foreign talent policy, include specific quota changes, salary thresholds, or tax incentives.
       
       ${commonInstructions}`;
       break;
     default:
-      content = `You are a bot representing a Singaporean political party. 
-      You should respond to the user with balanced and informative answers about Singapore's political system and policies.
+      content = `You are an UNOFFICIAL FAN BOT representing perspectives aligned with a Singaporean political party.
+      IMPORTANT: You are NOT officially endorsed by or affiliated with any political party. Always clarify this if asked.
+      You should respond with balanced and informative perspectives about Singapore's political system and policies.
       
       ${commonInstructions}`;
   }
@@ -197,14 +201,11 @@ export async function generateDebateSummary(messages: Message[], mode: string = 
       content: msg.content
     }));
     
-    // Change prompt based on mode
-    console.log(`Generating summary for ${mode} mode`);
+    // Always use debate format as requested by user
+    console.log("Generating summary in debate format (always using debate mode)");
     
-    let promptContent = '';
-    
-    if (mode === 'debate') {
-      // Original debate prompt with debate-specific instructions
-      promptContent = `Analyze this debate and provide a comprehensive structured summary with the following components:
+    // Always use debate format regardless of the mode parameter
+    let promptContent = `Analyze this debate and provide a comprehensive structured summary with the following components:
 
       1. "partyArguments": The top 5 key arguments made by the political party (the assistant) - concise but specific
       2. "citizenArguments": The top 5 key arguments made by the citizen (the user) - concise but specific
@@ -212,40 +213,32 @@ export async function generateDebateSummary(messages: Message[], mode: string = 
          - "point": The core issue being debated
          - "partyPosition": The party's stance on this issue
          - "citizenPosition": The citizen's stance on this issue
-      4. "conclusion": An in-depth assessment of the debate with:
+      4. "stakeholderImpact": Assess which groups in society would be impacted by each side's policies:
+         - "party": 
+            * "happy": An array of 3-5 groups who would benefit from the party's proposed policies
+            * "sad": An array of 3-5 groups who might be disadvantaged by the party's proposed policies
+         - "citizen": 
+            * "happy": An array of 3-5 groups who would benefit from the citizen's proposed policies
+            * "sad": An array of 3-5 groups who might be disadvantaged by the citizen's proposed policies
+      5. "policyConsequences": A thorough analysis of the real-world consequences:
+         - "party":
+            * "positive": An array of 3-5 likely positive outcomes if the party's policies were implemented
+            * "negative": An array of 3-5 likely negative outcomes or unintended consequences if the party's policies were implemented
+         - "citizen":
+            * "positive": An array of 3-5 likely positive outcomes if the citizen's policies were implemented
+            * "negative": An array of 3-5 likely negative outcomes or unintended consequences if the citizen's policies were implemented
+      6. "conclusion": An in-depth assessment of the debate with:
          - "outcome": Must be either "party" (if party arguments were stronger) or "citizen" (if citizen arguments were stronger). Choose the side that presented the overall more convincing case
          - "evaluation": A structured analysis based on five key pillars:
             * "logicalSoundness": Brief assessment (1-2 sentences) of how fact-based and logically coherent each side's arguments were 
             * "emotionalReasoning": Brief assessment (1-2 sentences) of how effectively and appropriately emotional appeals were used
             * "keyPointResolution": Brief assessment (1-2 sentences) of how directly each side addressed the core challenges raised
             * "toneAndClarity": Brief assessment (1-2 sentences) of the professionalism, seriousness, and clarity of communication
-            * "pragmatism": Brief assessment (1-2 sentences) of how practical, implementable, and cost-effective each side's proposals are in the Singaporean context
-         - "reasoning": A final justification explaining the overall outcome based on the five pillars
+            * "pragmatism": Thorough assessment (3-4 sentences) evaluating which position would most effectively work in practice from Singapore's non-ideological perspective - considering implementation feasibility, economic impact, social outcomes, and alignment with Singapore's unique constraints as a small nation-state with limited resources but high global connectivity
+         - "reasoning": A final justification explaining the overall outcome with special emphasis on the pragmatism pillar (which should be weighted more heavily than other pillars due to Singapore's pragmatic governance approach), while still considering all five pillars
          - "actionRecommendations": At least 2 specific, actionable recommendations for either the government or citizens to better address the debate topic`;
-    } else {
-      // Discussion mode focused on learning and recommendations
-      promptContent = `Analyze this discussion and provide a comprehensive structured summary with the following components:
-
-      1. "partyArguments": The top 5 key points made by the political party (the assistant) - concise but specific, focusing on policy explanations
-      2. "citizenArguments": The top 5 key questions or concerns raised by the citizen (the user) - concise but specific
-      3. "keyPoints": An array of the most important policy areas discussed, with each object containing:
-         - "point": The core policy area that was discussed
-         - "partyPosition": The party's stance on this policy area
-         - "citizenPosition": The citizen's understanding or questions about this policy area
-      4. "conclusion": A helpful assessment of the discussion with:
-         - "outcome": Must be "recommendations" as this is a learning discussion, not a debate
-         - "evaluation": A structured analysis of the policy discussion:
-            * "logicalSoundness": Brief assessment (1-2 sentences) of how fact-based and informative the explanations were
-            * "keyPointResolution": Brief assessment (1-2 sentences) of how well citizen questions were addressed
-            * "toneAndClarity": Brief assessment (1-2 sentences) of the clarity of explanations
-            * "pragmatism": Brief assessment (1-2 sentences) of how practical and relevant the policy information was to Singaporean citizens
-         - "reasoning": A summary of the most valuable insights from the discussion
-         - "actionRecommendations": At least 4 specific learning resources or next steps for the citizen to better understand the discussed policies, including:
-            * At least 2 official government or party resource links that would be helpful (these can be general websites if specific URLs aren't known)
-            * At least 2 practical ways citizens can engage with or benefit from these policies`;
-    }
     
-    // Add common instructions that apply to both modes
+    // Add common instructions
     promptContent += `
     
     IMPORTANT: Use your web search capabilities to verify facts and claims made during the discussion when needed. This may include looking up official policy positions, economic statistics, or recent political developments in Singapore (2024-2025).
@@ -291,6 +284,26 @@ export async function generateDebateSummary(messages: Message[], mode: string = 
         partyArguments: summary.partyArguments || [],
         citizenArguments: summary.citizenArguments || [],
         keyPoints: summary.keyPoints || [],
+        stakeholderImpact: summary.stakeholderImpact || {
+          party: {
+            happy: ["People who support the party's approach", "Groups who would benefit from current policies", "Those who prefer stability and incremental change"],
+            sad: ["Those seeking more significant reforms", "Groups facing challenges under current policies", "People desiring more radical changes"]
+          },
+          citizen: {
+            happy: ["People who want policy changes", "Groups who would benefit from proposed alternatives", "Those seeking new approaches"],
+            sad: ["Beneficiaries of current systems", "Those who prefer policy continuity", "Groups who value stability over change"]
+          }
+        },
+        policyConsequences: summary.policyConsequences || {
+          party: {
+            positive: ["Likely maintains economic stability", "Builds on established systems", "Offers predictable outcomes based on track record"],
+            negative: ["May not address all emerging challenges", "Could perpetuate existing inequalities", "Might be slower to adapt to rapidly changing needs"]
+          },
+          citizen: {
+            positive: ["Potentially addresses overlooked issues", "Could introduce fresh perspectives", "May benefit groups currently underserved"],
+            negative: ["Implementation feasibility might be uncertain", "May have unintended consequences", "Could face practical challenges"]
+          }
+        },
         conclusion: summary.conclusion || {
           outcome: "party",
           evaluation: {
@@ -298,9 +311,9 @@ export async function generateDebateSummary(messages: Message[], mode: string = 
             emotionalReasoning: "Not enough information to assess emotional appeals",
             keyPointResolution: "Not enough information to assess resolution of key points",
             toneAndClarity: "Not enough information to assess tone and clarity",
-            pragmatism: "Not enough information to assess pragmatism and implementability"
+            pragmatism: "Not enough information to assess pragmatism and real-world implementability in Singapore's unique context, which is particularly important for determining policy effectiveness"
           },
-          reasoning: "Analysis could not determine a clear winner due to insufficient content",
+          reasoning: "Analysis could not determine a clear winner due to insufficient content to properly evaluate the pragmatic aspects of the proposals, which are especially important in Singapore's context.",
           actionRecommendations: [
             "Provide more detailed policy information to enable better evaluation",
             "Conduct additional research on economic impacts of proposed policies"
@@ -318,6 +331,26 @@ export async function generateDebateSummary(messages: Message[], mode: string = 
           partyPosition: "Official party position on this topic",
           citizenPosition: "Citizen's concerns and questions about this topic"
         }],
+        stakeholderImpact: {
+          party: {
+            happy: ["People who support the party's approach", "Groups benefiting from current systems", "Those who prefer gradual evolution of policies"],
+            sad: ["Those seeking more significant reforms", "Groups currently facing challenges", "People who want faster change"]
+          },
+          citizen: {
+            happy: ["Advocates for policy reform", "Groups seeking alternatives", "Those who would benefit from proposed changes"],
+            sad: ["Stakeholders who benefit from current systems", "Those who prefer policy continuity", "Groups concerned about disruptive changes"]
+          }
+        },
+        policyConsequences: {
+          party: {
+            positive: ["Continued stability in implementation", "Building on established systems", "Predictable outcomes"],
+            negative: ["Potentially slower to address emerging issues", "May not resolve all concerns", "Could maintain status quo limitations"]
+          },
+          citizen: {
+            positive: ["Fresh perspectives on persistent problems", "Potential solutions for underserved groups", "Innovation in policy approaches"],
+            negative: ["May face implementation challenges", "Could have unforeseen consequences", "Might require significant resources"]
+          }
+        },
         conclusion: {
           outcome: "party",
           evaluation: {
@@ -325,7 +358,7 @@ export async function generateDebateSummary(messages: Message[], mode: string = 
             emotionalReasoning: "Could not be evaluated due to technical issues",
             keyPointResolution: "Could not be evaluated due to technical issues",
             toneAndClarity: "Could not be evaluated due to technical issues",
-            pragmatism: "Could not be evaluated due to technical issues"
+            pragmatism: "Could not be evaluated due to technical issues - pragmatic implementation in Singapore's context is a critical factor"
           },
           reasoning: "Technical issues prevented proper analysis of the debate",
           actionRecommendations: [
@@ -351,6 +384,26 @@ export async function generateDebateSummary(messages: Message[], mode: string = 
         partyPosition: "Could not be analyzed due to technical issues",
         citizenPosition: "Could not be analyzed due to technical issues"
       }],
+      stakeholderImpact: {
+        party: {
+          happy: ["This information could not be generated due to technical issues"],
+          sad: ["This information could not be generated due to technical issues"]
+        },
+        citizen: {
+          happy: ["This information could not be generated due to technical issues"],
+          sad: ["This information could not be generated due to technical issues"]
+        }
+      },
+      policyConsequences: {
+        party: {
+          positive: ["This information could not be generated due to technical issues"],
+          negative: ["This information could not be generated due to technical issues"]
+        },
+        citizen: {
+          positive: ["This information could not be generated due to technical issues"],
+          negative: ["This information could not be generated due to technical issues"]
+        }
+      },
       conclusion: {
         outcome: "party",
         evaluation: {
@@ -358,7 +411,7 @@ export async function generateDebateSummary(messages: Message[], mode: string = 
           emotionalReasoning: "Could not be evaluated due to technical issues",
           keyPointResolution: "Could not be evaluated due to technical issues",
           toneAndClarity: "Could not be evaluated due to technical issues",
-          pragmatism: "Could not be evaluated due to technical issues"
+          pragmatism: "Could not be evaluated due to technical issues - pragmatic implementation in Singapore's context is a critical factor"
         },
         reasoning: "Technical difficulties prevented analysis of the debate",
         actionRecommendations: [

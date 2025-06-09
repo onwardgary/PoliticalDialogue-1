@@ -275,7 +275,7 @@ export default function AuthPage() {
           <div className="h-full flex flex-col justify-center">
             <h2 className="text-3xl font-bold mb-4">Suara.sg</h2>
             <p className="text-lg mb-6">
-              Engage with AI chatbots representing Singapore's political parties
+              A Place for Civic Engagement in Singapore
             </p>
             <ul className="space-y-4">
               <li className="flex items-start">
@@ -284,7 +284,7 @@ export default function AuthPage() {
                     <polyline points="20 6 9 17 4 12"></polyline>
                   </svg>
                 </div>
-                <span>Debate policy positions with our AI party representatives</span>
+                <span>Debate policy positions with unofficial AI fanbots</span>
               </li>
               <li className="flex items-start">
                 <div className="rounded-full bg-white/20 p-1 mr-3 mt-0.5">
@@ -292,7 +292,7 @@ export default function AuthPage() {
                     <polyline points="20 6 9 17 4 12"></polyline>
                   </svg>
                 </div>
-                <span>Get personalized summaries of your political discussions</span>
+                <span>Get personalized summaries of your civic discussions</span>
               </li>
               <li className="flex items-start">
                 <div className="rounded-full bg-white/20 p-1 mr-3 mt-0.5">
@@ -308,7 +308,7 @@ export default function AuthPage() {
                     <polyline points="20 6 9 17 4 12"></polyline>
                   </svg>
                 </div>
-                <span>Explore trending political topics in Singapore</span>
+                <span>Explore trending civic topics in Singapore</span>
               </li>
             </ul>
           </div>

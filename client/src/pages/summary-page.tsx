@@ -2,13 +2,12 @@ import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
-import Sidebar from "@/components/sidebar";
-import { MobileHeader, MobileNavigation } from "@/components/mobile-nav";
-import DebateSummary from "@/components/debate-summary";
+import { useEffect, useState } from "react";
+import TopNavbar from "@/components/top-navbar";
+import DebateSummaryTabbed from "@/components/debate-summary-tabbed";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Clock, Loader2, RefreshCw } from "lucide-react";
+import { ArrowLeft, Check, Copy, Loader2, RefreshCw, Share2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 
@@ -22,14 +21,33 @@ export default function SummaryPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   
+  // State for tracking the share button state
+  const [isCopied, setIsCopied] = useState(false);
+  
   // Handle regenerating a summary if it failed
   const regenerateMutation = useMutation({
     mutationFn: async () => {
       if (!secureId && !id) throw new Error("No debate ID available");
+      
       const endpoint = secureId 
         ? `/api/debates/s/${secureId}/regenerate-summary`
         : `/api/debates/${id}/regenerate-summary`;
-      const res = await apiRequest("POST", endpoint);
+        
+      // Determine mode based on topic if debate data is available
+      let mode = "debate"; // Default mode
+      
+      if (debate?.topic) {
+        // If topic contains "discussion" or "recommendations", use "discuss" mode
+        if (debate.topic.toLowerCase().includes("discussion") || 
+            debate.topic.toLowerCase().includes("recommendations")) {
+          mode = "discuss";
+        }
+      }
+      
+      console.log(`Regenerating summary with mode: ${mode}`);
+      
+      // Pass the mode parameter to the regenerate endpoint
+      const res = await apiRequest("POST", endpoint, { mode });
       return await res.json();
     },
     onSuccess: (data) => {
@@ -54,36 +72,143 @@ export default function SummaryPage() {
     ? `/api/debates/s/${secureId}` 
     : `/api/debates/${id}`;
   
+  // State to track polling attempts and expiration
+  const [pollingAttempts, setPollingAttempts] = useState(0);
+  const MAX_POLLING_ATTEMPTS = 15; // Stop after ~30 seconds (15 attempts at 2 second intervals)
+  
   // Fetch debate data with automatic polling if summary is not available
   const { 
     data: debate, 
-    isLoading: isLoadingDebate, 
+    isLoading: isLoadingDebate,
+    error,
     refetch
   } = useQuery({
     queryKey: [apiEndpoint],
     queryFn: async () => {
-      console.log("Fetching debate summary from:", apiEndpoint);
-      const response = await fetch(apiEndpoint, {
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+      console.log(`Fetching debate summary from: ${apiEndpoint} (attempt ${pollingAttempts + 1}/${MAX_POLLING_ATTEMPTS})`);
+      
+      // Add a retry mechanism for initial load
+      let attempts = 0;
+      const maxAttempts = 3;
+      
+      while (attempts < maxAttempts) {
+        try {
+          const response = await fetch(apiEndpoint, {
+            headers: {
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
+            }
+          });
+          
+          if (!response.ok) {
+            console.log(`Attempt ${attempts + 1}/${maxAttempts} failed with status ${response.status}`);
+            attempts++;
+            if (attempts >= maxAttempts) {
+              throw new Error(`Failed to fetch debate after ${maxAttempts} attempts`);
+            }
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            continue;
+          }
+          
+          const data = await response.json();
+          
+          // Only log first few characters to avoid console spam
+          const summaryExists = data && data.summary;
+          console.log(
+            `Fetch success: Debate ID ${data.id}, secureId ${data.secureId}, ` +
+            `completed: ${data.completed}, has summary: ${summaryExists}`
+          );
+          
+          return data;
+        } catch (err) {
+          console.error(`Attempt ${attempts + 1}/${maxAttempts} error:`, err);
+          attempts++;
+          if (attempts >= maxAttempts) {
+            throw err;
+          }
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
-      });
-      if (!response.ok) {
-        throw new Error("Failed to fetch debate");
       }
-      return response.json();
+      
+      throw new Error("Failed to fetch debate after exhausting retries");
     },
     refetchOnWindowFocus: false,
-    refetchInterval: (data) => {
-      // If we have a summary, stop polling
-      if (data?.summary) return false;
-      // Otherwise, poll every 2 seconds
-      return 2000;
-    }
+    refetchInterval: (data: any) => {
+      // DO NOT increment polling attempts counter inside the refetchInterval callback!
+      // This causes an infinite React render cycle
+      
+      // Check if we should stop polling due to max attempts reached
+      if (pollingAttempts >= MAX_POLLING_ATTEMPTS) {
+        console.log(`Maximum polling attempts (${MAX_POLLING_ATTEMPTS}) reached, stopping polling`);
+        return false;
+      }
+      
+      // If we have a completed debate with a summary, stop polling
+      if (data && data.summary && typeof data.summary === 'object') {
+        // Debug summary structure to see what we're getting
+        console.log("Summary object received:", JSON.stringify(data.summary).substring(0, 100) + "...");
+        console.log("Summary found, stopping polling");
+        
+        // Force a specific property check to ensure it's a valid summary
+        if (data.summary.partyArguments || data.summary.citizenArguments || 
+            data.summary.keyPoints || data.summary.stakeholderImpact || 
+            data.summary.policyConsequences || data.summary.conclusion) {
+          console.log("Valid summary properties found, definitely stopping polling");
+          return false;
+        }
+      }
+      
+      // If debate is complete but no summary, use exponential backoff
+      if (data && data.completed) {
+        const backoffTime = Math.min(2000 * Math.pow(1.5, pollingAttempts - 1), 10000);
+        console.log(`Debate completed but no summary yet, polling with backoff: ${backoffTime}ms`);
+        return backoffTime;
+      }
+      
+      // If debate is still being processed, poll frequently with slightly increasing intervals
+      const baseInterval = 2000 + (pollingAttempts * 200);
+      console.log(`Summary not found yet, polling in ${baseInterval}ms (attempt ${pollingAttempts + 1}/${MAX_POLLING_ATTEMPTS})`);
+      return baseInterval;
+    },
+    // Add retry logic
+    retry: 3,
+    retryDelay: 1000,
+    // Add stale time to prevent unnecessary refetches
+    staleTime: 10000,
+    // Use longer cache time for debates with summaries
+    gcTime: 5 * 60 * 1000 // 5 minutes
   });
+  // Check if summary actually has data despite being present in the object
+  useEffect(() => {
+    if (debate && debate.summary) {
+      console.log("Summary exists in useEffect check:", debate.summary);
+      // Force stop polling by setting attempts to max
+      setPollingAttempts(MAX_POLLING_ATTEMPTS);
+    }
+  }, [debate, MAX_POLLING_ATTEMPTS]);
+  
+  // Use effect to safely increment polling counter
+  useEffect(() => {
+    // Only increment when debate exists but has no summary
+    if (debate && !debate.summary) {
+      console.log("No summary found yet, continuing to poll");
+      // Use a timer to control polling attempts increments
+      const timer = setTimeout(() => {
+        setPollingAttempts(prev => {
+          const newValue = Math.min(prev + 1, MAX_POLLING_ATTEMPTS);
+          console.log(`Incrementing polling attempts from ${prev} to ${newValue}`);
+          return newValue;
+        });
+      }, 2000); // Every 2 seconds increment the counter safely
+      
+      return () => clearTimeout(timer);
+    }
+  }, [debate, debate?.summary, MAX_POLLING_ATTEMPTS]);
+  
   // Fetch party data
-  const { data: party, isLoading: isLoadingParty } = useQuery({
+  const { data: partyData, isLoading: isLoadingParty } = useQuery({
     queryKey: ["/api/parties", debate?.partyId],
     queryFn: async () => {
       if (!debate) return null;
@@ -98,51 +223,127 @@ export default function SummaryPage() {
     refetchOnWindowFocus: false,
   });
   
-  // Fetch public aggregate summary
-  const { data: aggregateSummary, isLoading: isLoadingAggregate } = useQuery({
-    queryKey: ["/api/trending/weekly", debate?.topic],
-    queryFn: async () => {
-      const response = await fetch("/api/trending/weekly");
-      if (!response.ok) {
-        throw new Error("Failed to fetch trending topics");
-      }
-      const summaries = await response.json();
-      return summaries.find((s: any) => s.topic === debate?.topic && s.partyId === debate?.partyId);
-    },
-    enabled: !!debate && !!debate.topic,
-    refetchOnWindowFocus: false,
-  });
+  // Trending API has been removed to simplify the application
   
-  const isLoading = isLoadingDebate || isLoadingParty || isLoadingAggregate;
+  const isLoading = isLoadingDebate || isLoadingParty;
   
-  // Only redirect if debate doesn't exist
-  useEffect(() => {
-    if (!isLoading && !debate) {
-      toast({
-        title: "Debate not found",
-        description: "The debate you are looking for does not exist.",
-        variant: "destructive",
+  // Function to copy the debate URL to clipboard
+  const handleShare = () => {
+    const url = window.location.href;
+    
+    navigator.clipboard.writeText(url)
+      .then(() => {
+        setIsCopied(true);
+        toast({
+          title: "Link copied!",
+          description: "Share this link with others to show them your debate summary.",
+        });
+        
+        // Reset the copied state after 2 seconds
+        setTimeout(() => {
+          setIsCopied(false);
+        }, 2000);
+      })
+      .catch((error) => {
+        console.error("Failed to copy URL:", error);
+        toast({
+          title: "Copy failed",
+          description: "Could not copy the link. Please try again.",
+          variant: "destructive",
+        });
       });
-      setLocation("/");
+  };
+
+  // Handle loading errors and missing debates
+  useEffect(() => {
+    // Only trigger this logic after loading is complete
+    if (!isLoading) {
+      // If there's an error and no debate data
+      if (error && !debate) {
+        console.error("Error loading debate:", error);
+        toast({
+          title: "Error loading debate",
+          description: "There was a problem loading the debate summary. Returning to home page.",
+          variant: "destructive",
+        });
+        
+        // Small delay to ensure toast is visible before redirect
+        setTimeout(() => {
+          setLocation("/");
+        }, 1500);
+      } 
+      // If there's no error but no debate data
+      else if (!debate) {
+        toast({
+          title: "Debate not found",
+          description: "The debate you are looking for does not exist.",
+          variant: "destructive",
+        });
+        
+        // Small delay to ensure toast is visible before redirect
+        setTimeout(() => {
+          setLocation("/");
+        }, 1500);
+      }
     }
     // No ownership check - we're allowing any user to view debates
-  }, [isLoading, debate, setLocation, toast]);
+  }, [isLoading, debate, error, setLocation, toast]);
   
-  if (isLoading || !debate || !party) {
+  // Show share notification when summary page loads and data is available
+  useEffect(() => {
+    if (!isLoading && debate && debate.summary) {
+      // Slight delay to ensure the page is fully loaded
+      const timer = setTimeout(() => {
+        toast({
+          title: "Share your debate results!",
+          description: "Copy the link and share this debate summary with your friends to show them your discussion.",
+          variant: "default",
+          duration: 6000, // Show for 6 seconds
+        });
+      }, 1500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, debate, toast]);
+  
+  // Show a better loading state with more context
+  if (isLoading || !debate) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-black text-white">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <h3 className="text-xl font-semibold mb-2">Loading Debate Summary</h3>
+        <p className="text-gray-400 text-sm max-w-md text-center px-4">
+          Please wait while we retrieve your debate summary. This may take a few moments if the summary was just generated.
+        </p>
       </div>
     );
   }
   
-  // Check if summary exists, if not show a loading message
-  if (!debate.summary) {
+  // Create a party object to use in the component
+  // If partyData is available, use it, otherwise create a fallback party object
+  const party = partyData || {
+    id: debate.partyId,
+    name: "Political Party",
+    shortName: debate.partyShortName || "Party",
+    color: "#333333",
+    description: ""
+  };
+  
+  // Check if summary exists and has valid content
+  // We need to validate that summary is not only present but contains expected properties
+  const hasSummary = debate.summary && (
+    (Array.isArray(debate.summary.partyArguments) && debate.summary.partyArguments.length > 0) || 
+    (Array.isArray(debate.summary.citizenArguments) && debate.summary.citizenArguments.length > 0) ||
+    (Array.isArray(debate.summary.keyPoints) && debate.summary.keyPoints.length > 0) ||
+    debate.summary.conclusion
+  );
+
+  if (!hasSummary) {
+    console.log("Summary is missing or invalid in the render check:", debate.summary);
     return (
-      <div className="min-h-screen flex flex-col md:flex-row">
-        <Sidebar />
+      <div className="min-h-screen flex flex-col">
+        <TopNavbar />
         <main className="flex-1">
-          <MobileHeader />
           <div className="p-6">
             <div className="rounded-lg border bg-white shadow-sm">
               <div className="p-6">
@@ -184,11 +385,10 @@ export default function SummaryPage() {
   const topic = debate.topic || "Political Discussion";
   
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      <Sidebar />
+    <div className="min-h-screen flex flex-col">
+      <TopNavbar />
       
       <main className="flex-1">
-        <MobileHeader />
         
         <header className="bg-white border-b border-neutral-200 p-4">
           <div className="flex items-center justify-between">
@@ -204,25 +404,48 @@ export default function SummaryPage() {
               <h2 className="text-xl font-semibold">Debate Summary</h2>
             </div>
             
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-sm hover:bg-neutral-100"
-              onClick={() => regenerateMutation.mutate()}
-              disabled={regenerateMutation.isPending}
-            >
-              {regenerateMutation.isPending ? (
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-sm hover:bg-neutral-100"
+                onClick={handleShare}
+              >
                 <span className="flex items-center">
-                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                  Regenerating...
+                  {isCopied ? (
+                    <>
+                      <Check className="h-3 w-3 mr-1" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Share2 className="h-3 w-3 mr-1" />
+                      Share
+                    </>
+                  )}
                 </span>
-              ) : (
-                <span className="flex items-center">
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  Regenerate Summary
-                </span>
-              )}
-            </Button>
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-sm hover:bg-neutral-100"
+                onClick={() => regenerateMutation.mutate()}
+                disabled={regenerateMutation.isPending}
+              >
+                {regenerateMutation.isPending ? (
+                  <span className="flex items-center">
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                    Regenerating...
+                  </span>
+                ) : (
+                  <span className="flex items-center">
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Regenerate
+                  </span>
+                )}
+              </Button>
+            </div>
           </div>
           <div className="flex items-center mt-2">
             <div className={`w-8 h-8 bg-primary rounded-full flex items-center justify-center mr-2`}>
@@ -233,88 +456,15 @@ export default function SummaryPage() {
         </header>
         
         <div className="p-6">
-          <DebateSummary 
+          <DebateSummaryTabbed 
             debateId={secureId || String(debate.id)}
             summary={debate.summary}
             partyName={party.name}
             partyShortName={party.shortName}
+            topic={debate.topic}
           />
-          
-          {aggregateSummary && (
-            <div className="bg-white rounded-lg border border-neutral-200 p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">Public Aggregate Summary</h3>
-                <div className="flex space-x-2">
-                  <Button variant="outline" size="sm" className="px-3 py-1 rounded-full text-xs hover:bg-neutral-100">Daily</Button>
-                  <Button variant="default" size="sm" className="px-3 py-1 rounded-full text-xs">Weekly</Button>
-                  <Button variant="outline" size="sm" className="px-3 py-1 rounded-full text-xs hover:bg-neutral-100">Monthly</Button>
-                </div>
-              </div>
-              
-              <p className="text-sm text-neutral-600 mb-4">Based on {aggregateSummary.totalDebates} citizen debates on {topic.toLowerCase()} with {party.shortName} Bot this week</p>
-              
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center">
-                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center mr-2">
-                    <span className="text-white font-bold text-xs">P</span>
-                  </div>
-                  <span className="font-medium">{Math.round((aggregateSummary.partyVotes / (aggregateSummary.partyVotes + aggregateSummary.citizenVotes)) * 100)}%</span>
-                </div>
-                
-                <div className="flex-1 mx-4">
-                  <div className="h-2 bg-neutral-200 rounded-full overflow-hidden">
-                    <div 
-                      className="bg-primary h-full" 
-                      style={{ 
-                        width: `${Math.round((aggregateSummary.partyVotes / (aggregateSummary.partyVotes + aggregateSummary.citizenVotes)) * 100)}%` 
-                      }}
-                    ></div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center">
-                  <span className="font-medium">{Math.round((aggregateSummary.citizenVotes / (aggregateSummary.partyVotes + aggregateSummary.citizenVotes)) * 100)}%</span>
-                  <div className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center ml-2">
-                    <span className="text-white font-bold text-xs">C</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="text-md font-medium text-primary mb-3">Top {party.shortName} Arguments</h4>
-                  <ol className="space-y-3 list-decimal pl-5">
-                    {aggregateSummary.partyArguments.map((argument: string, index: number) => (
-                      <li key={index} className="text-sm text-neutral-700">{argument}</li>
-                    ))}
-                  </ol>
-                </div>
-                
-                <div>
-                  <h4 className="text-md font-medium text-secondary mb-3">Top Citizen Arguments</h4>
-                  <ol className="space-y-3 list-decimal pl-5">
-                    {aggregateSummary.citizenArguments.map((argument: string, index: number) => (
-                      <li key={index} className="text-sm text-neutral-700">{argument}</li>
-                    ))}
-                  </ol>
-                </div>
-              </div>
-              
-              <div className="mt-6 text-center">
-                <Button variant="outline" className="px-4 py-2 text-sm font-medium hover:bg-neutral-50">
-                  <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-                    <polyline points="16 6 12 2 8 6"></polyline>
-                    <line x1="12" y1="2" x2="12" y2="15"></line>
-                  </svg>
-                  Share this summary
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
         
-        <MobileNavigation />
       </main>
     </div>
   );

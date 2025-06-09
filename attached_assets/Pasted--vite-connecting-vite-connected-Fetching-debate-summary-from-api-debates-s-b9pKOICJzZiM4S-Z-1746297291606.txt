@@ -1,0 +1,53 @@
+[vite] connecting...
+[vite] connected.
+Fetching debate summary from: /api/debates/s/b9pKOICJzZiM4S_Z
+Query function executing for /api/parties with behavior on 401: throw
+Query response for /api/parties: status 200
+Current cookies at query time: 
+Content-Type for /api/parties: application/json; charset=utf-8
+Query data for /api/parties: 
+(3) [{…}, {…}, {…}]
+API request: POST /api/debates with data
+API response: POST /api/debates status: 201
+Fetching debate data from: /api/debates/s/m4klvH-HyxIsq_zA
+API request: POST /api/debates/s/m4klvH-HyxIsq_zA/messages with data
+API response: POST /api/debates/s/m4klvH-HyxIsq_zA/messages status: 201
+Fetching debate data from: /api/debates/s/m4klvH-HyxIsq_zA
+API request: POST /api/debates/s/m4klvH-HyxIsq_zA/messages with data
+API response: POST /api/debates/s/m4klvH-HyxIsq_zA/messages status: 201
+Fetching debate data from: /api/debates/s/m4klvH-HyxIsq_zA
+Warning: Encountered two children with the same key, &#x60;VXXUzFLeQ1pcqWTWiyNLo&#x60;. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at div
+    at ChatInterface (https://720871e3-5f59-430f-96c7-ff8b7a287b90-00-36dlki9hakbtw.riker.replit.dev/src/components/chat/chat-interface-new.tsx:30:3)
+    at main
+    at div
+    at DebatePage (https://720871e3-5f59-430f-96c7-ff8b7a287b90-00-36dlki9hakbtw.riker.replit.dev/src/pages/debate-page-simplified.tsx:163:18)
+    at Route (https://720871e3-5f59-430f-96c7-ff8b7a287b90-00-36dlki9hakbtw.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=55d2b1fa:265:16)
+    at Switch (https://720871e3-5f59-430f-96c7-ff8b7a287b90-00-36dlki9hakbtw.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=55d2b1fa:321:17)
+    at Router
+    at Provider (https://720871e3-5f59-430f-96c7-ff8b7a287b90-00-36dlki9hakbtw.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=55d2b1fa:38:15)
+    at TooltipProvider (https://720871e3-5f59-430f-96c7-ff8b7a287b90-00-36dlki9hakbtw.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=55d2b1fa:62:5)
+    at AuthProvider (https://720871e3-5f59-430f-96c7-ff8b7a287b90-00-36dlki9hakbtw.riker.replit.dev/src/hooks/use-auth.tsx:36:32)
+    at Provider (https://720871e3-5f59-430f-96c7-ff8b7a287b90-00-36dlki9hakbtw.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-redux.js?v=55d2b1fa:923:11)
+    at ReduxProvider (https://720871e3-5f59-430f-96c7-ff8b7a287b90-00-36dlki9hakbtw.riker.replit.dev/src/providers/redux-provider.tsx?t=1746296789017:19:33)
+    at App
+    at QueryClientProvider (https://720871e3-5f59-430f-96c7-ff8b7a287b90-00-36dlki9hakbtw.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=55d2b1fa:2805:3)
+at div
+at ChatInterface (https://720871e3-5f59-430f-96c7-ff8b7a287b90-00-36dlki9hakbtw.riker.replit.dev/src/components/chat/chat-interface-new.tsx:30:3)
+at main
+at div
+at DebatePage (https://720871e3-5f59-430f-96c7-ff8b7a287b90-00-36dlki9hakbtw.riker.replit.dev/src/pages/debate-page-simplified.tsx:163:18)
+at Route (https://720871e3-5f59-430f-96c7-ff8b7a287b90-00-36dlki9hakbtw.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=55d2b1fa:265:16)
+at Switch (https://720871e3-5f59-430f-96c7-ff8b7a287b90-00-36dlki9hakbtw.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=55d2b1fa:321:17)
+at Router
+at Provider (https://720871e3-5f59-430f-96c7-ff8b7a287b90-00-36dlki9hakbtw.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=55d2b1fa:38:15)
+at TooltipProvider (https://720871e3-5f59-430f-96c7-ff8b7a287b90-00-36dlki9hakbtw.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=55d2b1fa:62:5)
+at AuthProvider (https://720871e3-5f59-430f-96c7-ff8b7a287b90-00-36dlki9hakbtw.riker.replit.dev/src/hooks/use-auth.tsx:36:32)
+at Provider (https://720871e3-5f59-430f-96c7-ff8b7a287b90-00-36dlki9hakbtw.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-redux.js?v=55d2b1fa:923:11)
+at ReduxProvider (https://720871e3-5f59-430f-96c7-ff8b7a287b90-00-36dlki9hakbtw.riker.replit.dev/src/providers/redux-provider.tsx?t=1746296789017:19:33)
+at App
+at QueryClientProvider (https://720871e3-5f59-430f-96c7-ff8b7a287b90-00-36dlki9hakbtw.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=55d2b1fa:2805:3)
+at t.value (https://720871e3-5f59-430f-96c7-ff8b7a287b90-00-36dlki9hakbtw.riker.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://720871e3-5f59-430f-96c7-ff8b7a287b90-00-36dlki9hakbtw.riker.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://720871e3-5f59-430f-96c7-ff8b7a287b90-00-36dlki9hakbtw.riker.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://720871e3-5f59-430f-96c7-ff8b7a287b90-00-36dlki9hakbtw.riker.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400

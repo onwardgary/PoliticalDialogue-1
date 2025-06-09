@@ -139,6 +139,11 @@ export default function DebatePage() {
     polling: false
   });
   
+  // NOTE: We've removed round extension functionality
+  // No more isExtendingRounds or showInlineExtensionOptions state variables
+  
+  // We've removed the ability to extend rounds after initial selection
+  
   // Determine which API endpoint to use based on which parameter is available
   const apiEndpoint = secureId 
     ? `/api/debates/s/${secureId}` 
@@ -405,6 +410,78 @@ export default function DebatePage() {
     ? `/api/debates/s/${secureId}/end`
     : `/api/debates/${id}/end`;
     
+  // Debate round extension endpoint
+  const extendRoundsEndpoint = secureId
+    ? `/api/debates/s/${secureId}/extend`
+    : `/api/debates/${id}/extend`;
+    
+  // Extend debate rounds mutation
+  const extendRoundsMutation = useMutation({
+    mutationFn: async (maxRounds: number) => {
+      setIsExtendingRounds(true);
+      console.log(`Extending debate to ${maxRounds} rounds`);
+      const res = await apiRequest("PATCH", extendRoundsEndpoint, { maxRounds });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      console.log("Debate rounds extended successfully:", data);
+      
+      // IMMEDIATELY reset extending state to hide dialog
+      setIsExtendingRounds(false);
+      setShowInlineExtensionOptions(false);
+      
+      // Update React Query cache with the new maxRounds value
+      queryClient.setQueryData([apiEndpoint], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          maxRounds: data.maxRounds,
+          updatedAt: new Date().toISOString(),
+        };
+      });
+      
+      // Log that we're forcing dialog close
+      console.log("🛑 FORCING HIDE of inline extension options after extension");
+      
+      // Show success toast
+      toast({
+        title: "Debate extended",
+        description: `You now have ${data.maxRounds} rounds for this debate.`,
+      });
+      
+      // Force refetch debate data to ensure UI is updated correctly
+      queryClient.invalidateQueries({queryKey: [apiEndpoint]});
+      
+      // Clear extension state
+      setIsExtendingRounds(false);
+    },
+    onError: (error: any) => {
+      console.error("Error extending debate rounds:", error);
+      
+      // Get API error message if available
+      let errorMessage = "There was a problem extending the debate.";
+      try {
+        if (error.response && error.response.data && error.response.data.message) {
+          errorMessage = error.response.data.message;
+        } else if (typeof error.message === 'string') {
+          errorMessage = error.message;
+        }
+      } catch (e) {
+        console.error("Error processing API error:", e);
+      }
+      
+      // Show detailed error toast
+      toast({
+        title: "Failed to extend debate",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      
+      // Clear extension state
+      setIsExtendingRounds(false);
+    }
+  });
+  
   // End debate mutation
   const endDebateMutation = useMutation({
     mutationFn: async () => {
@@ -588,6 +665,57 @@ export default function DebatePage() {
     }
   }, [isLoadingDebate, debate?.completed, summaryGenerationStep, setLocation, id, secureId]);
   
+  // Effect to manage inline extension options
+  useEffect(() => {
+    if (!debate) return;
+    
+    // Calculate current round based on user messages
+    const userMessages = debate.messages.filter((msg: Message) => msg.role === 'user');
+    const currentRound = userMessages.length;
+    const maxRounds = debate.maxRounds || 6;
+    
+    // Check if last message is from user
+    const lastMessage = debate.messages.length > 0 ? debate.messages[debate.messages.length - 1] : null;
+    const isLastMessageFromUser = lastMessage && lastMessage.role === 'user';
+    
+    // Detailed debug logging of all conditions
+    console.log(`
+      🔍 Extension conditions check:
+      - currentRound: ${currentRound}
+      - maxRounds: ${maxRounds} 
+      - isExtendingRounds: ${isExtendingRounds}
+      - isLastMessageFromUser: ${isLastMessageFromUser}
+      - messageStatus.sending: ${messageStatus.sending}
+      - userMessages.length: ${userMessages.length}
+      - showInlineExtensionOptions: ${showInlineExtensionOptions}
+    `);
+    
+    // Only show extension options when user has sent their last message AND bot has responded
+    if (
+      currentRound === maxRounds && 
+      maxRounds < 6 && 
+      !isExtendingRounds && 
+      !isLastMessageFromUser && // Only show after bot has responded to last user message
+      !messageStatus.sending && // Make sure bot isn't still generating a response
+      // Prevent showing extension options immediately after extension
+      // by ensuring we have at least max rounds of user messages
+      userMessages.length >= maxRounds
+    ) {
+      console.log(`Showing inline extension options: currentRound=${currentRound}, maxRounds=${maxRounds}`);
+      setShowInlineExtensionOptions(true);
+    } else if (
+      // Hide extension options when:
+      // - Extension is in progress
+      // - or we're at max rounds already (8)
+      // - or a new message was added after showing options
+      (isExtendingRounds || maxRounds >= 6 || (debate.messages.length > 0 && showInlineExtensionOptions && lastMessage?.role === 'user')) && 
+      showInlineExtensionOptions
+    ) {
+      console.log(`Hiding inline extension options: isExtendingRounds=${isExtendingRounds}, maxRounds=${maxRounds}`);
+      setShowInlineExtensionOptions(false);
+    }
+  }, [debate, isExtendingRounds, messageStatus.sending, showInlineExtensionOptions]);
+  
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -678,13 +806,52 @@ export default function DebatePage() {
               messages={localMessages.length > 0 ? localMessages : (debate?.messages || [])}
               isLoading={messageStatus.sending}
               onSendMessage={handleSendMessage}
+              onEndDebate={handleEndDebate}
               partyShortName={party?.shortName}
               userTyping={isUserTyping}
+              maxRounds={debate?.maxRounds || 6}
+              isGeneratingSummary={viewState === 'generating'}
             />
             <ChatInput 
               onSendMessage={handleSendMessage}
-              isLoading={messageStatus.sending}
+              isLoading={messageStatus.sending || viewState === 'generating'}
               onTypingStateChange={setIsUserTyping}
+              disabled={
+                // Disable input in these scenarios:
+                
+                // CASE 1: While waiting for AI response (disable immediately after sending)
+                messageStatus.sending || messageStatus.polling ||
+                
+                // CASE 2: When at max rounds (any number) - permanent disabling
+                (debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 6)) ||
+                
+                // CASE 3: Always disable when the last message is from the user (waiting for bot)
+                (debate?.messages && debate.messages.length > 0 && 
+                debate.messages[debate.messages.length - 1].role === 'user') ||
+                
+                // CASE 4: When generating a summary
+                viewState === 'generating'
+              }
+              disabledReason={
+                // Determine the reason for disabling:
+                
+                // PRIORITY 1: When generating a summary
+                viewState === 'generating'
+                  ? 'generating'
+                
+                // PRIORITY 2: When waiting for the bot to respond
+                : (messageStatus.sending || messageStatus.polling ||
+                   (debate?.messages && debate.messages.length > 0 && 
+                    debate.messages[debate.messages.length - 1].role === 'user'))
+                    ? 'waiting'
+                
+                // PRIORITY 3: When at maximum allowed rounds
+                : (debate?.messages?.filter((msg: Message) => msg.role === 'user').length >= (debate?.maxRounds || 6))
+                    ? 'finalRound'
+                
+                // PRIORITY 4: Default state
+                : ''
+              }
             />
           </>
         )}

@@ -13,13 +13,47 @@ type ChatInputProps = {
   onSendMessage: (message: string) => void;
   isLoading: boolean;
   onTypingStateChange?: (isTyping: boolean) => void;
+  disabled?: boolean;
+  disabledReason?: 'waiting' | 'maxRounds' | 'finalRound' | 'generating' | 'summaryReady';
 };
 
-export default function ChatInput({ onSendMessage, isLoading, onTypingStateChange }: ChatInputProps) {
+export default function ChatInput({ 
+  onSendMessage, 
+  isLoading, 
+  onTypingStateChange, 
+  disabled = false,
+  disabledReason = 'maxRounds'
+}: ChatInputProps) {
   const [message, setMessage] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const wasDisabledRef = useRef<boolean>(disabled);
   const MAX_CHARS = 560; // Doubled character limit for users
+  
+  // Immediately log state changes for debugging
+  useEffect(() => {
+    console.log("INPUT STATE CHANGE:", { 
+      disabled, 
+      disabledReason, 
+      isLoading,
+      textareaFocused: document.activeElement === textareaRef.current
+    });
+    
+    // If the input was disabled and is now enabled, try to focus it
+    // This helps with the perceived latency when re-enabling the input
+    if (wasDisabledRef.current && !disabled) {
+      // Short timeout to ensure DOM is ready
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+          console.log("Auto-focused textarea after re-enabling");
+        }
+      }, 50);
+    }
+    
+    // Update the ref for next comparison
+    wasDisabledRef.current = disabled;
+  }, [disabled, disabledReason, isLoading]);
   
   // Handle sending the message
   const handleSubmit = (e: FormEvent) => {
@@ -84,14 +118,26 @@ export default function ChatInput({ onSendMessage, isLoading, onTypingStateChang
         <div className="flex-1 relative">
           <Textarea
             ref={textareaRef}
-            placeholder="Type your message... (Ctrl+Enter to send)"
-            className="w-full resize-none pr-10 min-h-[45px] md:min-h-[60px] focus:outline-none focus:ring-1 focus:ring-primary"
+            placeholder={
+              disabled 
+                ? disabledReason === 'waiting'
+                  ? "Waiting for response and for you to finish reading..." 
+                  : disabledReason === 'finalRound'
+                    ? "Maximum rounds reached. Debate complete."
+                    : disabledReason === 'generating'
+                      ? "Generating debate summary..."
+                      : disabledReason === 'summaryReady'
+                        ? "Debate summary is ready to view!"
+                        : "Maximum rounds reached. End debate to continue."
+                : "Type your message... (Ctrl+Enter to send)"
+            }
+            className={`w-full resize-none pr-10 min-h-[45px] md:min-h-[60px] focus:outline-none focus:ring-1 focus:ring-primary ${disabled ? 'bg-neutral-100 text-neutral-500' : ''}`}
             value={message}
             onChange={(e) => {
               setMessage(e.target.value);
               
               // Handle typing indicator
-              if (onTypingStateChange) {
+              if (onTypingStateChange && !disabled) {
                 // User is typing
                 onTypingStateChange(true);
                 
@@ -108,8 +154,8 @@ export default function ChatInput({ onSendMessage, isLoading, onTypingStateChang
               }
             }}
             onKeyDown={handleKeyDown}
-            disabled={isLoading}
-            autoFocus
+            disabled={isLoading || disabled}
+            autoFocus={!disabled}
           />
           {/* Character counter on mobile */}
           {message.length > 0 && (
@@ -125,7 +171,7 @@ export default function ChatInput({ onSendMessage, isLoading, onTypingStateChang
               variant="ghost" 
               size="icon" 
               className="text-neutral-400 hover:text-neutral-600 h-7 w-7"
-              disabled={isLoading}
+              disabled={isLoading || disabled}
             >
               <SmileIcon className="h-4 w-4" />
             </Button>
@@ -134,10 +180,23 @@ export default function ChatInput({ onSendMessage, isLoading, onTypingStateChang
         <Button 
           type="submit" 
           className="ml-2 min-h-[45px] md:min-h-[60px] px-4 transition-all duration-100" 
-          disabled={!message.trim() || isLoading || isOverLimit}
+          disabled={!message.trim() || isLoading || isOverLimit || disabled}
         >
           {isLoading ? (
             <span className="animate-pulse text-primary-foreground/80">Sent</span>
+          ) : disabled ? (
+            <span className="text-primary-foreground/60">
+              {disabledReason === 'waiting'
+                ? "Please wait..."
+                : disabledReason === 'finalRound'
+                  ? "Debate Complete"
+                  : disabledReason === 'generating'
+                    ? "Generating Summary"
+                    : disabledReason === 'summaryReady'
+                      ? "Summary Ready"
+                      : "Round Limit"
+              }
+            </span>
           ) : (
             <>
               <SendIcon className="h-4 w-4 mr-2" />

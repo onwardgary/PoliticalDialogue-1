@@ -12,7 +12,10 @@ type MessageBubbleProps = {
   isGrouped?: boolean;
 };
 
-export default function MessageBubble({ message, partyShortName = "BOT", isGrouped = false }: MessageBubbleProps) {
+export default function MessageBubble({ message, partyShortName, isGrouped = false }: MessageBubbleProps) {
+  // Get bot name format for display - ensure we always have a valid party short name
+  const safePartyShortName = partyShortName || "Bot";
+  const botName = `${safePartyShortName} Unofficial Fanbot`;
   const isUser = message.role === "user";
   const isBot = message.role === "assistant";
   const formattedTime = format(new Date(message.timestamp), "h:mm a");
@@ -174,12 +177,12 @@ export default function MessageBubble({ message, partyShortName = "BOT", isGroup
       {!isGrouped ? (
         <div className={cn(
           "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
-          isUser ? "ml-2 bg-neutral-200" : "mr-2 bg-primary"
+          isUser ? "ml-2 bg-white border border-black" : "mr-2 bg-black"
         )}>
           {isUser ? (
-            <span className="text-neutral-500 text-xs">YOU</span>
+            <span className="text-black text-xs">YOU</span>
           ) : (
-            <span className="text-white font-bold text-xs">{partyShortName}</span>
+            <span className="text-white font-bold text-xs" title={botName}>{safePartyShortName}</span>
           )}
         </div>
       ) : (
@@ -192,8 +195,8 @@ export default function MessageBubble({ message, partyShortName = "BOT", isGroup
       <div className={cn(
         "chat-bubble p-3 rounded-lg shadow-sm max-w-[88%] md:max-w-3xl",
         isUser 
-          ? "bg-primary text-white" 
-          : "bg-white text-neutral-800",
+          ? "bg-black text-white" 
+          : "bg-white text-black",
         // Adjust bubble corners for grouped messages
         isGrouped 
           ? isUser 
@@ -213,17 +216,27 @@ export default function MessageBubble({ message, partyShortName = "BOT", isGroup
             </ReactMarkdown>
           ) : message.id.startsWith('typing-') ? (
             // Special case for typing indicator - larger, more prominent animation
-            <div className="flex space-x-2 items-center py-3 px-1">
-              <div className="w-2.5 h-2.5 bg-neutral-400 rounded-full animate-pulse" style={{ animationDelay: "0ms", animationDuration: "800ms" }}></div>
-              <div className="w-2.5 h-2.5 bg-neutral-400 rounded-full animate-pulse" style={{ animationDelay: "200ms", animationDuration: "800ms" }}></div>
-              <div className="w-2.5 h-2.5 bg-neutral-400 rounded-full animate-pulse" style={{ animationDelay: "400ms", animationDuration: "800ms" }}></div>
-            </div>
+            <>
+              {!isGrouped && (
+                <div className="text-xs text-primary font-medium mb-1">
+                  {botName}
+                </div>
+              )}
+              <div className="flex space-x-2 items-center py-3 px-1">
+                <div className="w-2.5 h-2.5 bg-neutral-400 rounded-full animate-pulse" style={{ animationDelay: "0ms", animationDuration: "800ms" }}></div>
+                <div className="w-2.5 h-2.5 bg-neutral-400 rounded-full animate-pulse" style={{ animationDelay: "200ms", animationDuration: "800ms" }}></div>
+                <div className="w-2.5 h-2.5 bg-neutral-400 rounded-full animate-pulse" style={{ animationDelay: "400ms", animationDuration: "800ms" }}></div>
+              </div>
+            </>
           ) : (
-            <Typewriter 
-              text={message.content} 
-              speed={7} 
-              onComplete={() => setTypewriterComplete(true)}
-            />
+            <>
+              <Typewriter 
+                key={`typewriter-${message.id}`} // More distinctive key prefix to avoid collisions
+                text={message.content} 
+                speed={7} 
+                onComplete={() => setTypewriterComplete(true)}
+              />
+            </>
           )}
         </div>
         
@@ -231,7 +244,7 @@ export default function MessageBubble({ message, partyShortName = "BOT", isGroup
         <div className="flex justify-between items-center mt-1">
           {/* Show search icon for assistant messages that used search */}
           {!isUser && message.searchEnabled && (
-            <div className="flex items-center text-blue-500" title="Web search was used to generate this response">
+            <div className="flex items-center text-blue-600" title="Web search was used to generate this response">
               <Globe className="w-3 h-3 mr-1" />
               <span className="text-xs">Search-enhanced</span>
             </div>
@@ -247,7 +260,7 @@ export default function MessageBubble({ message, partyShortName = "BOT", isGroup
           {/* Always show timestamp */}
           <p className={cn(
             "text-xs",
-            isUser ? "text-primary-100 ml-auto" : "text-neutral-400 ml-auto"
+            isUser ? "text-white ml-auto" : "text-black ml-auto"
           )}>
             {formattedTime}
           </p>
