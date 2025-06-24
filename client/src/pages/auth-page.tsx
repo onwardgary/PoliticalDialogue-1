@@ -127,6 +127,40 @@ export default function AuthPage() {
               </form>
             </Form>
             
+            <div className="mt-4 text-center">
+              <button 
+                type="button"
+                className="text-sm text-blue-600 hover:text-blue-800 underline"
+                onClick={async () => {
+                  const email = loginForm.getValues("email");
+                  if (!email) {
+                    alert("Please enter your email address first.");
+                    return;
+                  }
+                  
+                  try {
+                    const response = await fetch("/api/auth/reset-password", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ email }),
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                      alert(data.message);
+                    } else {
+                      alert(data.message || "Password reset failed");
+                    }
+                  } catch (error) {
+                    alert("Password reset failed. Please try again.");
+                  }
+                }}
+              >
+                Forgot your password?
+              </button>
+            </div>
+            
             <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
               <h3 className="text-sm font-medium text-blue-900 mb-2">Need an Account?</h3>
               <p className="text-sm text-blue-700">

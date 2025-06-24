@@ -1218,6 +1218,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to delete user" });
     }
   });
+
+  // Password reset endpoint (admin only)
+  app.post("/api/auth/reset-password", async (req, res) => {
+    const bodySchema = z.object({
+      email: z.string().email("Invalid email address"),
+    });
+    
+    try {
+      const { email } = bodySchema.parse(req.body);
+      
+      // Only allow password reset for the admin email
+      if (email !== "2011j3a38@gmail.com") {
+        return res.status(403).json({ message: "Password reset is only available for administrators" });
+      }
+      
+      // Find and reset admin password
+      const adminUser = await storage.getUserByEmail(email);
+      if (!adminUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      await storage.updateUser(adminUser.id, { password: "admin123" });
+      
+      res.json({ message: "Password has been reset to 'admin123'" });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid email address", errors: error.errors });
+      }
+      console.error("Error resetting password:", error);
+      res.status(500).json({ message: "Failed to reset password" });
+    }
+  });
   
   const httpServer = createServer(app);
   
