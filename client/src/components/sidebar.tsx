@@ -49,9 +49,17 @@ export default function Sidebar() {
           <ul className="space-y-2">
             <li>
               <Link href="/admin/knowledge">
-                <div className={`flex items-center p-2 rounded-lg font-medium ${location.startsWith('/admin') ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
+                <div className={`flex items-center p-2 rounded-lg font-medium ${location === '/admin/knowledge' ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
                   <Database className="w-5 h-5 mr-3" />
                   <span>Knowledge Base</span>
+                </div>
+              </Link>
+            </li>
+            <li>
+              <Link href="/admin/users">
+                <div className={`flex items-center p-2 rounded-lg font-medium ${location === '/admin/users' ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
+                  <Users className="w-5 h-5 mr-3" />
+                  <span>User Management</span>
                 </div>
               </Link>
             </li>

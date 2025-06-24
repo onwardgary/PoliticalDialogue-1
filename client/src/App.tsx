@@ -13,6 +13,7 @@ import DebatePageRedux from "./pages/debate-page-redux"; // New Redux implementa
 import SummaryPage from "./pages/summary-page";
 import ProfilePage from "./pages/profile-page";
 import AdminKnowledgePage from "./pages/admin-knowledge-page-new";
+import AdminUsersPage from "./pages/admin-users-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -38,6 +39,7 @@ function Router() {
       
       {/* Admin routes - temporarily not protected for simplicity */}
       <Route path="/admin/knowledge" component={AdminKnowledgePage} />
+      <Route path="/admin/users" component={AdminUsersPage} />
       
       {/* Auth page - temporarily hidden
       <Route path="/auth" component={AuthPage} />
