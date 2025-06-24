@@ -114,6 +114,7 @@ The application is configured for deployment on Replit with the following setup:
   - Created login buttons with "By Invitation Only" messaging
   - Enabled authentication flows while maintaining guest access
   - Added user role management and safety checks
+  - Secured admin routes with authentication and role-based access control
 - June 16, 2025: Initial setup
 
 ## User Preferences
