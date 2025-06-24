@@ -1239,7 +1239,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
       
-      await storage.updateUser(adminUser.id, { password: "admin123" });
+      // Hash the new password using the same method as auth.ts
+      const { randomBytes, scrypt } = await import('crypto');
+      const { promisify } = await import('util');
+      const scryptAsync = promisify(scrypt);
+      
+      const salt = randomBytes(16).toString("hex");
+      const buf = (await scryptAsync("admin123", salt, 64)) as Buffer;
+      const hashedPassword = `${buf.toString("hex")}.${salt}`;
+      
+      await storage.updateUser(adminUser.id, { password: hashedPassword });
       
       res.json({ message: "Password has been reset to 'admin123'" });
     } catch (error) {
