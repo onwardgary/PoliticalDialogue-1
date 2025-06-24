@@ -5,7 +5,8 @@ import {
   Menu,
   Database,
   LogIn,
-  LogOut
+  LogOut,
+  Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 

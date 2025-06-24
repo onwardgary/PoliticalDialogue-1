@@ -78,6 +78,50 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+
+  async getAllUsers(): Promise<User[]> {
+    try {
+      const allUsers = await db
+        .select()
+        .from(users)
+        .orderBy(users.createdAt);
+      
+      return allUsers;
+    } catch (error) {
+      console.error("Error in getAllUsers:", error);
+      throw error;
+    }
+  }
+
+  async updateUser(id: number, updateData: Partial<InsertUser>): Promise<User> {
+    try {
+      const [updatedUser] = await db
+        .update(users)
+        .set(updateData)
+        .where(eq(users.id, id))
+        .returning();
+      
+      if (!updatedUser) {
+        throw new Error("User not found");
+      }
+      
+      return updatedUser;
+    } catch (error) {
+      console.error("Error in updateUser:", error);
+      throw error;
+    }
+  }
+
+  async deleteUser(id: number): Promise<void> {
+    try {
+      const result = await db
+        .delete(users)
+        .where(eq(users.id, id));
+    } catch (error) {
+      console.error("Error in deleteUser:", error);
+      throw error;
+    }
+  }
   
   // Get or create anonymous user for unauthenticated operations
   async getOrCreateAnonymousUser(): Promise<User> {

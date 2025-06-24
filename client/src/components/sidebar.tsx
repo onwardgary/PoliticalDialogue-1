@@ -8,7 +8,8 @@ import {
   UserCircle, 
   LogOut,
   Database,
-  LogIn
+  LogIn,
+  Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";

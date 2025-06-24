@@ -1066,6 +1066,158 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to add sample summaries" });
     }
   });
+
+  // Admin-only user management routes
+  
+  // Get all users (admin only)
+  app.get("/api/admin/users", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "Not authorized to access user management" });
+    }
+    
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+  
+  // Create a new user (admin only)
+  app.post("/api/admin/users", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "Not authorized to create users" });
+    }
+    
+    const bodySchema = z.object({
+      username: z.string().min(3, "Username must be at least 3 characters"),
+      email: z.string().email("Invalid email address"),
+      password: z.string().min(6, "Password must be at least 6 characters"),
+      isAdmin: z.boolean().default(false),
+    });
+    
+    try {
+      const userData = bodySchema.parse(req.body);
+      
+      // Check if username or email already exists
+      const existingUsername = await storage.getUserByUsername(userData.username);
+      if (existingUsername) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+      
+      const existingEmail = await storage.getUserByEmail(userData.email);
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+      
+      // Create the user
+      const newUser = await storage.createUser(userData);
+      
+      // Remove password from response
+      const { password, ...userResponse } = newUser;
+      
+      res.status(201).json(userResponse);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid user data", errors: error.errors });
+      }
+      console.error("Error creating user:", error);
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+  
+  // Update user (admin only)
+  app.patch("/api/admin/users/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "Not authorized to update users" });
+    }
+    
+    const bodySchema = z.object({
+      isAdmin: z.boolean(),
+    });
+    
+    try {
+      const userId = parseInt(req.params.id);
+      const updateData = bodySchema.parse(req.body);
+      
+      // Check if user exists
+      const existingUser = await storage.getUser(userId);
+      if (!existingUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Prevent users from removing their own admin status
+      if (req.user.id === userId && !updateData.isAdmin) {
+        return res.status(400).json({ message: "Cannot remove your own admin privileges" });
+      }
+      
+      // Update the user
+      const updatedUser = await storage.updateUser(userId, updateData);
+      
+      // Remove password from response
+      const { password, ...userResponse } = updatedUser;
+      
+      res.json(userResponse);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid update data", errors: error.errors });
+      }
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+  
+  // Delete user (admin only)
+  app.delete("/api/admin/users/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "Not authorized to delete users" });
+    }
+    
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // Check if user exists
+      const existingUser = await storage.getUser(userId);
+      if (!existingUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Prevent users from deleting themselves
+      if (req.user.id === userId) {
+        return res.status(400).json({ message: "Cannot delete your own account" });
+      }
+      
+      // Prevent deletion of guest user
+      if (existingUser.username === "guest") {
+        return res.status(400).json({ message: "Cannot delete the guest user" });
+      }
+      
+      // Delete the user
+      await storage.deleteUser(userId);
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
   
   const httpServer = createServer(app);
   

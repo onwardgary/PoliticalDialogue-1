@@ -146,6 +146,35 @@ export class MemStorage implements IStorage {
     this.users.set(id, user);
     return user;
   }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async updateUser(id: number, updateData: Partial<InsertUser>): Promise<User> {
+    const existingUser = this.users.get(id);
+    if (!existingUser) {
+      throw new Error("User not found");
+    }
+    
+    const updatedUser: User = { 
+      ...existingUser, 
+      ...updateData,
+      // Don't allow changing id or createdAt
+      id: existingUser.id,
+      createdAt: existingUser.createdAt
+    };
+    
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
+  async deleteUser(id: number): Promise<void> {
+    if (!this.users.has(id)) {
+      throw new Error("User not found");
+    }
+    this.users.delete(id);
+  }
   
   // Party methods
   async getParties(): Promise<Party[]> {
