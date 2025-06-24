@@ -109,7 +109,12 @@ The application is configured for deployment on Replit with the following setup:
 
 ## Changelog
 
-- June 16, 2025. Initial setup
+- June 24, 2025: Implemented invite-only user management system
+  - Added admin user creation interface at `/admin/users`
+  - Created login buttons with "By Invitation Only" messaging
+  - Enabled authentication flows while maintaining guest access
+  - Added user role management and safety checks
+- June 16, 2025: Initial setup
 
 ## User Preferences
 
