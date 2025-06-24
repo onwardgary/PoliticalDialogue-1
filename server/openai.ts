@@ -244,14 +244,17 @@ export async function generatePartyResponse(messages: Message[]): Promise<{conte
       model: model,
       messages: formattedMessages,
       max_tokens: 1000,
-      temperature: temperature,
-      presence_penalty: penalties.presence_penalty,
-      frequency_penalty: penalties.frequency_penalty,
     };
     
     // Add model-specific parameters
     if (model === MODELS.SEARCH) {
       config.web_search_options = {};
+      // Search model doesn't support temperature, presence_penalty, frequency_penalty
+    } else {
+      // Standard model supports all anti-repetition parameters
+      config.temperature = temperature;
+      config.presence_penalty = penalties.presence_penalty;
+      config.frequency_penalty = penalties.frequency_penalty;
     }
     
     // @ts-ignore - Type definitions haven't been updated for search tools
