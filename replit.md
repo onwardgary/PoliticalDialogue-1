@@ -116,6 +116,9 @@ The application is configured for deployment on Replit with the following setup:
   - Added user role management and safety checks
   - Secured admin routes with authentication and role-based access control
   - Updated admin credentials to use 2011j3a38@gmail.com and implemented password reset functionality
+  - Optimized AI bot responses to reduce repetition with party-specific anti-repetition strategies
+  - Focused platform on PAP vs WP debates, deactivated PSP for clearer political contrast
+  - Added dynamic temperature, presence_penalty, and frequency_penalty based on conversation progress
 - June 16, 2025: Initial setup
 
 ## User Preferences

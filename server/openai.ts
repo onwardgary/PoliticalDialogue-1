@@ -90,17 +90,7 @@ export function createPartySystemMessage(partyShortName: string): Message {
       
       ${commonInstructions}`;
       break;
-    case "PSP":
-      content = `You are an UNOFFICIAL FAN BOT representing perspectives aligned with Singapore's Progress Singapore Party (PSP).
-      IMPORTANT: You are NOT officially endorsed by or affiliated with the PSP. Always clarify this if asked.
-      You should respond with perspectives that generally align with PSP's known positions and policies.
-      Be reform-minded, people-centric, and transparent in your responses. 
-      Emphasize the need for political reform, economic self-reliance, and putting Singaporeans first. 
-      Present policy proposals with concrete examples, measurable goals, and practical implementation timelines.
-      For example, when discussing foreign talent policy, include specific quota changes, salary thresholds, or tax incentives.
-      
-      ${commonInstructions}`;
-      break;
+
     default:
       content = `You are an UNOFFICIAL FAN BOT representing perspectives aligned with a Singaporean political party.
       IMPORTANT: You are NOT officially endorsed by or affiliated with any political party. Always clarify this if asked.
@@ -117,70 +107,170 @@ export function createPartySystemMessage(partyShortName: string): Message {
   };
 }
 
+// Helper function to extract party from system message
+function extractPartyFromMessages(messages: Message[]): string {
+  const systemMessage = messages.find(msg => msg.role === 'system');
+  if (!systemMessage) return 'unknown';
+  
+  if (systemMessage.content.includes('People\'s Action Party (PAP)')) return 'PAP';
+  if (systemMessage.content.includes('Workers\' Party (WP)')) return 'WP';
+  return 'unknown';
+}
+
+// Dynamic temperature based on party and conversation length
+function getPartyTemperature(party: string, messageCount: number): number {
+  const progressiveTemp = Math.min(0.9, 0.6 + (messageCount * 0.05));
+  
+  switch(party) {
+    case 'PAP': return progressiveTemp - 0.05; // Slightly more structured
+    case 'WP': return progressiveTemp + 0.05; // Slightly more exploratory
+    default: return progressiveTemp;
+  }
+}
+
+// Party-specific penalties to reduce repetition
+function getPartyPenalties(party: string, round: number): {presence_penalty: number, frequency_penalty: number} {
+  const roundMultiplier = Math.min(round / 3, 1.5); // Cap the multiplier
+  
+  switch(party) {
+    case 'PAP': 
+      return {
+        presence_penalty: Math.min(0.6, 0.3 + (roundMultiplier * 0.1)),
+        frequency_penalty: Math.min(0.4, 0.2 + (roundMultiplier * 0.05))
+      };
+    case 'WP':
+      return {
+        presence_penalty: Math.min(0.7, 0.4 + (roundMultiplier * 0.1)),
+        frequency_penalty: Math.min(0.5, 0.3 + (roundMultiplier * 0.05))
+      };
+    default:
+      return { presence_penalty: 0.3, frequency_penalty: 0.2 };
+  }
+}
+
+// Generate anti-repetition context for each party
+function getAntiRepetitionContext(party: string, assistantMessages: Message[]): string {
+  if (assistantMessages.length < 2) return '';
+  
+  const recentPoints = assistantMessages
+    .slice(-3) // Last 3 bot messages
+    .map(msg => msg.content.substring(0, 100))
+    .join(', ');
+    
+  const baseContext = `\nPREVIOUSLY DISCUSSED: You've covered: ${recentPoints}...
+CRITICAL: AVOID repeating these points. Explore NEW angles, different examples, or deeper policy details.`;
+
+  switch(party) {
+    case 'PAP':
+      return baseContext + `
+PAP ANTI-REPETITION STRATEGY:
+- Rotate through policy layers: immediate impacts → medium-term planning → long-term vision
+- Diversify evidence types: local statistics → international benchmarks → historical comparisons  
+- Vary implementation angles: national programs → constituency examples → inter-ministry coordination
+- Shift perspectives: economic efficiency → social cohesion → strategic positioning
+MAINTAIN: Authoritative expertise, specific data points, whole-of-government approach`;
+    
+    case 'WP':
+      return baseContext + `
+WP ANTI-REPETITION STRATEGY:
+- Rotate stakeholder perspectives: working families → elderly → young adults → small businesses
+- Vary democratic angles: parliamentary representation → grassroots feedback → policy consultation
+- Shift focus areas: immediate relief → structural reform → democratic participation  
+- Change advocacy styles: policy critique → alternative proposals → citizen empowerment
+MAINTAIN: Ground-up perspective, checks-and-balances focus, representative democracy emphasis`;
+    
+    default:
+      return baseContext;
+  }
+}
+
 // Generate a response from the AI based on the conversation history
 export async function generatePartyResponse(messages: Message[]): Promise<{content: string, searchEnabled: boolean}> {
   try {
     console.log("Generating party response with API key present:", !!API_KEY);
     console.log("Number of messages:", messages.length);
     
-    // Find the latest user message, if any, to determine if we need search capabilities
+    // Extract party and conversation metrics
+    const party = extractPartyFromMessages(messages);
     const userMessages = messages.filter(msg => msg.role === 'user');
+    const assistantMessages = messages.filter(msg => msg.role === 'assistant');
+    const conversationRound = Math.ceil(userMessages.length / 2);
+    
+    console.log(`Party: ${party}, Round: ${conversationRound}, Assistant messages: ${assistantMessages.length}`);
+    
+    // Find the latest user message for search capability determination
     const latestUserMessage = userMessages.length > 0 ? userMessages[userMessages.length - 1].content : '';
     
-    // Select the appropriate model based on the user's query
+    // Select the appropriate model
     const model = selectModel('conversation', latestUserMessage);
     console.log(`Using model for party response: ${model}`);
     
-    // Track if search was used for this message
+    // Track if search was used
     const searchEnabled = model === MODELS.SEARCH;
     
-    // Convert Messages to OpenAI format
-    const formattedMessages = messages.map(msg => ({
+    // Add anti-repetition context to system message
+    const antiRepetitionContext = getAntiRepetitionContext(party, assistantMessages);
+    const enhancedMessages = messages.map(msg => {
+      if (msg.role === 'system') {
+        return {
+          ...msg,
+          content: msg.content + antiRepetitionContext
+        };
+      }
+      return msg;
+    });
+    
+    // Convert to OpenAI format
+    const formattedMessages = enhancedMessages.map(msg => ({
       role: msg.role,
       content: msg.content
     }));
     
     console.log("Sending request to OpenAI API...");
     
-    // Add a timeout to the OpenAI request (increased to 20 seconds to ensure complete responses)
+    // Timeout promise
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => reject(new Error("OpenAI API request timed out after 20 seconds")), 20000);
     });
     
-    // Create the basic configuration
+    // Get dynamic parameters
+    const temperature = getPartyTemperature(party, messages.length);
+    const penalties = getPartyPenalties(party, conversationRound);
+    
+    console.log(`Using temperature: ${temperature}, presence_penalty: ${penalties.presence_penalty}, frequency_penalty: ${penalties.frequency_penalty}`);
+    
+    // Create configuration with dynamic parameters
     const config: any = {
       model: model,
       messages: formattedMessages,
-      max_tokens: 1000, // Increased to allow for more detailed responses with examples and calculations
+      max_tokens: 1000,
+      temperature: temperature,
+      presence_penalty: penalties.presence_penalty,
+      frequency_penalty: penalties.frequency_penalty,
     };
     
     // Add model-specific parameters
     if (model === MODELS.SEARCH) {
-      config.web_search_options = {}; // Enable web search capabilities for search model
-    } else {
-      // For standard model, we can add temperature
-      config.temperature = 0.7;
+      config.web_search_options = {};
     }
     
-    // @ts-ignore - The type definitions haven't been updated for the search tools yet
+    // @ts-ignore - Type definitions haven't been updated for search tools
     const apiPromise = openai.chat.completions.create(config);
     
-    // Race the API promise against the timeout
+    // Race against timeout
     const response = await Promise.race([apiPromise, timeoutPromise]);
     
     console.log("Received response from OpenAI API");
-    // @ts-ignore - Type definitions don't match the actual API response structure
+    // @ts-ignore - Type definitions don't match actual API response
     const content = response.choices[0].message.content || "I'm sorry, I couldn't generate a response.";
     return { content, searchEnabled };
   } catch (error) {
     console.error("Error generating party response:", error);
-    // Provide more detailed error information
     if (error instanceof Error) {
       console.error("Error details:", error.message);
       console.error("Error stack:", error.stack);
     }
     
-    // Return a fallback response instead of throwing
     return { 
       content: "I apologize, but I'm having trouble connecting to our AI service at the moment. Please try again shortly.",
       searchEnabled: false 
