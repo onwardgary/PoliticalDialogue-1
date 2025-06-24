@@ -72,7 +72,6 @@ export default function Sidebar() {
       {!isAdmin && <div className="flex-1"></div>}
       
       <div className="p-4 border-t border-neutral-200">
-        {/* User info and login/register temporarily hidden
         {user ? (
           <div className="flex flex-col space-y-4">
             <div className="flex items-center p-2">
@@ -109,9 +108,6 @@ export default function Sidebar() {
             Login / Register
           </Button>
         )}
-        */}
-        
-        {/* Removed "Powered by" text as requested */}
       </div>
     </aside>
   );

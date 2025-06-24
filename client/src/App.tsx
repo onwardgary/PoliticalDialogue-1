@@ -41,9 +41,8 @@ function Router() {
       <Route path="/admin/knowledge" component={AdminKnowledgePage} />
       <Route path="/admin/users" component={AdminUsersPage} />
       
-      {/* Auth page - temporarily hidden
+      {/* Auth page */}
       <Route path="/auth" component={AuthPage} />
-      */}
 
       {/* For testing other debate page versions */}
       <Route path="/debate-redux/:id([0-9]+)" component={DebatePageRedux} />

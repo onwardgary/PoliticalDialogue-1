@@ -111,7 +111,6 @@ function MobileSidebar() {
       {!isAdmin && <div className="flex-1"></div>}
       
       <div className="mt-4 pt-4 border-t border-neutral-200">
-        {/* Login/logout buttons temporarily hidden
         {user ? (
           <Button 
             onClick={handleLogout} 
@@ -132,8 +131,6 @@ function MobileSidebar() {
             Login / Register
           </Button>
         )}
-        */}
-        {/* Removed "Powered by" text */}
       </div>
     </div>
   );
