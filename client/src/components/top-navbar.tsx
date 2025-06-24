@@ -36,7 +36,7 @@ export default function TopNavbar() {
       setIsLoggingOut(false);
     }
   };
-  
+
   const handleLogin = () => {
     setLocation("/auth");
   };
@@ -80,8 +80,43 @@ export default function TopNavbar() {
           </nav>
         </div>
         
-        <div>
-          {/* Login/logout buttons temporarily hidden - same as sidebar */}
+        <div className="flex items-center space-x-3">
+          {user ? (
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback className="bg-primary text-white text-sm">
+                    {user.username.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="hidden md:block">
+                  <p className="text-sm font-medium">{user.username}</p>
+                  <p className="text-xs text-muted-foreground">{user.email}</p>
+                </div>
+              </div>
+              <Button 
+                onClick={handleLogout} 
+                variant="outline" 
+                size="sm"
+                disabled={isLoggingOut}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                {isLoggingOut ? "Logging out..." : "Logout"}
+              </Button>
+            </div>
+          ) : (
+            <Button 
+              onClick={handleLogin} 
+              variant="outline" 
+              size="sm"
+              className="flex items-center"
+            >
+              <LogIn className="mr-2 h-4 w-4" />
+              <span className="hidden md:inline">Login</span>
+              <span className="md:hidden">Login</span>
+              <span className="hidden lg:inline ml-1">(By Invitation Only)</span>
+            </Button>
+          )}
         </div>
       </div>
       
@@ -186,8 +221,35 @@ function MobileSidebar() {
         </ul>
       </nav>
       
+      {/* Empty flex-1 div to push footer to bottom when no nav */}
+      {!isAdmin && <div className="flex-1"></div>}
+      
       <div className="mt-4 pt-4 border-t border-neutral-200">
-        {/* Login/logout buttons temporarily hidden - same as sidebar */}
+        {user ? (
+          <Button 
+            onClick={handleLogout} 
+            variant="outline" 
+            className="w-full flex items-center justify-center"
+            disabled={isLoggingOut}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            {isLoggingOut ? "Logging out..." : "Logout"}
+          </Button>
+        ) : (
+          <div className="space-y-2">
+            <Button 
+              onClick={handleLogin} 
+              variant="outline" 
+              className="w-full flex items-center justify-center"
+            >
+              <LogIn className="mr-2 h-4 w-4" />
+              Login (By Invitation Only)
+            </Button>
+            <p className="text-xs text-center text-muted-foreground">
+              New users must be invited by administrators
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

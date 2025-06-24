@@ -98,15 +98,20 @@ export default function Sidebar() {
             </Button>
           </div>
         ) : (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="w-full flex items-center justify-center"
-            onClick={handleLogin}
-          >
-            <LogIn className="mr-2 h-4 w-4" />
-            Login / Register
-          </Button>
+          <div className="space-y-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full flex items-center justify-center"
+              onClick={handleLogin}
+            >
+              <LogIn className="mr-2 h-4 w-4" />
+              Login
+            </Button>
+            <p className="text-xs text-center text-muted-foreground">
+              By Invitation Only
+            </p>
+          </div>
         )}
       </div>
     </aside>

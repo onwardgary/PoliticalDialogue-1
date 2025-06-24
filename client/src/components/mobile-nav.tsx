@@ -122,14 +122,19 @@ function MobileSidebar() {
             {isLoggingOut ? "Logging out..." : "Logout"}
           </Button>
         ) : (
-          <Button 
-            onClick={handleLogin} 
-            variant="outline" 
-            className="w-full flex items-center justify-center"
-          >
-            <LogIn className="mr-2 h-4 w-4" />
-            Login / Register
-          </Button>
+          <div className="space-y-2">
+            <Button 
+              onClick={handleLogin} 
+              variant="outline" 
+              className="w-full flex items-center justify-center"
+            >
+              <LogIn className="mr-2 h-4 w-4" />
+              Login (By Invitation Only)
+            </Button>
+            <p className="text-xs text-center text-muted-foreground">
+              New users must be invited by administrators
+            </p>
+          </div>
         )}
       </div>
     </div>
