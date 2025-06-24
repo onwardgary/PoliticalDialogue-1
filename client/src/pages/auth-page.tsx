@@ -138,7 +138,7 @@ export default function AuthPage() {
         </div>
         
         {/* Right column - Image/branding */}
-        <div className="w-full md:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 p-8 flex flex-col justify-center text-white">
+        <div className="w-full md:w-1/2 bg-gradient-to-br from-gray-900 to-black p-8 flex flex-col justify-center text-white">
           <div className="mb-8">
             <h2 className="text-3xl font-bold mb-4">Welcome to Suara.sg</h2>
             <p className="text-lg opacity-90 mb-6">
