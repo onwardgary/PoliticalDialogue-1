@@ -126,14 +126,6 @@ export default function AuthPage() {
                 </Button>
               </form>
             </Form>
-            
-            <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <h3 className="text-sm font-medium text-blue-900 mb-2">Need an Account?</h3>
-              <p className="text-sm text-blue-700">
-                This platform is invitation-only. New accounts must be created by administrators. 
-                If you need access, please contact an existing administrator.
-              </p>
-            </div>
           </div>
         </div>
         
