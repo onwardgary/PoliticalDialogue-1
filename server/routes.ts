@@ -1260,6 +1260,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Analytics routes
+  app.get('/api/insights', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const { debateAnalytics } = await import('./analytics');
+      const insights = await debateAnalytics.generateInsights();
+      res.json(insights);
+    } catch (error) {
+      console.error('Error fetching insights:', error);
+      res.status(500).json({ message: 'Failed to generate insights' });
+    }
+  });
+
   const httpServer = createServer(app);
   
   return httpServer;

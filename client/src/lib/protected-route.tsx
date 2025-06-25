@@ -40,7 +40,7 @@ export function ProtectedRoute({
           );
         }
         
-        return <Component />;
+        return Component ? <Component /> : null;
       }}
     </Route>
   );

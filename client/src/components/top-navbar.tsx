@@ -207,6 +207,18 @@ function MobileSidebar() {
             </Link>
           </li>
           
+          {/* Insights - for logged in users */}
+          {user && (
+            <li>
+              <Link href="/insights">
+                <div className={`flex items-center p-3 rounded-lg font-medium ${location === '/insights' ? 'text-primary bg-blue-50' : 'text-neutral-600 hover:bg-neutral-100'}`}>
+                  <BarChart className="w-5 h-5 mr-3" />
+                  <span>Insights</span>
+                </div>
+              </Link>
+            </li>
+          )}
+          
           {/* Admin menu - only visible to admins */}
           {isAdmin && (
             <>

@@ -14,8 +14,8 @@ import SummaryPage from "./pages/summary-page";
 import ProfilePage from "./pages/profile-page";
 import AdminKnowledgePage from "./pages/admin-knowledge-page-new";
 import AdminUsersPage from "./pages/admin-users-page";
-import InsightsPage from "./pages/insights-page";
 import { ProtectedRoute } from "./lib/protected-route";
+import InsightsPage from "./pages/insights-page";
 
 function Router() {
   // Using the fixed implementation with proper party handling
@@ -46,11 +46,7 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       
       {/* Insights route - protected */}
-      <Route path="/insights">
-        <ProtectedRoute>
-          <InsightsPage />
-        </ProtectedRoute>
-      </Route>
+      <ProtectedRoute path="/insights" component={InsightsPage} />
 
       {/* For testing other debate page versions */}
       <Route path="/debate-redux/:id([0-9]+)" component={DebatePageRedux} />
