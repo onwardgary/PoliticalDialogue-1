@@ -109,6 +109,13 @@ The application is configured for deployment on Replit with the following setup:
 
 ## Changelog
 
+- June 25, 2025: Restored partisan defense behavior in AI bots
+  - Fixed neutral mediator problem - bots now vigorously defend party positions
+  - Enhanced prompts with combative language: "PASSIONATE ADVOCATE" and "DEFEND VIGOROUSLY"
+  - Added explicit response frameworks to challenge opposition arguments
+  - Removed neutrality instructions that weakened partisan stance
+  - Updated anti-repetition strategies to maintain fierce partisan advocacy
+  - Bots now end responses by reinforcing party superiority rather than seeking compromise
 - June 24, 2025: Implemented invite-only user management system
   - Added admin user creation interface at `/admin/users`
   - Created login buttons with "By Invitation Only" messaging
