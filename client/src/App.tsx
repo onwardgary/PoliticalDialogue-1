@@ -16,6 +16,7 @@ import AdminKnowledgePage from "./pages/admin-knowledge-page-new";
 import AdminUsersPage from "./pages/admin-users-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import InsightsPage from "./pages/insights-page";
+import AdminInsightsPage from "./pages/admin-insights-page";
 
 function Router() {
   // Using the fixed implementation with proper party handling

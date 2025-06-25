@@ -1088,6 +1088,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get insights data (authenticated users only)
+  app.get('/api/insights', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const { getCachedInsights } = await import('./insightsTrigger');
+      const insights = await getCachedInsights();
+      res.json(insights);
+    } catch (error) {
+      console.error('Error fetching insights:', error);
+      res.status(500).json({ message: 'Failed to fetch insights' });
+    }
+  });
+
+  // Generate insights for date range (admin only)
+  app.post('/api/admin/generate-insights', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+    
+    try {
+      const { startDate, endDate } = req.body;
+      
+      if (!startDate || !endDate) {
+        return res.status(400).json({ message: 'Start date and end date are required' });
+      }
+      
+      const { generateInsightsForDateRange } = await import('./insightsTrigger');
+      await generateInsightsForDateRange(startDate, endDate);
+      
+      res.json({ message: 'Insights generated successfully', dateRange: { startDate, endDate } });
+    } catch (error) {
+      console.error('Error generating insights:', error);
+      res.status(500).json({ message: 'Failed to generate insights' });
+    }
+  });
+
   // Create a new user (admin only)
   app.post("/api/admin/users", async (req, res) => {
     if (!req.isAuthenticated()) {

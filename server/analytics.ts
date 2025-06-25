@@ -191,9 +191,18 @@ export class DebateAnalytics {
     totalTopics: number;
   }> {
     try {
-      // Get all completed debates
+      // Get completed debates within date range
       const debates = await storage.getAllDebates();
-      const completedDebates = debates.filter(d => d.completed);
+      const startDateTime = new Date(startDate);
+      const endDateTime = new Date(endDate);
+      endDateTime.setHours(23, 59, 59, 999); // Include full end date
+      
+      const completedDebates = debates.filter(d => 
+        d.completed && 
+        d.createdAt && 
+        d.createdAt >= startDateTime && 
+        d.createdAt <= endDateTime
+      );
       
       console.log(`Processing ${completedDebates.length} completed debates`);
       

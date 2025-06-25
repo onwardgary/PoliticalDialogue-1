@@ -109,12 +109,13 @@ The application is configured for deployment on Replit with the following setup:
 
 ## Changelog
 
-- June 25, 2025: Implemented scalable trigger-based insights system
-  - Replaced real-time analytics with cached insights updated on debate completion
-  - Added memory-cached results for fast API responses
-  - Created trigger system that updates analytics only when new debates finish
-  - Prevents exponential processing overhead as debate volume grows
-  - Added admin endpoint for manual insights refresh when needed
+- June 25, 2025: Implemented admin-controlled date range insights system
+  - Created admin interface for generating insights with specific date ranges
+  - Added memory-cached results for fast API responses without real-time processing
+  - Built date picker interface with preset options (last 7/30 days)
+  - Added admin navigation tab "Generate" for insights control
+  - Insights dashboard now shows date range of analyzed data
+  - Prevents exponential processing overhead - analytics only run when admin triggers
 - June 25, 2025: Built ministry busyness insights dashboard for logged-in users
   - Added Natural.js text analysis engine processing 300+ debates
   - Created topic word cloud showing most discussed policy areas
