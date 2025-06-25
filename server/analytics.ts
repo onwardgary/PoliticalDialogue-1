@@ -67,11 +67,11 @@ export class DebateAnalytics {
               .toLowerCase()
               .trim();
             
-            // Filter out very short messages and obvious test content
-            if (cleanText.length > 20 && 
-                !cleanText.includes('test') && 
-                !cleanText.includes('hello') &&
-                !cleanText.includes('hi there')) {
+            // Filter out very short messages and system prompts
+            if (cleanText.length > 15 && 
+                !cleanText.startsWith('hello i m the') &&
+                !cleanText.includes('fanbot') &&
+                !cleanText.includes('unofficial')) {
               allTexts.push(cleanText);
             }
           }
