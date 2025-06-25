@@ -204,11 +204,10 @@ export class DebateAnalytics {
         d.createdAt <= endDateTime
       );
       
-      console.log(`Processing ${completedDebates.length} completed debates`);
+      console.log(`Processing ${completedDebates.length} completed debates in date range ${startDate} to ${endDate}`);
       
       // Extract text from debates
       const debateTexts = this.extractTextFromDebates(completedDebates);
-      console.log(`Sample extracted texts:`, debateTexts.slice(0, 3));
       
       if (debateTexts.length === 0) {
         console.warn('No text content found in debates');

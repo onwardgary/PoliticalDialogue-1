@@ -73,6 +73,12 @@ export default function TopNavbar() {
             {/* Admin options */}
             {isAdmin && (
               <>
+                <Link href="/admin/insights">
+                  <div className={`flex items-center p-2 rounded-lg font-medium ${location === '/admin/insights' ? 'text-primary' : 'text-neutral-600 hover:text-primary'}`}>
+                    <BarChart className="w-4 h-4 mr-2" />
+                    <span>Generate</span>
+                  </div>
+                </Link>
                 <Link href="/admin/knowledge">
                   <div className={`flex items-center p-2 rounded-lg font-medium ${location === '/admin/knowledge' ? 'text-primary' : 'text-neutral-600 hover:text-primary'}`}>
                     <Database className="w-4 h-4 mr-2" />
