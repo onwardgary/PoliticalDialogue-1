@@ -71,16 +71,13 @@ export class DebateAnalytics {
               .toLowerCase()
               .trim();
             
-            // Filter out bot introductions and focus on policy discussions
-            if (cleanText.length > 15 && 
+            // Focus on substantial policy questions and discussions
+            if (cleanText.length > 10 && 
                 !cleanText.includes('fanbot') &&
                 !cleanText.includes('unofficial') &&
                 !cleanText.includes('endorsed') &&
-                !cleanText.includes('not officially') &&
-                !cleanText.includes('perspectives aligned') &&
-                !cleanText.includes('hello i m the') &&
-                !cleanText.includes('challenge me on') &&
-                !cleanText.includes('what would you like to debate')) {
+                !cleanText.includes('hello') &&
+                cleanText.length < 200) { // Avoid very long messages
               allTexts.push(cleanText);
             }
           }
