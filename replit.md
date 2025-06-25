@@ -109,6 +109,12 @@ The application is configured for deployment on Replit with the following setup:
 
 ## Changelog
 
+- June 25, 2025: Implemented scalable trigger-based insights system
+  - Replaced real-time analytics with cached insights updated on debate completion
+  - Added memory-cached results for fast API responses
+  - Created trigger system that updates analytics only when new debates finish
+  - Prevents exponential processing overhead as debate volume grows
+  - Added admin endpoint for manual insights refresh when needed
 - June 25, 2025: Built ministry busyness insights dashboard for logged-in users
   - Added Natural.js text analysis engine processing 300+ debates
   - Created topic word cloud showing most discussed policy areas
