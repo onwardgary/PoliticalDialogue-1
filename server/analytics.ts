@@ -29,8 +29,10 @@ const MINISTRY_PORTFOLIOS = {
 // Common stop words to filter out
 const STOP_WORDS = new Set([
   'the', 'is', 'at', 'which', 'on', 'and', 'a', 'to', 'are', 'as', 'was', 'will', 'be', 'have', 'has', 'had',
-  'do', 'does', 'did', 'would', 'could', 'should', 'may', 'might', 'can', 'must', 'shall', 'will',
-  'singapore', 'singaporean', 'singaporeans', 'government', 'policy', 'policies', 'pap', 'wp', 'party'
+  'do', 'does', 'did', 'would', 'could', 'should', 'may', 'might', 'can', 'must', 'shall', 'will', 'this', 'that',
+  'with', 'for', 'from', 'by', 'of', 'in', 'not', 'but', 'or', 'if', 'then', 'than', 'more', 'also', 'very',
+  'singapore', 'singaporean', 'singaporeans', 'government', 'policy', 'policies', 'pap', 'party', 'citizen',
+  'you', 'your', 'our', 'we', 'they', 'their', 'them', 'there', 'here', 'what', 'how', 'when', 'where', 'why'
 ]);
 
 export interface TopicData {
@@ -54,13 +56,30 @@ export class DebateAnalytics {
     for (const debate of debates) {
       if (debate.messages && Array.isArray(debate.messages)) {
         for (const message of debate.messages) {
+          // Focus on user messages as they contain citizen concerns and topics
           if (message.role === 'user' && message.content) {
-            allTexts.push(message.content.toLowerCase());
+            // Clean and normalize text, removing system prompts and formatting
+            let cleanText = message.content
+              .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove bold formatting
+              .replace(/\n+/g, ' ') // Replace newlines with spaces
+              .replace(/[^\w\s]/g, ' ') // Remove punctuation
+              .replace(/\s+/g, ' ') // Normalize whitespace
+              .toLowerCase()
+              .trim();
+            
+            // Filter out very short messages and obvious test content
+            if (cleanText.length > 20 && 
+                !cleanText.includes('test') && 
+                !cleanText.includes('hello') &&
+                !cleanText.includes('hi there')) {
+              allTexts.push(cleanText);
+            }
           }
         }
       }
     }
     
+    console.log(`Extracted ${allTexts.length} text segments from ${debates.length} debates`);
     return allTexts;
   }
 
@@ -69,21 +88,26 @@ export class DebateAnalytics {
     const allTokens: string[] = [];
     
     for (const text of texts) {
-      // Use natural.js for tokenization
-      const tokens = natural.WordTokenizer.prototype.tokenize(text);
-      
-      for (const token of tokens) {
-        const cleanToken = token.toLowerCase().trim();
+      try {
+        // Use natural.js for tokenization
+        const tokens = natural.WordTokenizer.prototype.tokenize(text) || [];
         
-        // Filter out stop words, short words, and non-alphabetic tokens
-        if (cleanToken.length > 3 && 
-            !STOP_WORDS.has(cleanToken) && 
-            /^[a-zA-Z]+$/.test(cleanToken)) {
-          allTokens.push(cleanToken);
+        for (const token of tokens) {
+          const cleanToken = token.toLowerCase().trim();
+          
+          // Filter out stop words, short words, and non-alphabetic tokens
+          if (cleanToken.length > 2 && // Lowered threshold from 3 to 2
+              !STOP_WORDS.has(cleanToken) && 
+              /^[a-zA-Z]+$/.test(cleanToken)) {
+            allTokens.push(cleanToken);
+          }
         }
+      } catch (error) {
+        console.warn('Error tokenizing text:', error);
       }
     }
     
+    console.log(`Generated ${allTokens.length} tokens from ${texts.length} text segments`);
     return allTokens;
   }
 
@@ -165,20 +189,45 @@ export class DebateAnalytics {
       const debates = await storage.getAllDebates();
       const completedDebates = debates.filter(d => d.completed);
       
+      console.log(`Processing ${completedDebates.length} completed debates`);
+      
       // Extract text from debates
       const debateTexts = this.extractTextFromDebates(completedDebates);
+      
+      if (debateTexts.length === 0) {
+        console.warn('No text content found in debates');
+        return {
+          wordCloudData: [],
+          ministryBusyness: [],
+          totalDebates: completedDebates.length,
+          totalTopics: 0
+        };
+      }
       
       // Tokenize and clean
       const tokens = this.tokenizeText(debateTexts);
       
+      if (tokens.length === 0) {
+        console.warn('No valid tokens generated from text');
+        return {
+          wordCloudData: [],
+          ministryBusyness: [],
+          totalDebates: completedDebates.length,
+          totalTopics: 0
+        };
+      }
+      
       // Calculate frequencies
       const frequencies = this.calculateWordFrequencies(tokens);
       
-      // Convert to word cloud data (top 100 words)
+      // Convert to word cloud data (top 100 words with minimum frequency of 2)
       const wordCloudData: TopicData[] = Array.from(frequencies.entries())
+        .filter(([, count]) => count >= 2) // Only include words mentioned at least twice
         .sort(([,a], [,b]) => b - a)
         .slice(0, 100)
         .map(([text, value]) => ({ text, value }));
+      
+      console.log(`Generated ${wordCloudData.length} topics from ${frequencies.size} unique words`);
       
       // Calculate ministry busyness
       const ministryBusyness = this.classifyTopicsByMinistry(wordCloudData);
