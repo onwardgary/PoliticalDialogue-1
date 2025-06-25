@@ -60,6 +60,16 @@ export default function TopNavbar() {
               </div>
             </Link>
 
+            {/* Insights - for logged in users */}
+            {user && (
+              <Link href="/insights">
+                <div className={`flex items-center p-2 rounded-lg font-medium ${location === '/insights' ? 'text-primary' : 'text-neutral-600 hover:text-primary'}`}>
+                  <BarChart className="w-4 h-4 mr-2" />
+                  <span>Insights</span>
+                </div>
+              </Link>
+            )}
+
             {/* Admin options */}
             {isAdmin && (
               <>

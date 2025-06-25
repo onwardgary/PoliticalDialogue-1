@@ -109,6 +109,12 @@ The application is configured for deployment on Replit with the following setup:
 
 ## Changelog
 
+- June 25, 2025: Built ministry busyness insights dashboard for logged-in users
+  - Added Natural.js text analysis engine processing 300+ debates
+  - Created topic word cloud showing most discussed policy areas
+  - Implemented ministry accountability ranking based on citizen inquiry volume
+  - Added protected /insights route with real-time analytics
+  - Enhanced navbar with insights tab for authenticated users
 - June 25, 2025: Restored partisan defense behavior in AI bots
   - Fixed neutral mediator problem - bots now vigorously defend party positions
   - Enhanced prompts with combative language: "PASSIONATE ADVOCATE" and "DEFEND VIGOROUSLY"

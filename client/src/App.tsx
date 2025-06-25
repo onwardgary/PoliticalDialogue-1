@@ -44,6 +44,13 @@ function Router() {
       
       {/* Auth page */}
       <Route path="/auth" component={AuthPage} />
+      
+      {/* Insights route - protected */}
+      <Route path="/insights">
+        <ProtectedRoute>
+          <InsightsPage />
+        </ProtectedRoute>
+      </Route>
 
       {/* For testing other debate page versions */}
       <Route path="/debate-redux/:id([0-9]+)" component={DebatePageRedux} />
