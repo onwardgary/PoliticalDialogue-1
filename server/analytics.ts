@@ -55,10 +55,14 @@ export class DebateAnalytics {
     
     for (const debate of debates) {
       if (debate.messages && Array.isArray(debate.messages)) {
-        for (const message of debate.messages) {
-          // Focus on user messages as they contain citizen concerns and topics
-          if (message.role === 'user' && message.content) {
-            // Clean and normalize text, removing system prompts and formatting
+        for (let i = 0; i < debate.messages.length; i++) {
+          const message = debate.messages[i];
+          
+          // Skip system messages (usually first message)
+          if (message.role === 'system') continue;
+          
+          // Process both user questions and assistant responses for richer analysis
+          if ((message.role === 'user' || message.role === 'assistant') && message.content) {
             let cleanText = message.content
               .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove bold formatting
               .replace(/\n+/g, ' ') // Replace newlines with spaces
@@ -67,11 +71,16 @@ export class DebateAnalytics {
               .toLowerCase()
               .trim();
             
-            // Filter out very short messages and system prompts
+            // Filter out bot introductions and focus on policy discussions
             if (cleanText.length > 15 && 
-                !cleanText.startsWith('hello i m the') &&
                 !cleanText.includes('fanbot') &&
-                !cleanText.includes('unofficial')) {
+                !cleanText.includes('unofficial') &&
+                !cleanText.includes('endorsed') &&
+                !cleanText.includes('not officially') &&
+                !cleanText.includes('perspectives aligned') &&
+                !cleanText.includes('hello i m the') &&
+                !cleanText.includes('challenge me on') &&
+                !cleanText.includes('what would you like to debate')) {
               allTexts.push(cleanText);
             }
           }
@@ -89,14 +98,14 @@ export class DebateAnalytics {
     
     for (const text of texts) {
       try {
-        // Use natural.js for tokenization
-        const tokens = natural.WordTokenizer.prototype.tokenize(text) || [];
+        // Use simple word splitting instead of natural.js tokenizer
+        const words = text.split(/\s+/).filter(word => word.length > 0);
         
-        for (const token of tokens) {
-          const cleanToken = token.toLowerCase().trim();
+        for (const word of words) {
+          const cleanToken = word.toLowerCase().trim();
           
           // Filter out stop words, short words, and non-alphabetic tokens
-          if (cleanToken.length > 2 && // Lowered threshold from 3 to 2
+          if (cleanToken.length > 2 && 
               !STOP_WORDS.has(cleanToken) && 
               /^[a-zA-Z]+$/.test(cleanToken)) {
             allTokens.push(cleanToken);
