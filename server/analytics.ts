@@ -26,13 +26,13 @@ const MINISTRY_PORTFOLIOS = {
   ]
 };
 
-// Common stop words to filter out
+// Common stop words to filter out - keeping it focused on policy topics
 const STOP_WORDS = new Set([
   'the', 'is', 'at', 'which', 'on', 'and', 'a', 'to', 'are', 'as', 'was', 'will', 'be', 'have', 'has', 'had',
-  'do', 'does', 'did', 'would', 'could', 'should', 'may', 'might', 'can', 'must', 'shall', 'will', 'this', 'that',
+  'do', 'does', 'did', 'would', 'could', 'should', 'may', 'might', 'can', 'must', 'shall', 'this', 'that',
   'with', 'for', 'from', 'by', 'of', 'in', 'not', 'but', 'or', 'if', 'then', 'than', 'more', 'also', 'very',
-  'singapore', 'singaporean', 'singaporeans', 'government', 'policy', 'policies', 'pap', 'party', 'citizen',
-  'you', 'your', 'our', 'we', 'they', 'their', 'them', 'there', 'here', 'what', 'how', 'when', 'where', 'why'
+  'you', 'your', 'our', 'we', 'they', 'their', 'them', 'there', 'here', 'what', 'how', 'when', 'where', 'why',
+  'about', 'take', 'make', 'get', 'like', 'think', 'know', 'see', 'come', 'use', 'find', 'give', 'tell', 'ask'
 ]);
 
 export interface TopicData {
@@ -58,11 +58,11 @@ export class DebateAnalytics {
         for (let i = 0; i < debate.messages.length; i++) {
           const message = debate.messages[i];
           
-          // Skip system messages (usually first message)
+          // Skip system messages and bot introductions
           if (message.role === 'system') continue;
           
-          // Process both user questions and assistant responses for richer analysis
-          if ((message.role === 'user' || message.role === 'assistant') && message.content) {
+          // Focus primarily on user messages which contain citizen policy questions
+          if (message.role === 'user' && message.content) {
             let cleanText = message.content
               .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove bold formatting
               .replace(/\n+/g, ' ') // Replace newlines with spaces
@@ -202,6 +202,7 @@ export class DebateAnalytics {
       
       // Extract text from debates
       const debateTexts = this.extractTextFromDebates(completedDebates);
+      console.log(`Sample extracted texts:`, debateTexts.slice(0, 3));
       
       if (debateTexts.length === 0) {
         console.warn('No text content found in debates');
@@ -229,11 +230,11 @@ export class DebateAnalytics {
       // Calculate frequencies
       const frequencies = this.calculateWordFrequencies(tokens);
       
-      // Convert to word cloud data (top 100 words with minimum frequency of 2)
+      // Convert to word cloud data (top 50 words, minimum frequency of 1 for better coverage)
       const wordCloudData: TopicData[] = Array.from(frequencies.entries())
-        .filter(([, count]) => count >= 2) // Only include words mentioned at least twice
+        .filter(([, count]) => count >= 1) // Include all valid policy terms
         .sort(([,a], [,b]) => b - a)
-        .slice(0, 100)
+        .slice(0, 50)
         .map(([text, value]) => ({ text, value }));
       
       console.log(`Generated ${wordCloudData.length} topics from ${frequencies.size} unique words`);
