@@ -14,6 +14,7 @@ import SummaryPage from "./pages/summary-page";
 import ProfilePage from "./pages/profile-page";
 import AdminKnowledgePage from "./pages/admin-knowledge-page-new";
 import AdminUsersPage from "./pages/admin-users-page";
+import InsightsPage from "./pages/insights-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
