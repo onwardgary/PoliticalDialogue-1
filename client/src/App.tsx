@@ -6,10 +6,7 @@ import { ReduxProvider } from "./providers/redux-provider";
 import NotFound from "./pages/not-found";
 import HomePage from "./pages/home-page";
 import AuthPage from "./pages/auth-page";
-import DebatePage from "./pages/debate-page-simplified-new";
-import DebatePageTemp from "./pages/debate-page-temp"; // Using temp page to fix hooks issue
-import DebatePageFixed from "./pages/debate-page-fixed"; // Fixed version with proper party handling
-import DebatePageRedux from "./pages/debate-page-redux"; // New Redux implementation
+import DebatePageFixed from "./pages/debate-page-fixed"; // Main debate page
 import SummaryPage from "./pages/summary-page";
 import ProfilePage from "./pages/profile-page";
 import AdminKnowledgePage from "./pages/admin-knowledge-page-new";
@@ -19,7 +16,6 @@ import InsightsPage from "./pages/insights-page";
 import AdminInsightsPage from "./pages/admin-insights-page";
 
 function Router() {
-  // Using the fixed implementation with proper party handling
   const DebateComponent = DebatePageFixed;
   
   return (
@@ -50,13 +46,6 @@ function Router() {
       {/* Insights route - protected */}
       <ProtectedRoute path="/insights" component={InsightsPage} />
 
-      {/* For testing other debate page versions */}
-      <Route path="/debate-redux/:id([0-9]+)" component={DebatePageRedux} />
-      <Route path="/debate-redux/s/:secureId" component={DebatePageRedux} />
-      <Route path="/debate-original/:id([0-9]+)" component={DebatePage} />
-      <Route path="/debate-original/s/:secureId" component={DebatePage} />
-      <Route path="/debate-fixed/:id([0-9]+)" component={DebatePageFixed} />
-      <Route path="/debate-fixed/s/:secureId" component={DebatePageFixed} />
       
       <Route component={NotFound} />
     </Switch>

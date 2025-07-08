@@ -37,6 +37,50 @@ export default function DebatePageFixed() {
   const [uiState, setUiState] = useState<UIState>("loading");
   const [isUserTyping, setIsUserTyping] = useState(false);
   const [summaryUrl, setSummaryUrl] = useState<string | null>(null);
+  const [isBotTyping, setIsBotTyping] = useState(false);
+  
+  // Reset isBotTyping on component mount to clear any previous state
+  useEffect(() => {
+    setIsBotTyping(false);
+  }, []);
+  
+  // Monitor localMessages for new AI responses
+  useEffect(() => {
+    if (localMessages.length > 0) {
+      const latestMessage = localMessages[localMessages.length - 1];
+      console.log("📨 Local messages updated:", {
+        totalMessages: localMessages.length,
+        latestMessageId: latestMessage?.id,
+        latestMessageRole: latestMessage?.role
+      });
+      
+      // If the latest message is from assistant, show stop button
+      if (latestMessage?.role === 'assistant' && !isBotTyping) {
+        console.log("🤖 New AI message detected, showing stop button");
+        setIsBotTyping(true);
+      }
+    }
+  }, [localMessages]); // Removed isBotTyping from dependencies to avoid race condition
+  
+  // Handle when typewriter animation completes
+  const handleLatestMessageComplete = () => {
+    console.log("🤖 Latest message completed typing, hiding stop button");
+    setIsBotTyping(false);
+  };
+  
+  // Safety mechanism: Auto-clear isBotTyping after 10 seconds if it gets stuck
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    if (isBotTyping) {
+      timeoutId = setTimeout(() => {
+        console.log("⚠️ SAFETY: Auto-clearing stuck isBotTyping state");
+        setIsBotTyping(false);
+      }, 10000); // 10 second safety timeout
+    }
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [isBotTyping]);
   
   // Create persistent refs for intervals and timeouts
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -453,6 +497,7 @@ export default function DebatePageFixed() {
             userTyping={isUserTyping}
             maxRounds={debate?.maxRounds || 3}
             isGeneratingSummary={uiState === "animating"}
+            onLatestMessageComplete={handleLatestMessageComplete}
           />
         )}
         
@@ -462,6 +507,7 @@ export default function DebatePageFixed() {
             onSendMessage={handleSendMessage}
             isLoading={messageStatus.sending || messageStatus.polling || uiState === "animating"}
             onTypingStateChange={setIsUserTyping}
+            isBotTyping={isBotTyping}
             disabled={
               messageStatus.sending || 
               messageStatus.polling ||
@@ -471,11 +517,15 @@ export default function DebatePageFixed() {
               // Waiting for bot response
               (localMessages.length > 0 && localMessages[localMessages.length - 1].role === 'user') ||
               uiState === "animating" || 
-              uiState === "summaryReady"
+              uiState === "summaryReady" ||
+              // Disable input when bot is typing for refined UX
+              isBotTyping
             }
             disabledReason={
               uiState === "animating" ? 'generating' :
               uiState === "summaryReady" ? 'summaryReady' :
+              // Bot is typing - show refined UX
+              isBotTyping ? 'waiting' :
               // Optimistic check for final round status - using local state
               (messageStatus.finalRoundReached || 
                (localMessages.filter(msg => msg.role === 'user').length >= (debate?.maxRounds || 3))) ? 'finalRound' :
